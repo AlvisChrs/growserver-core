@@ -309,6 +309,51 @@ export async function useConsumable(player: Player, world: World, item: ItemDefi
     case CONSUMABLE_ID.WATER_BUCKET:
       await useWaterBucket(player, world, tileX, tileY);
       return;
+    case 7480: { // Growformer PowerKey
+      if (player.inventory.clothes.feet !== 7384 && player.inventory.hasItem(7384)) {
+        player.equipClothes(7384);
+      }
+      if (player.inventory.clothes.feet !== 7384 && !player.isDeveloper) {
+        player.sendTextBubble("`4You need Go-Go-Growformer! equipped to use this PowerKey!``", true);
+        return;
+      }
+      player.toggleTransform();
+      world.sendParticleEffect(36, player.state.x + 16, player.state.y + 16);
+      return;
+    }
+    case 2382: { // Crime Wave
+      if (player.removeItemInven(2382, 1) <= 0) return;
+      world.playPositioned("audio/alarm.wav", player.netID);
+      world.broadcastVariant(Variant.from("OnParticleEffect", 46, [player.state.x + 16, player.state.y + 16]));
+      world.broadcastVariant(Variant.from("OnConsoleMessage", "`4[ALERT] A Crime Wave has hit the world! A Crime In Progress has broken out nearby!``"));
+      world.broadcastVariant(Variant.from("OnTalkBubble", player.netID, "`4A Crime In Progress has broken out! Superheroes, to the rescue!``", 0));
+
+      // Find an empty tile nearby to spawn Crime In Progress (2302)
+      let spawned = false;
+      const px = Math.floor((player.state.x + 10) / 32);
+      const py = Math.floor((player.state.y + 16) / 32);
+      for (let r = 1; r <= 5 && !spawned; r++) {
+        for (let dx = -r; dx <= r && !spawned; dx++) {
+          for (let dy = -r; dy <= r && !spawned; dy++) {
+            const tx = px + dx;
+            const ty = py + dy;
+            if (tx < 0 || tx >= world.width || ty < 0 || ty >= world.height) continue;
+            const t = world.getTileAt(tx, ty);
+            if (t && t.fg === 0 && !world.isSolid(tx, ty)) {
+              t.fg = 2302; // Crime In Progress
+              t.damage = 0;
+              t.flags |= TileFlags.TILEEXTRA;
+              const { tileFrom } = require("../world/tiles");
+              tileFrom(world, t).tileUpdate();
+              world.broadcastVariant(Variant.from("OnParticleEffect", 36, [tx * 32 + 16, ty * 32 + 16]));
+              world.markDirty();
+              spawned = true;
+            }
+          }
+        }
+      }
+      return;
+    }
   }
 
   if (isPackItem(itemId)) {

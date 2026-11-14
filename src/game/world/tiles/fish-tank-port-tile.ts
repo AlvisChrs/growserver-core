@@ -31,8 +31,13 @@ export class FishTankPortTile extends Tile {
 
   public override async onPlaceForeground(player: Player, itemMeta: ItemDefinition): Promise<boolean> {
     if (this.data.bg !== ITEM_ID.FISH_TANK) {
-      player.sendTextBubble("You can only place this on a Fish Tank!", true);
-      return false;
+      if (player.isDeveloper || this.data.bg === 0) {
+        // Auto-place Fish Tank background (3004) so placing is effortless
+        this.data.bg = ITEM_ID.FISH_TANK;
+      } else {
+        player.sendTextBubble("Fish Tank Port must be placed on a Fish Tank background (ID 3004)!", true);
+        return false;
+      }
     }
 
     if (!(await super.onPlaceForeground(player, itemMeta))) return false;

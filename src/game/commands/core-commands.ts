@@ -1925,3 +1925,112 @@ registerCommand({
     player.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 successfully reset to procedural template!\`\``);
   },
 });
+
+registerCommand({
+  name: "katana",
+  aliases: ["lkat", "katanas"],
+  description: "Give Legendary Katana and elemental katana series",
+  role: PLAYER_ROLE.USER,
+  execute(player) {
+    const katanas = [
+      { id: 2592, name: "Legendary Katana" },
+      { id: 9058, name: "Cursed Katana" },
+      { id: 11118, name: "Sonic Buster Katana" },
+      { id: 13710, name: "Dark Magic Katana" },
+      { id: 16428, name: "Immortal Sonic Buster Katana" },
+    ];
+    for (const k of katanas) {
+      if (!player.inventory.hasItem(k.id)) player.addItemInven(k.id, 1);
+    }
+    // Auto-equip Legendary Katana
+    player.equipClothes(2592);
+    player.sendSfx("audio/thousandSlash.wav");
+    player.sendTextBubble("`#SHING! Legendary Katana equipped!``", true);
+    player.variants.sendOnConsoleMessage("`#You have unsheathed the Legendary Katana! Punch to unleash crescent slashes!``");
+  },
+});
+
+registerCommand({
+  name: "hero",
+  aliases: ["superhero"],
+  description: "Equip superhero suit and activate hero mode",
+  role: PLAYER_ROLE.USER,
+  execute(player) {
+    const heroItems = [
+      350, // Heroman Cape
+      2134, // Superhero Mask - Red
+      2098, // Heroic Tights - Red
+      2122, // Heroic Boots - Red
+      2170, // Superheroine Top - Red
+      11560, // Ezio Full-Body Suit
+    ];
+    for (const id of heroItems) {
+      if (!player.inventory.hasItem(id)) player.addItemInven(id, 1);
+    }
+    player.equipClothes(350);
+    player.equipClothes(2134);
+    player.equipClothes(2098);
+    player.equipClothes(2122);
+    player.equipClothes(2170);
+
+    player.playMods.add("hero_suit");
+    player.sendSfx("audio/change_clothes.wav");
+    player.sendTextBubble("`5Up, up, and away! Superhero powers engaged!``", true);
+    player.variants.sendOnConsoleMessage("`5Superhero powers activated! Double jump, increased speed, and heroic punch range unlocked!``");
+  },
+});
+
+registerCommand({
+  name: "criminal",
+  aliases: ["villain", "crime"],
+  description: "Receive Crime Wave consumable and Crime In Progress blocks",
+  role: PLAYER_ROLE.USER,
+  execute(player) {
+    player.addItemInven(2382, 5); // Crime Wave
+    player.addItemInven(2302, 5); // Crime In Progress
+    player.addItemInven(2360, 1); // Dr. Destructo Portrait
+    player.sendSfx("audio/alarm.wav");
+    player.sendTextBubble("`4Villainous schemes in motion!``", true);
+    player.variants.sendOnConsoleMessage("`4Received Crime Wave and Crime In Progress blocks! Use Crime Wave to summon villains!``");
+  },
+});
+
+registerCommand({
+  name: "fish",
+  aliases: ["fishing", "angler"],
+  description: "Receive fishing rods, baits, fish tank and port starter pack",
+  role: PLAYER_ROLE.USER,
+  execute(player) {
+    const fishingPack = [
+      { id: 2912, count: 1 }, // Fishing Rod
+      { id: 3040, count: 1 }, // Goldenrod
+      { id: 2914, count: 50 }, // Wiggly Worm
+      { id: 3014, count: 25 }, // Salmon Eggs
+      { id: 5528, count: 10 }, // Mega-Pellet Bait
+      { id: 3004, count: 20 }, // Fish Tank (background)
+      { id: 3002, count: 2 }, // Fish Tank Port
+      { id: 5530, count: 2 }, // Training Port
+    ];
+    for (const item of fishingPack) {
+      player.addItemInven(item.id, item.count);
+    }
+    // Auto-equip Fishing Rod
+    player.equipClothes(2912);
+    player.sendSfx("audio/splash.wav");
+    player.sendTextBubble("`2Equipped Fishing Rod! Select bait and tap water to fish!``", true);
+    player.variants.sendOnConsoleMessage("`2Received Fishing Starter Pack! Equip rod, select bait, and tap water to catch fish!``");
+  },
+});
+
+registerCommand({
+  name: "wizard",
+  aliases: ["lquester", "legendarywizard"],
+  description: "Get Legendary Wizard NPC block and interact with the wizard",
+  role: PLAYER_ROLE.USER,
+  execute(player) {
+    player.addItemInven(1790, 1); // Legendary Wizard
+    player.sendSfx("audio/magic_hit.wav");
+    player.sendTextBubble("`9The Legendary Wizard answers your call!``", true);
+    player.variants.sendOnConsoleMessage("`9Received Legendary Wizard block! Place it or interact to undertake Legendary Quests!``");
+  },
+});

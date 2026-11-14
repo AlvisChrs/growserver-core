@@ -255,10 +255,17 @@ export function isFishingBait(itemId: number): boolean {
 export async function handleFishingCast(player: Player, world: World, itemId: number, tileX: number, tileY: number): Promise<boolean> {
   if (!isFishingBait(itemId)) return false;
 
-  const rodId = player.inventory.clothes.hand;
+  let rodId = player.inventory.clothes.hand;
   if (!isFishingRod(rodId)) {
-    player.sendTextBubble("You need to be holding a Fishing Rod to use bait.", true);
-    return true;
+    // Auto-equip rod if in inventory
+    const availableRod = Object.keys(FISHING_RODS).map(Number).find(id => player.inventory.hasItem(id));
+    if (availableRod) {
+      player.equipClothes(availableRod);
+      rodId = availableRod;
+    } else {
+      player.sendTextBubble("You need to be holding a Fishing Rod to use bait.", true);
+      return true;
+    }
   }
 
   const targetTile = world.getTileAt(tileX, tileY);
@@ -616,7 +623,7 @@ function reelIn(player: Player, world: World): void {
   const catchText = isFish ? `${count} lb. ${itemName}` : itemName;
 
   if (isFish) {
-    if (player.inventory.hasItem(caughtItem) || player.inventory.isFull) {
+    if (player.inventory.isFull && !player.inventory.hasItem(caughtItem)) {
       world.drop(player, player.state.x, player.state.y + 16, caughtItem, count, { noSimilar: true, tree: true });
       player.variants.sendOnConsoleMessage(`Inventory full! Your ${count} lb. ${itemName} dropped on the floor.`);
     } else {

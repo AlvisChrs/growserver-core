@@ -32,6 +32,7 @@ import { FishTankPortTile } from "./fish-tank-port-tile";
 import { TrainingPortTile } from "./training-port-tile";
 import { OvenTile } from "./oven-tile";
 import { ChemicalCombinerTile } from "./chemical-combiner-tile";
+import { BurglarTile } from "./burglar-tile";
 import { DefaultExtraTile, getDefaultExtra, UNSUPPORTED_EXTRA_TYPES } from "./default-extra-tile";
 import { ITEM_ID } from "../constants";
 // dialog modules register their dialog returns on import
@@ -72,6 +73,7 @@ export const TileMap: Partial<Record<number, TileClass>> = {
   [ActionTypes.LAB]: ChemicalCombinerTile,
   [ActionTypes.ITEM_SUCKER]: MagplantTile,
   [ActionTypes.PET_TRAINER]: NpcTile,
+  [ActionTypes.BURGLAR]: BurglarTile,
 };
 
 /** Tile behaviour for single items whose action type is shared with plain blocks. */
@@ -100,12 +102,15 @@ export const TileMapByItem: Partial<Record<number, TileClass>> = {
   [ITEM_ID.UNSTABLE_TESSERACT]: MagplantTile,
   4654: GeigerChargerTile,
   [3448]: LobsterTrapTile,
-  // NPCs: The Ringmaster, Crazy Jim, Pet Trainers, Tropical Merchant
+  // NPCs: The Ringmaster, Crazy Jim, Pet Trainers, Tropical Merchant, Legendary Wizard
   1900: NpcTile,
   3902: NpcTile,
   3554: NpcTile,
   15224: NpcTile,
   13546: NpcTile,
+  1790: NpcTile,
+  // Crime In Progress villain block
+  2302: BurglarTile,
 };
 
 /**

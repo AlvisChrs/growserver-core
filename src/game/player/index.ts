@@ -435,7 +435,7 @@ export class Player {
     if (removed > 0) {
       if (notifyClient) this.variants.sendModifyItemInventory(itemId, -removed);
       if (wasEquipped && !this.inventory.isEquipped(itemId)) {
-        if (this.isTransformed && !this.hasTransformItem() && !this.isDeveloper) {
+        if (this.isTransformed && !this.hasTransformItem()) {
           this.untransform();
         }
         this.onClothesChanged(itemId, false);
@@ -563,7 +563,7 @@ export class Player {
 
   public unequipClothes(itemId: number): void {
     if (this.inventory.unequipById(itemId)) {
-      if (this.isTransformed && !this.hasTransformItem() && !this.isDeveloper) {
+      if (this.isTransformed && !this.hasTransformItem()) {
         this.untransform();
       }
       this.onClothesChanged(itemId, false);
@@ -671,7 +671,7 @@ export class Player {
   }
 
   private onClothesChanged(itemId: number, equipped: boolean): void {
-    if (!equipped && this.isTransformed && !this.hasTransformItem() && !this.isDeveloper) {
+    if (!equipped && this.isTransformed && !this.hasTransformItem()) {
       this.untransform();
     }
 

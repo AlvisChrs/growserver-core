@@ -3,6 +3,7 @@ import { getItem } from "../../item/item-utils";
 import type { Player } from "../../player";
 import { questDailyDialog } from "../../quests/daily-quest";
 import { ringmasterDialog } from "../../quests/ringmaster-quest";
+import { legendaryWizardDialog } from "../../quests/legendary-wizard-quest";
 import { LockPermission } from "../constants";
 import { Tile } from "../tile";
 import { registerDialog } from "../../network/dialog-handler";
@@ -68,6 +69,13 @@ export class NpcTile extends Tile {
         player.sendTextBubble("`6[Tropical Merchant] Exotic goods and island blessings for weary travelers!``", false);
         this.world.playPositioned("audio/secret.wav", player.netID);
         player.variants.sendOnDialogRequest(this.merchantDialog(player));
+        return true;
+      }
+
+      case 1790: { // Legendary Wizard
+        player.sendTextBubble("`9[Legendary Wizard] Greetings, seeker of ancient relics and supreme blades!``", false);
+        this.world.playPositioned("audio/magic_hit.wav", player.netID);
+        player.variants.sendOnDialogRequest(legendaryWizardDialog(player, this.data.x, this.data.y));
         return true;
       }
 

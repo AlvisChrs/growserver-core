@@ -127,6 +127,10 @@ async function TileChangeRequest(player: Player, tank: GameUpdatePacket, world: 
     if (await handleCuttingBoardSlice(player, world, block)) return;
     await tileFrom(world, block).onPunch(player);
     if (player.inventory.clothes.hand === ITEM_ID.RAYMANS_FIST) await raymanPunch(player, world, data);
+    const handItem = player.inventory.clothes.hand;
+    if (handItem === 2592 || handItem === 9058 || handItem === 11118 || handItem === 13710 || handItem === 16428) {
+      world.playPositioned("audio/thousandSlash.wav", player.netID);
+    }
   } else if (data.itemID === ITEM_ID.WRENCH) {
     if (handleSurgeryWrench(player, world, data.tileX, data.tileY, block.fg)) return;
     if (handleFoodGrinderWrench(player, block)) return;

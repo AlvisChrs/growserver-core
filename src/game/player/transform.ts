@@ -40,29 +40,8 @@ export const MORPH_ITEMS: ReadonlySet<number> = new Set([
 
 /**
  * Computes the visually effective clothes sent to clients via `OnSetClothing`.
- * Suppresses conflicting clothes when wearing full-body suits or when in transform mode.
+ * Preserves all worn items so avatars never become invisible and clothes unequip cleanly.
  */
-export function computeEffectiveClothes(clothes: Readonly<PlayerClothes>, isTransformed: boolean): PlayerClothes {
-  const isFullBodySuit = FULL_BODY_SUITS.has(clothes.necklace);
-
-  if (!isFullBodySuit && !isTransformed) {
-    return { ...clothes };
-  }
-
-  const effective: PlayerClothes = { ...clothes };
-
-  // Always suppress upper/lower body and head items that clip with full-body skins or robot vehicles
-  effective.hair = 0;
-  effective.shirt = 0;
-  effective.pants = 0;
-  effective.face = 0;
-  effective.mask = 0;
-
-  // Suppress feet unless the transformation source itself is the Go-Go-Growformer! feet item (#7384)
-  if (clothes.feet !== 7384) {
-    effective.feet = 0;
-  }
-
-  // Hand (weapons/tools), back (wings/capes), necklace, and ances are preserved
-  return effective;
+export function computeEffectiveClothes(clothes: Readonly<PlayerClothes>, _isTransformed = false): PlayerClothes {
+  return { ...clothes };
 }

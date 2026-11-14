@@ -21,7 +21,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect(MORPH_ITEMS.has(10960)).toBe(true); // Space Rabbit
   });
 
-  test("Wearing a full-body suit suppresses clashing clothes but preserves back, hand, and ances", () => {
+  test("Wearing a full-body suit preserves clothes cleanly without turning invisible", () => {
     const raw: PlayerClothes = {
       hair: 100,
       shirt: 200,
@@ -37,16 +37,14 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
 
     const effective = computeEffectiveClothes(raw, false);
 
-    // Suppressed slots
-    expect(effective.hair).toBe(0);
-    expect(effective.shirt).toBe(0);
-    expect(effective.pants).toBe(0);
-    expect(effective.feet).toBe(0);
-    expect(effective.face).toBe(0);
-    expect(effective.mask).toBe(0);
-
-    // Preserved slots
+    // All slots preserved so the player is never rendered invisible
     expect(effective.necklace).toBe(EZIO);
+    expect(effective.hair).toBe(100);
+    expect(effective.shirt).toBe(200);
+    expect(effective.pants).toBe(300);
+    expect(effective.feet).toBe(400);
+    expect(effective.face).toBe(500);
+    expect(effective.mask).toBe(600);
     expect(effective.hand).toBe(98);
     expect(effective.back).toBe(156);
     expect(effective.ances).toBe(700);
@@ -70,7 +68,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect(effective).toEqual(raw);
   });
 
-  test("Go-Go-Growformer! transformed vehicle mode suppresses clothes but preserves feet #7384", () => {
+  test("Go-Go-Growformer! vehicle mode preserves character clothes so avatar is never invisible", () => {
     const raw: PlayerClothes = {
       hair: 100,
       shirt: 200,
@@ -85,15 +83,11 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     };
 
     const effective = computeEffectiveClothes(raw, true);
-
-    expect(effective.hair).toBe(0);
-    expect(effective.shirt).toBe(0);
-    expect(effective.pants).toBe(0);
-    expect(effective.face).toBe(0);
-    expect(effective.mask).toBe(0);
-
-    // Feet must remain Growformer so the vehicle sprite renders
     expect(effective.feet).toBe(GROWFORMER);
+    expect(effective.hair).toBe(100);
+    expect(effective.shirt).toBe(200);
+    expect(effective.pants).toBe(300);
+    expect(effective.face).toBe(500);
     expect(effective.hand).toBe(98);
     expect(effective.back).toBe(156);
   });

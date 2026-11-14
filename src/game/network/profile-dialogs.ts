@@ -75,7 +75,13 @@ export function selfProfileDialog(player: Player): string {
     .addTextBox(`\`oGems: \`w${player.gems}\`\`  Role: \`w${PLAYER_ROLE_NAMES[player.role] ?? "Player"}\`\``)
     .addSpacer("small")
     .addButton("daily_quests", "`2Daily Quests``")
-    .addButton("role_goals", "`2Goals``")
+    .addButton("role_goals", "`2Goals``");
+
+  if (player.canTransform()) {
+    dialog.addButton("transform", player.isTransformed ? "`4Untransform!``" : "`2Transform!``");
+  }
+
+  dialog
     .addTextBox(`\`oTime played: \`w${formatDuration(player.playtime)}\`\``)
     .addTextBox(`\`oPlaying since: \`w${since}\`\` (\`w${player.accountAgeDays}\`\` ${player.accountAgeDays === 1 ? "day" : "days"} ago)\`\``)
     .addSpacer("small")
@@ -118,8 +124,12 @@ registerDialog("popup", (player, action) => {
   const target = player.world?.players.find((other) => other.netID === targetNetId);
 
   // Quick shortcuts are only present in the player's own wrench popup.
-  if (["home_world", "daily_quests", "role_goals", "my_worlds"].includes(button) && targetNetId !== player.netID) return;
+  if (["home_world", "daily_quests", "role_goals", "my_worlds", "transform"].includes(button) && targetNetId !== player.netID) return;
   switch (button) {
+    case "transform": {
+      player.toggleTransform();
+      return;
+    }
     case "daily_quests": {
       player.variants.sendOnDialogRequest(questDailyDialog(player));
       return;

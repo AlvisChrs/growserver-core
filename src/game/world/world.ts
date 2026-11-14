@@ -488,7 +488,7 @@ export class World {
     player.variants.sendOnEmoticonDataChanged();
     player.variants.sendOnSpawn(player.spawnOptions(true));
     player.variants.sendOnSetPos(player.netID, player.state.x, player.state.y);
-    player.variants.sendClothes(player.netID, player.inventory.clothes, player.effectiveSkinColor);
+    player.variants.sendClothes(player.netID, player.effectiveClothes, player.effectiveSkinColor);
     player.sendBuffer(player.variants.buildCharacterState(player.netID, player.characterStats, player.state.characterState, player.punchId));
     // world modifiers shown in brackets, like the real game's "[ANTIGRAVITY]"
     const mods = this.worldMods.map((mod) => ` \`0[\`2${mod}\`\`\`0]\`\``).join("");
@@ -507,7 +507,7 @@ export class World {
 
     for (const other of others) {
       other.variants.sendOnSpawn(player.spawnOptions(false));
-      other.variants.sendClothes(player.netID, player.inventory.clothes, player.effectiveSkinColor);
+      other.variants.sendClothes(player.netID, player.effectiveClothes, player.effectiveSkinColor);
       other.sendBuffer(other.variants.buildCharacterState(player.netID, player.characterStats, player.state.characterState, player.punchId));
       if (announceJoin) {
         other.variants.sendOnConsoleMessage(joinMessage);
@@ -516,7 +516,7 @@ export class World {
       other.actions.sendPlaySfx("audio/door_open.wav");
 
       player.variants.sendOnSpawn(other.spawnOptions(false));
-      player.variants.sendClothes(other.netID, other.inventory.clothes, other.effectiveSkinColor);
+      player.variants.sendClothes(other.netID, other.effectiveClothes, other.effectiveSkinColor);
       player.sendBuffer(player.variants.buildCharacterState(other.netID, other.characterStats, other.state.characterState, other.punchId));
     }
 

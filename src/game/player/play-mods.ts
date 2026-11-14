@@ -1,5 +1,6 @@
 import { CHARACTER_STATE } from "../../constants";
 import { Collection } from "../../utils/collection";
+import { FULL_BODY_SUITS } from "./transform";
 import {
   XENO_B_DOUBLE_JUMP,
   XENO_B_HIGH_JUMP,
@@ -85,6 +86,36 @@ for (const def of [
   mod({ id: "hunting_ghosts", name: "Hunting Ghosts", displayItem: 3716, addMessage: "You fire Neutron Beams (requires Neutron Pack to work).", removeMessage: "You're afraid of a ghost.", punchType: 69, punchRange: 2, items: [3716] }),
   mod({ id: "geiger_counter", name: "Geiger Counter", displayItem: 2204, addMessage: "You are detecting radiation...", removeMessage: "Geiger Counter removed.", items: [2204] }),
   mod({ id: "slasher", name: "Slasher", displayItem: 3466, addMessage: "You can slash with your blade!", removeMessage: "You put your blade away.", punchType: 29, items: [3466, 4506] }),
+  mod({
+    id: "hero_suit",
+    name: "Hero Instincts",
+    displayItem: 11560,
+    addMessage: "You feel the instincts of a legendary hero!",
+    removeMessage: "You stepped down from hero duty.",
+    speed: 100,
+    punchRange: 1,
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
+    items: [...FULL_BODY_SUITS],
+  }),
+  mod({
+    id: "growformer_speed",
+    name: "Speedy: Go-Go!",
+    displayItem: 7384,
+    addMessage: "Go-Go-Growformer activated!",
+    removeMessage: "Go-Go-Growformer deactivated.",
+    speed: 100,
+    items: [7384],
+  }),
+  mod({
+    id: "transformed",
+    name: "Transform Mode",
+    displayItem: 7384,
+    addMessage: "Growformer, Roll Out!",
+    removeMessage: "Powering down...",
+    speed: 250,
+    punchType: 12,
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
+  }),
 
   // --- world-driven ------------------------------------------------------------
   // granted while a Xenonite Crystal is placed in the world; its masks, not the

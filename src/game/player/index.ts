@@ -19,8 +19,10 @@ import { QuestController } from "../quests/quest-state";
 import type { FishingSession } from "../fishing/fishing-manager";
 import type { GeigerSession } from "../geiger/geiger-manager";
 import type { ActiveSurgery } from "../surgery/surgery-manager";
+import { FULL_BODY_SUITS, MORPH_ITEMS, computeEffectiveClothes } from "./transform";
 
 export * from "./inventory";
+export * from "./transform";
 
 /** Delay between an inventory change and the database write that persists it. */
 const INVENTORY_SAVE_DEBOUNCE_MS = 1500;
@@ -84,6 +86,8 @@ export class Player {
   public xp = 0;
   /** Raw 32-bit skin color as sent to the client. */
   public skinColor: number = DEFAULT_SKIN_COLOR;
+  /** Whether the avatar is currently transformed (vehicle/robot or morph mode). */
+  public isTransformed = false;
 
   public variants: VariantHandler;
   public actions: ActionsHandler;
@@ -514,7 +518,78 @@ export class Player {
   }
 
   public unequipClothes(itemId: number): void {
-    if (this.inventory.unequipById(itemId)) this.onClothesChanged(itemId, false);
+    if (this.inventory.unequipById(itemId)) {
+      if (this.isTransformed && !this.canTransform()) {
+        this.toggleTransform();
+      }
+      this.onClothesChanged(itemId, false);
+    }
+  }
+
+  /**
+   * Visually effective clothes rendered by clients. Suppresses clashing items
+   * when full-body hero suits are worn or while transformed.
+   */
+  public get effectiveClothes(): PlayerClothes {
+    return this.getEffectiveClothes();
+  }
+
+  public getEffectiveClothes(): PlayerClothes {
+    return computeEffectiveClothes(this.inventory.clothes, this.isTransformed);
+  }
+
+  /**
+   * Whether the player can enter or toggle transform mode.
+   * True if wearing a transform item (like Go-Go-Growformer!), a full-body suit,
+   * is already transformed, or has developer privileges.
+   */
+  public canTransform(): boolean {
+    if (this.isTransformed) return true;
+    if (this.isDeveloper) return true;
+    if (this.inventory.clothes.feet === 7384) return true;
+    if (FULL_BODY_SUITS.has(this.inventory.clothes.necklace)) return true;
+    for (const id of MORPH_ITEMS) {
+      if (this.inventory.isEquipped(id)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Toggles avatar transformation (vehicle/robot mode for Growformer, or hero stance).
+   */
+  public toggleTransform(): boolean {
+    if (!this.canTransform()) {
+      this.variants.sendOnConsoleMessage("`4You need a transformable item (like Go-Go-Growformer! or a Hero Suit) to transform!``");
+      return false;
+    }
+
+    this.isTransformed = !this.isTransformed;
+
+    if (this.isTransformed) {
+      this.playMods.add("transformed");
+      if (this.inventory.clothes.feet === 7384) {
+        this.sendTextBubble("`3Growformer, Roll Out!``", true);
+        this.variants.sendOnConsoleMessage("`3Go-Go-Growformer: Activated! Transforming into vehicle mode!``");
+        this.sendSfx("audio/jet_engine01.wav");
+      } else if (FULL_BODY_SUITS.has(this.inventory.clothes.necklace)) {
+        this.sendTextBubble("`5Hero mode engaged!``", true);
+        this.variants.sendOnConsoleMessage("`5Hero transformation activated!``");
+        this.sendSfx("audio/change_clothes.wav");
+      } else {
+        this.sendTextBubble("`2Transformed!``", true);
+        this.variants.sendOnConsoleMessage("`2Transform mode activated!``");
+        this.sendSfx("audio/jet_engine01.wav");
+      }
+    } else {
+      this.playMods.remove("transformed");
+      this.sendTextBubble("`4Powering down...``", true);
+      this.variants.sendOnConsoleMessage("`4Transform mode deactivated.``");
+      this.sendSfx("audio/power_down.wav");
+    }
+
+    this.sendClothesToWorld();
+    this.sendCharacterState();
+    return true;
   }
 
   /** Consumes one Legal Briefs to clear malpractice; inventory removal updates worn clothes. */
@@ -539,16 +614,17 @@ export class Player {
     this.scheduleInventorySave();
   }
 
-  /** Sends the current clothes to everyone in the world (including this player). */
+  /** Sends the current effective clothes to everyone in the world (including this player). */
   public sendClothesToWorld(): void {
     const skin = this.effectiveSkinColor;
+    const clothes = this.effectiveClothes;
     if (this.world) {
       for (const other of this.world.players) {
-        other.variants.sendClothes(this.netID, this.inventory.clothes, skin);
+        other.variants.sendClothes(this.netID, clothes, skin);
         other.variants.sendOnChangeSkin(this.netID, skin);
       }
     } else {
-      this.variants.sendClothes(this.netID, this.inventory.clothes, skin);
+      this.variants.sendClothes(this.netID, clothes, skin);
     }
   }
 

@@ -361,7 +361,7 @@ registerCommand({
       player.variants.sendOnConsoleMessage("`2Ghost mode enabled``. You can now walk through blocks!");
       // semi-transparent white appearance
       for (const other of player.world?.players ?? [player]) {
-        other.variants.sendClothes(player.netID, player.inventory.clothes, 0xffffff80);
+        other.variants.sendClothes(player.netID, player.effectiveClothes, 0xffffff80);
       }
     } else {
       player.state.characterState &= ~GHOST_STATE;
@@ -1150,5 +1150,15 @@ registerCommand({
       player.variants.sendOnConsoleMessage("`2Flight mode enabled! You can now double jump in mid-air!\`\``");
     }
     player.sendCharacterState();
+  },
+});
+
+registerCommand({
+  name: "transform",
+  aliases: ["morph", "growformer"],
+  description: "Toggle vehicle or robot transform mode with transformable items",
+  cooldown: 1,
+  execute(player) {
+    player.toggleTransform();
   },
 });

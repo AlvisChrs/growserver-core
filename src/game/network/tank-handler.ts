@@ -1,8 +1,10 @@
-import { TANK_PACKET_TYPE } from "../../constants";
+import { CHARACTER_STATE, TANK_PACKET_TYPE } from "../../constants";
 import { logger } from "../../utils/logger";
 import { placeWithMagplantRemote } from "../world/magplant";
 import { getItem } from "../item/item-utils";
 import { useConsumable } from "../item/consumables";
+import { isPackItem } from "../item/packs";
+import { isGrowscan, openGrowscan } from "../item/growscan";
 import type { GameUpdatePacket } from "../packets/game-packet";
 import { Variant } from "../packets/variants";
 import type { Player } from "../player";
@@ -44,7 +46,9 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
 
   // tile the player is standing on, only reported when not punching
   if (data.tileX > 0 || data.tileY > 0) return;
-  const block = world.getTileAt(Math.floor(data.posX / 32), Math.floor(data.posY / 32));
+  const block =
+    world.getTileAt(Math.floor((data.posX + 10) / 32), Math.floor((data.posY + 15) / 32)) ??
+    world.getTileAt(Math.floor(data.posX / 32), Math.floor(data.posY / 32));
   if (!block) return;
 
   const item = getItem(block.fg || block.bg);
@@ -52,6 +56,28 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
     const index = block.x + block.y * world.width;
     player.variants.sendVariant(Variant.from({ netID: player.netID, delay: 0 }, "SetRespawnPos", index));
     player.lastCheckpoint = { x: block.x, y: block.y };
+  }
+
+  // Lava and deadly hazard check
+  const fgItem = getItem(block.fg);
+  const isDeadlyHazard =
+    block.fg === 4 ||
+    fgItem?.type === ActionTypes.LAVA ||
+    fgItem?.type === ActionTypes.DEADLY_BLOCK ||
+    fgItem?.type === ActionTypes.POINTY;
+
+  if (isDeadlyHazard && !player.state.isGhost) {
+    const isImmune =
+      (player.isDeveloper && (player.state.characterState & CHARACTER_STATE.WALK_IN_BLOCKS) !== 0) ||
+      player.playMods.has("antidote") ||
+      player.inventory.clothes.feet === 622; // Fireproof Boots
+
+    if (!isImmune) {
+      player.respawn();
+      player.sendTextBubble("`4Ouch! That's deadly!``", true);
+      world.playPositioned("audio/burn.wav", player.netID);
+      return;
+    }
   }
 }
 
@@ -118,7 +144,12 @@ async function TileChangeRequest(player: Player, tank: GameUpdatePacket, world: 
 
     if (await handleFishingCast(player, world, data.itemID, data.tileX, data.tileY)) return;
 
-    if (type === ActionTypes.CONSUMABLE) {
+    if (isGrowscan(itemMeta.id ?? 0)) {
+      openGrowscan(player, world);
+      return;
+    }
+
+    if (type === ActionTypes.CONSUMABLE || isPackItem(itemMeta.id ?? 0)) {
       await useConsumable(player, world, itemMeta, data.tileX, data.tileY);
       return;
     }
@@ -241,16 +272,17 @@ async function ItemActivateRequest(player: Player, tank: GameUpdatePacket): Prom
   }
 
   if (item.type === ActionTypes.CLOTHES || item.type === ActionTypes.ANCES) {
-    if (player.inventory.isEquipped(itemId) && (itemId === 7384 || FULL_BODY_SUITS.has(itemId) || MORPH_ITEMS.has(itemId))) {
-      player.toggleTransform();
-      return;
-    }
     player.equipClothes(itemId);
     return;
   }
 
-  // a consumable used from the backpack is used on the player's own tile
-  if (item.type === ActionTypes.CONSUMABLE && player.world) {
+  if (isGrowscan(itemId) && player.world) {
+    openGrowscan(player, player.world);
+    return;
+  }
+
+  // a consumable or pack used from the backpack is used on the player's own tile
+  if ((item.type === ActionTypes.CONSUMABLE || isPackItem(itemId)) && player.world) {
     await useConsumable(player, player.world, item, Math.floor((player.state.x + 10) / 32), Math.floor((player.state.y + 15) / 32));
   }
 }

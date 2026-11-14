@@ -13,6 +13,7 @@ import { tileFrom } from "../world/tiles";
 import type { TileData } from "../world/types";
 import type { World } from "../world/world";
 import { worldManager } from "../world/world-manager";
+import { isPackItem, openPack } from "./packs";
 import { getItem } from "./item-utils";
 import { HAND_DRILL, ICE_CRUST_BLOCK, NUCLEAR_DETONATOR, URANIUM_BLOCK } from "../fishing/fishing-manager";
 
@@ -308,6 +309,11 @@ export async function useConsumable(player: Player, world: World, item: ItemDefi
     case CONSUMABLE_ID.WATER_BUCKET:
       await useWaterBucket(player, world, tileX, tileY);
       return;
+  }
+
+  if (isPackItem(itemId)) {
+    openPack(player, world, itemId);
+    return;
   }
 
   const treeSpray = TREE_SPRAY_SECONDS[itemId];

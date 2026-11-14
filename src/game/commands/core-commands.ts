@@ -11,7 +11,8 @@ import { serverManager } from "../server/server-manager";
 import { registerDialog } from "../network/dialog-handler";
 import { homeWorldDialog } from "../network/home-world-dialog";
 import { questDailyDialog, sendGoalsDialog } from "../quests";
-import { ActionTypes, ITEM_ID, LOCKS } from "../world/constants";
+import { ActionTypes, ITEM_ID, LOCKS, LockPermission } from "../world/constants";
+import { generateDefaultWorld } from "../world/generation/default";
 import { worldManager } from "../world/world-manager";
 import { SeedTile } from "../world/tiles/seed-tile";
 import { ProviderTile } from "../world/tiles/provider-tile";
@@ -1719,5 +1720,208 @@ registerCommand({
     } else {
       player.variants.sendOnConsoleMessage(`\`2Started event \`$${targetType}\`2 for \`w${duration} minutes\`2.\`\``);
     }
+  },
+});
+
+registerCommand({
+  name: "worldban",
+  aliases: ["wban"],
+  description: "Ban a player from the current world",
+  role: PLAYER_ROLE.BASIC,
+  async execute(player, args) {
+    const world = player.world;
+    if (!world) return;
+
+    const isOwner = world.getOwnerPlayerId() === player.playerId;
+    if (!isOwner && !player.isModerator && !player.isDeveloper) {
+      player.variants.sendOnConsoleMessage("`4You must be the world owner or staff to ban players from this world!``");
+      return;
+    }
+
+    if (!args[0]) {
+      player.variants.sendOnConsoleMessage("`4Usage: /worldban <target> [minutes] [reason]``");
+      return;
+    }
+
+    const target = await resolveTarget(args[0]);
+    if (!target) {
+      player.variants.sendOnConsoleMessage(`\`4Player '${args[0]}' not found.\`\``);
+      return;
+    }
+
+    if (target.playerId === player.playerId) {
+      player.variants.sendOnConsoleMessage("`4You cannot ban yourself from the world!``");
+      return;
+    }
+
+    const duration = args[1] && !isNaN(Number(args[1])) ? Math.max(1, Number(args[1])) : 60;
+    const reason = args.slice(isNaN(Number(args[1])) ? 1 : 2).join(" ") || "Violating world rules";
+
+    world.banPlayer(target.playerId, duration, reason);
+
+    if (target.online && target.online.world === world) {
+      target.online.variants.sendOnConsoleMessage(`\`4You have been banned from \`w${world.name}\`4 for \`w${duration} minutes\`4! Reason: \`w${reason}\`\``);
+      target.online.leaveWorld(true);
+    }
+
+    world.broadcastVariant(
+      Variant.from(
+        "OnConsoleMessage",
+        `\`4[WORLDBAN]\`\` \`w${target.name}\`\` was banned from this world by \`w${player.displayName}\`\` for \`w${duration}\`\` minutes! Reason: \`w${reason}\`\``,
+      ),
+    );
+  },
+});
+
+registerCommand({
+  name: "worldunban",
+  aliases: ["wunban"],
+  description: "Unban a player from the current world",
+  role: PLAYER_ROLE.BASIC,
+  async execute(player, args) {
+    const world = player.world;
+    if (!world) return;
+
+    const isOwner = world.getOwnerPlayerId() === player.playerId;
+    if (!isOwner && !player.isModerator && !player.isDeveloper) {
+      player.variants.sendOnConsoleMessage("`4You must be the world owner or staff to unban players from this world!``");
+      return;
+    }
+
+    if (!args[0]) {
+      player.variants.sendOnConsoleMessage("`4Usage: /worldunban <target>``");
+      return;
+    }
+
+    const target = await resolveTarget(args[0], true);
+    if (!target) {
+      player.variants.sendOnConsoleMessage(`\`4Player '${args[0]}' not found.\`\``);
+      return;
+    }
+
+    const removed = world.unbanPlayer(target.playerId);
+    if (removed) {
+      player.variants.sendOnConsoleMessage(`\`2Unbanned \`w${target.name}\`2 from \`w${world.name}\`2.\`\``);
+    } else {
+      player.variants.sendOnConsoleMessage(`\`4Player \`w${target.name}\`4 is not banned from this world.\`\``);
+    }
+  },
+});
+
+registerCommand({
+  name: "worldbans",
+  aliases: ["wbans"],
+  description: "View banned players in the current world",
+  role: PLAYER_ROLE.BASIC,
+  execute(player) {
+    const world = player.world;
+    if (!world) return;
+
+    if (world.bannedPlayers.size === 0) {
+      player.variants.sendOnConsoleMessage("`2There are no players currently banned from this world.`");
+      return;
+    }
+
+    player.variants.sendOnConsoleMessage(`\`o=== Banned Players in \`w${world.name}\`o ===\`\``);
+    const now = Date.now();
+    for (const [pId, info] of world.bannedPlayers) {
+      const remaining = Math.max(0, Math.ceil((info.until - now) / 60000));
+      player.variants.sendOnConsoleMessage(`\`4#${pId}\`o: \`w${remaining} min left\`o - Reason: \`w${info.reason}\`\``);
+    }
+  },
+});
+
+registerCommand({
+  name: "banworld",
+  aliases: ["lockworld"],
+  description: "Ban/suspend a world server-wide (Admin/Developer)",
+  role: PLAYER_ROLE.MODERATOR,
+  execute(player, args) {
+    const targetName = args[0] ? args[0].toUpperCase() : player.world?.name;
+    if (!targetName) {
+      player.variants.sendOnConsoleMessage("`4Usage: /banworld <world_name> [reason]``");
+      return;
+    }
+
+    const reason = args.slice(1).join(" ") || "Inappropriate / prohibited world content";
+    worldManager.banWorld(targetName, reason);
+
+    const loadedWorld = worldManager.getLoaded(targetName);
+    if (loadedWorld) {
+      for (const p of loadedWorld.players) {
+        if (!p.isDeveloper) {
+          p.variants.sendOnConsoleMessage(`\`4World \`w${targetName}\`4 has been suspended by administrators! Reason: \`w${reason}\`\``);
+          p.leaveWorld(true);
+        }
+      }
+    }
+
+    serverManager.broadcast(
+      Variant.from("OnConsoleMessage", `\`4[SERVER ALERT]\`\` World \`w${targetName}\`\` has been suspended by staff! Reason: \`w${reason}\`\``),
+    );
+  },
+});
+
+registerCommand({
+  name: "unbanworld",
+  description: "Unban/unsuspend a world server-wide (Admin/Developer)",
+  role: PLAYER_ROLE.MODERATOR,
+  execute(player, args) {
+    if (!args[0]) {
+      player.variants.sendOnConsoleMessage("`4Usage: /unbanworld <world_name>``");
+      return;
+    }
+
+    const targetName = args[0].toUpperCase();
+    const removed = worldManager.unbanWorld(targetName);
+    if (removed) {
+      player.variants.sendOnConsoleMessage(`\`2Successfully unbanned world \`w${targetName}\`2.\`\``);
+    } else {
+      player.variants.sendOnConsoleMessage(`\`4World \`w${targetName}\`4 was not banned.\`\``);
+    }
+  },
+});
+
+registerCommand({
+  name: "resetworld",
+  aliases: ["templatereset", "cleartemplate"],
+  description: "Completely reset the world back to pristine procedural template (Developer only)",
+  role: PLAYER_ROLE.DEVELOPER,
+  async execute(player, args) {
+    const targetName = args[0] ? args[0].toUpperCase() : player.world?.name;
+    if (!targetName) {
+      player.variants.sendOnConsoleMessage("`4Usage: /resetworld [world_name]``");
+      return;
+    }
+
+    const world = await worldManager.get(targetName);
+    if (!world) {
+      player.variants.sendOnConsoleMessage(`\`4World '${targetName}' could not be loaded.\`\``);
+      return;
+    }
+
+    // Generate pristine procedural default template
+    const template = generateDefaultWorld(world.name, world.width, world.height);
+    world.data.blocks = template.blocks;
+    world.data.dropped = { uid: 0, items: [] };
+    delete world.data.worldLockIndex;
+    delete world.data.weather;
+    world.markDirty();
+
+    // Teleport all online players to main door and resend world
+    const door = world.mainDoor;
+    const doorX = (door?.x ?? 0) * 32;
+    const doorY = (door?.y ?? 0) * 32;
+
+    for (const p of world.players) {
+      p.state.x = doorX;
+      p.state.y = doorY;
+      p.sendWorld(world);
+      p.sendInventory();
+      p.sendTextBubble("`2The world was reset to its original template!``", true);
+      p.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 was regenerated to its clean procedural template.\`\``);
+    }
+
+    player.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 successfully reset to procedural template!\`\``);
   },
 });

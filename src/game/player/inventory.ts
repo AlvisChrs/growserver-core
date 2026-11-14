@@ -75,6 +75,18 @@ export class PlayerInventory {
   /** Backpack capacity (number of distinct item slots). */
   public max = DEFAULT_INVENTORY_SIZE;
 
+  public get capacity(): number {
+    return this.max;
+  }
+
+  /** Expands the player's backpack slot capacity. */
+  public upgradeBackpack(slots: number): number {
+    this.max = Math.min(396, this.max + slots);
+    this.player.scheduleInventorySave();
+    this.player.sendInventory();
+    return this.max;
+  }
+
   /** key: item id, value: amount (max 200 per slot). */
   public items: Collection<number, number> = new Collection();
 

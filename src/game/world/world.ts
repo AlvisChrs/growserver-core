@@ -14,6 +14,7 @@ import { tileFrom } from "./tiles";
 import { upgradeXenonite } from "./tiles/xenonite-tile";
 import { isAntigravityActive } from "./tiles/antigravity-tile";
 import { DEFAULT_MUSIC_BPM, ActionTypes, CLIENT_UNAMPLIFIED_MUSIC_TYPE, ITEM_ID, JAMMERS, MUSIC_BLOCKS, LockPermission, SIGNAL_JAMMER, TileFlags, WEATHER_CLEAR, WORLD_DATA_VERSION } from "./constants";
+import { worldManager } from "./world-manager";
 import type { DroppedItem, TileData, WorldData, XenoniteSettings } from "./types";
 
 export interface DropOptions {
@@ -90,6 +91,29 @@ export class World {
   private musicStreams: Collection<number, string> = new Collection();
   /** Players whose own tile audio was replaced by the server relay, keyed by player id. */
   private musicRelayed: Collection<number, string> = new Collection();
+  /** Players banned from this world: playerId -> { until, reason } */
+  public bannedPlayers: Collection<number, { until: number; reason: string }> = new Collection();
+
+  public banPlayer(playerId: number, durationMinutes: number, reason: string): void {
+    const until = Date.now() + Math.max(1, durationMinutes) * 60 * 1000;
+    this.bannedPlayers.set(playerId, { until, reason });
+  }
+
+  public unbanPlayer(playerId: number): boolean {
+    return this.bannedPlayers.delete(playerId);
+  }
+
+  public isPlayerBanned(playerId: number): { banned: boolean; remainingMinutes: number; reason: string } {
+    const record = this.bannedPlayers.get(playerId);
+    if (!record) return { banned: false, remainingMinutes: 0, reason: "" };
+    const now = Date.now();
+    if (record.until <= now) {
+      this.bannedPlayers.delete(playerId);
+      return { banned: false, remainingMinutes: 0, reason: "" };
+    }
+    const remainingMinutes = Math.ceil((record.until - now) / 60000);
+    return { banned: true, remainingMinutes, reason: record.reason };
+  }
 
   public get players(): Player[] {
     return serverManager.players.filter((player) => player.world === this);
@@ -105,6 +129,18 @@ export class World {
    * world lock's minimum level does not apply to the owner, admins or staff.
    */
   public entryDenial(player: Player): string | undefined {
+    // Check if entire world is banned by administrators
+    const serverBanReason = worldManager.isWorldBanned(this.name);
+    if (serverBanReason && !player.isDeveloper) {
+      return `\`4This world is banned by administrators: \`w${serverBanReason}\`4.\`\``;
+    }
+
+    // Check if player is banned from this specific world
+    const banInfo = this.isPlayerBanned(player.playerId);
+    if (banInfo.banned && !player.isDeveloper && !player.isModerator) {
+      return `\`4You are banned from \`w${this.name}\`4 for another \`w${banInfo.remainingMinutes}\`4 minute(s)! Reason: \`w${banInfo.reason}\`\``;
+    }
+
     const index = this.data.worldLockIndex;
     const lock = index === undefined ? undefined : this.getTileByIndex(index);
     const minLevel = lock?.worldLockData?.minLevel ?? 1;

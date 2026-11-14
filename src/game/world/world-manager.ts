@@ -51,6 +51,20 @@ export class WorldManager {
 
   /** Loaded worlds keyed by upper-case name. */
   public worlds: Collection<string, World> = new Collection();
+  /** Server-wide banned/suspended worlds. */
+  public bannedWorlds: Collection<string, string> = new Collection();
+
+  public banWorld(worldName: string, reason: string): void {
+    this.bannedWorlds.set(WorldManager.normalizeName(worldName), reason);
+  }
+
+  public unbanWorld(worldName: string): boolean {
+    return this.bannedWorlds.delete(WorldManager.normalizeName(worldName));
+  }
+
+  public isWorldBanned(worldName: string): string | undefined {
+    return this.bannedWorlds.get(WorldManager.normalizeName(worldName));
+  }
 
   private pendingSaves: Collection<string, ReturnType<typeof setTimeout>> = new Collection();
   private loading: Collection<string, Promise<World>> = new Collection();

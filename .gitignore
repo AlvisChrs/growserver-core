@@ -1,0 +1,55 @@
+# dependencies (bun install)
+node_modules
+
+# output
+out
+dist
+*.tgz
+/data/*.db*
+/data/_backups
+# AI Agent instructions & skills
+AGENTS.md
+.agents/
+skills-lock.json
+
+# Editor configs
+.zed/
+.vscode/
+/configs
+/resources
+
+.tmpref
+Reference/
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
+.DS_Store
+
+# legacy monorepo artifacts and tool directories
+apps/
+packages/
+.commandcode/
+rootCA.pem
+

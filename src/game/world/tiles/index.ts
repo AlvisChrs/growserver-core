@@ -24,6 +24,7 @@ import { AntigravityTile } from "./antigravity-tile";
 import { RouletteTile } from "./roulette-tile";
 import { XenoniteTile } from "./xenonite-tile";
 import { ProviderTile } from "./provider-tile";
+import { NpcTile } from "./npc-tile";
 import { GeigerChargerTile } from "./geiger-charger-tile";
 import { LobsterTrapTile } from "./lobster-trap-tile";
 import { CuttingBoardTile } from "./cutting-board-tile";
@@ -70,6 +71,7 @@ export const TileMap: Partial<Record<number, TileClass>> = {
   [ActionTypes.OVEN]: OvenTile,
   [ActionTypes.LAB]: ChemicalCombinerTile,
   [ActionTypes.ITEM_SUCKER]: MagplantTile,
+  [ActionTypes.PET_TRAINER]: NpcTile,
 };
 
 /** Tile behaviour for single items whose action type is shared with plain blocks. */
@@ -98,6 +100,12 @@ export const TileMapByItem: Partial<Record<number, TileClass>> = {
   [ITEM_ID.UNSTABLE_TESSERACT]: MagplantTile,
   4654: GeigerChargerTile,
   [3448]: LobsterTrapTile,
+  // NPCs: The Ringmaster, Crazy Jim, Pet Trainers, Tropical Merchant
+  1900: NpcTile,
+  3902: NpcTile,
+  3554: NpcTile,
+  15224: NpcTile,
+  13546: NpcTile,
 };
 
 /**

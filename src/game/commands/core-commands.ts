@@ -14,6 +14,7 @@ import { questDailyDialog, sendGoalsDialog } from "../quests";
 import { ActionTypes, ITEM_ID, LOCKS } from "../world/constants";
 import { worldManager } from "../world/world-manager";
 import { SeedTile } from "../world/tiles/seed-tile";
+import { ProviderTile } from "../world/tiles/provider-tile";
 import { Collection } from "../../utils/collection";
 import { canUseCommand, commands, registerCommand, roleRank, type ChatCommand } from "./registry";
 import { tradeManager } from "../trade/trade-manager";
@@ -1434,25 +1435,33 @@ registerCommand({
 
 registerCommand({
   name: "growall",
-  aliases: ["grow", "trees"],
-  description: "Instantly grow all planted seed trees in the world",
+  aliases: ["grow", "trees", "providers"],
+  description: "Instantly grow all planted seed trees and ready all providers in the world",
   role: PLAYER_ROLE.DEVELOPER,
   cooldown: 2,
   execute(player) {
     const world = player.world;
     if (!world) return;
 
-    let count = 0;
+    let treeCount = 0;
+    let providerCount = 0;
     for (const block of world.data.blocks) {
       if (block.tree) {
         block.tree.plantedAt = Date.now() - 999999999;
         block.tree.fullyGrownAt = Date.now() - 1000;
         new SeedTile(world, block).tileUpdate();
-        count++;
+        treeCount++;
+      }
+      if (block.provider) {
+        block.provider.plantedAt = Date.now() - 999999999;
+        new ProviderTile(world, block).tileUpdate();
+        providerCount++;
       }
     }
     world.markDirty();
-    player.variants.sendOnConsoleMessage(`\`2Instantly grew \`o${count}\`2 trees in this world! Ready for harvest!\`\``);
+    player.variants.sendOnConsoleMessage(
+      `\`2Instantly grew \`o${treeCount}\`2 trees and readied \`o${providerCount}\`2 providers in this world! Ready for harvest!\`\``,
+    );
   },
 });
 

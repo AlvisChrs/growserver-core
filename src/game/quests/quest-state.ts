@@ -21,6 +21,8 @@ export interface QuestState {
   surgerySkill: number;
   /** Successful surgeries on real patients. */
   surgeryDone: number;
+  /** Ringmaster Carnival quest progression. */
+  ringmaster?: { step: number; completedCount: number };
 }
 
 /** Transient state of a patient lying in a hospital bed. */
@@ -121,6 +123,12 @@ export class QuestController {
       if (typeof parsed.dd === "number") this.state.dd = parsed.dd;
       if (typeof parsed.surgerySkill === "number") this.state.surgerySkill = Math.min(Math.max(0, Math.floor(parsed.surgerySkill)), 100);
       if (typeof parsed.surgeryDone === "number") this.state.surgeryDone = Math.max(0, Math.floor(parsed.surgeryDone));
+      if (parsed.ringmaster && typeof parsed.ringmaster === "object") {
+        this.state.ringmaster = {
+          step: typeof parsed.ringmaster.step === "number" ? parsed.ringmaster.step : 0,
+          completedCount: typeof parsed.ringmaster.completedCount === "number" ? parsed.ringmaster.completedCount : 0,
+        };
+      }
       if (parsed.roles && typeof parsed.roles === "object") {
         for (const id of ROLE_ORDER) {
           const role = parsed.roles[id];
@@ -161,6 +169,34 @@ export class QuestController {
 
   public set surgerySkill(value: number) {
     this.state.surgerySkill = Math.min(100, Math.max(0, Math.floor(value)));
+    this.player.scheduleInventorySave();
+  }
+
+  /** Current Ringmaster trial step (0 = not started, 1..10 = ongoing). */
+  public get ringmasterStep(): number {
+    return this.state.ringmaster?.step ?? 0;
+  }
+
+  public set ringmasterStep(step: number) {
+    if (!this.state.ringmaster) {
+      this.state.ringmaster = { step: 0, completedCount: 0 };
+    }
+    this.state.ringmaster.step = Math.max(0, Math.floor(step));
+    this.player.scheduleInventorySave();
+  }
+
+  /** Total Ringmaster trials completed. */
+  public get ringmasterCompletedCount(): number {
+    return this.state.ringmaster?.completedCount ?? 0;
+  }
+
+  /** Marks 10th trial completed and grants completion counter increment. */
+  public incrementRingmasterCompleted(): void {
+    if (!this.state.ringmaster) {
+      this.state.ringmaster = { step: 0, completedCount: 0 };
+    }
+    this.state.ringmaster.completedCount++;
+    this.state.ringmaster.step = 0;
     this.player.scheduleInventorySave();
   }
 

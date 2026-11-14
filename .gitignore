@@ -6,6 +6,8 @@ out
 dist
 *.tgz
 /data/*.db*
+/data/*.json
+/data/worlds/
 /data/_backups
 # AI Agent instructions & skills
 AGENTS.md

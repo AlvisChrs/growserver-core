@@ -20,7 +20,7 @@
 
 ---
 
-## ⚠️ Legal Disclaimer
+## Legal Disclaimer
 
 > **IMPORTANT:** This project is an independent, non-commercial open-source server emulator developed strictly for **educational, security research, and protocol interoperability purposes**. 
 > 
@@ -30,7 +30,7 @@
 
 ---
 
-## ✨ Features
+## Features
 
 - **Blazing Fast Performance:** Powered by [Bun](https://bun.sh) and native ENet networking compiled to WebAssembly via [growtopia.wasm](https://github.com/StileDevs/growtopia.wasm).
 - **Modern Client Compatibility:** Full support for modern Growtopia PC clients (including the modern OAuth/Web Login modal with Argon2id password hashing).
@@ -39,7 +39,7 @@
 - **Rich In-Game Command Suite (30+ Commands):**
   - Item spawning (`/give`, `/find`, `/search`)
   - World manipulation (`/nuke`, `/fillworld`, `/undo`, `/backup`, `/restore`, `/rain`, `/cleardrops`)
-  - Player physics & godmode (`/ghost`, `/invis`, `/speed`, `/gravity`, `/zoom`, `/heal`, `/fly`)
+  - Player physics & godmode (`/ghost`, `/invis`, `/speed`, `/gravity`, `/zoom`, `/heal`, `/fly`, `/transform`)
   - Instant tree harvesting (`/growall`)
   - Title customization (`/title <Dr.|Master|Legend|Hero|...>`)
   - Currency & roles (`/gems`, `/level`, `/nick`, `/giverole`)
@@ -51,7 +51,7 @@
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **OS:** Windows 10/11, macOS, or Linux.
 - **Runtime:** [Bun](https://bun.sh) (v1.3.0 or later).
@@ -60,7 +60,7 @@
 
 ---
 
-## 🚀 Quickstart (Windows 1-Click)
+## Quickstart (Windows 1-Click)
 
 1. **Clone the repository:**
    ```bash
@@ -87,7 +87,7 @@
 
 ---
 
-## 🛠️ Manual Installation & Setup
+## Manual Installation & Setup
 
 ### 1. System Hosts Setup
 Add the following entries to your hosts file (`C:\Windows\System32\drivers\etc\hosts` on Windows, or `/etc/hosts` on Unix):
@@ -137,7 +137,7 @@ An interactive CLI console is available directly in the terminal while the serve
 
 ---
 
-## 🎮 In-Game Commands Reference
+## In-Game Commands Reference
 
 As an administrator / developer (`role_id: 1`), you have access to all commands:
 
@@ -152,6 +152,7 @@ As an administrator / developer (`role_id: 1`), you have access to all commands:
 | **Abilities & Physics** | `/ghost` / `/unghost` | Toggles noclip and flight through blocks. |
 | | `/invis` | Toggles complete invisibility. |
 | | `/fly` | Toggles mid-air double-jump flight without requiring wings. |
+| | `/transform` / `/morph` | Toggles vehicle / robot mode (Growformer) or hero stance. |
 | | `/speed <value\|reset>` | Sets custom run velocity (e.g. `/speed 3000`). |
 | | `/gravity <value\|reset>` | Sets custom gravity (e.g. `/gravity 200` for moon gravity). |
 | | `/zoom <value\|reset>` | Adjusts world camera zoom level. |
@@ -174,7 +175,7 @@ As an administrator / developer (`role_id: 1`), you have access to all commands:
 
 ---
 
-## 🔧 Architecture Overview
+## Architecture Overview
 
 ```
 Growtopia Client
@@ -193,7 +194,7 @@ Growtopia Client
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions, bug reports, and pull requests are welcome:
 1. Fork this repository.
@@ -204,7 +205,7 @@ Contributions, bug reports, and pull requests are welcome:
 
 ---
 
-## 📜 License & Credits
+## License & Credits
 
 - Licensed under the **[MIT License](LICENSE)**.
 - Original project architecture created by [JadlionHD](https://github.com/JadlionHD) and open-source contributors.

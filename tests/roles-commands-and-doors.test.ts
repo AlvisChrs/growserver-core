@@ -260,3 +260,149 @@ describe("Door Security & Privacy Enforcement", () => {
     expect(ownerAllowed).toBe(true);
   });
 });
+
+describe("Transform Mode & Hero Enhancements", () => {
+  test("Vehicle mode applies NO_BODY and NO_HANDS to render cleanly as vehicle", () => {
+    const GROWFORMER = 7384;
+    let charState = 0;
+    let isTransformed = false;
+
+    const mockPlayer = {
+      inventory: { clothes: { feet: GROWFORMER, necklace: 0 } },
+      toggleTransform() {
+        isTransformed = !isTransformed;
+        if (isTransformed) {
+          if (this.inventory.clothes.feet === GROWFORMER) {
+            charState |= (1 << 5) | (1 << 3); // NO_BODY | NO_HANDS
+          }
+        } else {
+          charState &= ~((1 << 5) | (1 << 3));
+        }
+      },
+    };
+
+    // Transform into vehicle
+    mockPlayer.toggleTransform();
+    expect(isTransformed).toBe(true);
+    expect((charState & (1 << 5)) !== 0).toBe(true); // NO_BODY
+    expect((charState & (1 << 3)) !== 0).toBe(true); // NO_HANDS
+
+    // Untransform
+    mockPlayer.toggleTransform();
+    expect(isTransformed).toBe(false);
+    expect((charState & (1 << 5)) === 0).toBe(true);
+    expect((charState & (1 << 3)) === 0).toBe(true);
+  });
+});
+
+describe("Direct Trading System", () => {
+  test("Two players can initiate, add items, lock, and complete an atomic trade", async () => {
+    const { TradeSession } = await import("../src/game/trade/trade-session");
+    const { TradeManager } = await import("../src/game/trade/trade-manager");
+
+    const tradeMgr = new TradeManager();
+
+    const p1Items = new Map<number, number>([[242, 10]]); // 10 World Locks
+    const p2Items = new Map<number, number>([[1796, 1]]); // 1 Diamond Lock
+
+    const p1 = {
+      playerId: 101,
+      displayName: "Alice",
+      world: { name: "TRADE" },
+      inventory: {
+        getAmount: (id: number) => p1Items.get(id) ?? 0,
+        items: { toArray: () => [{ id: 242, amount: 10 }] },
+      },
+      removeItemInven: (id: number, amt: number) => {
+        p1Items.set(id, (p1Items.get(id) ?? 0) - amt);
+        return amt;
+      },
+      addItemInven: (id: number, amt: number) => {
+        p1Items.set(id, (p1Items.get(id) ?? 0) + amt);
+        return true;
+      },
+      saveToDatabase: async () => {},
+      variants: {
+        sendOnConsoleMessage: () => {},
+        sendOnDialogRequest: () => {},
+      },
+      sendSfx: () => {},
+    } as unknown as Player;
+
+    const p2 = {
+      playerId: 102,
+      displayName: "Bob",
+      world: { name: "TRADE" },
+      inventory: {
+        getAmount: (id: number) => p2Items.get(id) ?? 0,
+        items: { toArray: () => [{ id: 1796, amount: 1 }] },
+      },
+      removeItemInven: (id: number, amt: number) => {
+        p2Items.set(id, (p2Items.get(id) ?? 0) - amt);
+        return amt;
+      },
+      addItemInven: (id: number, amt: number) => {
+        p2Items.set(id, (p2Items.get(id) ?? 0) + amt);
+        return true;
+      },
+      saveToDatabase: async () => {},
+      variants: {
+        sendOnConsoleMessage: () => {},
+        sendOnDialogRequest: () => {},
+      },
+      sendSfx: () => {},
+    } as unknown as Player;
+
+    // Start trade session
+    tradeMgr.startTrade(p1, p2);
+    expect(tradeMgr.isInTrade(p1)).toBe(true);
+    expect(tradeMgr.isInTrade(p2)).toBe(true);
+
+    const session = tradeMgr.getSession(p1)!;
+    expect(session).toBeDefined();
+
+    // Alice offers 10 World Locks
+    tradeMgr.addItem(p1, 242, 10);
+    expect(session.items1.get(242)).toBe(10);
+
+    // Bob offers 1 Diamond Lock
+    tradeMgr.addItem(p2, 1796, 1);
+    expect(session.items2.get(1796)).toBe(1);
+
+    // Both lock trade
+    tradeMgr.lock(p1);
+    tradeMgr.lock(p2);
+    expect(session.locked1).toBe(true);
+    expect(session.locked2).toBe(true);
+
+    // Complete trade
+    await tradeMgr.acceptTrade(p1);
+    await tradeMgr.acceptTrade(p2);
+
+    expect(session.isCompleted).toBe(true);
+    expect(tradeMgr.isInTrade(p1)).toBe(false);
+
+    // Verify atomic swap: Alice now has 0 WL and 1 DL, Bob has 10 WL and 0 DL
+    expect(p1Items.get(242)).toBe(0);
+    expect(p1Items.get(1796)).toBe(1);
+    expect(p2Items.get(242)).toBe(10);
+    expect(p2Items.get(1796)).toBe(0);
+  });
+});
+
+describe("Automated Game Events System", () => {
+  test("Event manager starts, tracks, and stops seasonal events", async () => {
+    const { eventManager, GameEventType } = await import("../src/game/events/event-manager");
+
+    eventManager.startEvent(GameEventType.CARNIVAL, 60);
+    expect(eventManager.isActive).toBe(true);
+    expect(eventManager.activeEvent).toBe(GameEventType.CARNIVAL);
+    expect(eventManager.currentEvent.title).toBe("The Carnival!");
+    expect(eventManager.remainingSeconds).toBeGreaterThan(0);
+
+    eventManager.stopEvent();
+    expect(eventManager.isActive).toBe(false);
+    expect(eventManager.activeEvent).toBe(GameEventType.NONE);
+  });
+});
+

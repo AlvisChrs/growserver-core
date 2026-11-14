@@ -6,6 +6,7 @@ import { useConsumable } from "../item/consumables";
 import type { GameUpdatePacket } from "../packets/game-packet";
 import { Variant } from "../packets/variants";
 import type { Player } from "../player";
+import { FULL_BODY_SUITS, MORPH_ITEMS } from "../player/transform";
 import { ActionTypes, ITEM_ID, LockPermission, TileFlags } from "../world/constants";
 import { isPlaceableType, tileFrom } from "../world/tiles";
 import type { World } from "../world/world";
@@ -240,6 +241,10 @@ async function ItemActivateRequest(player: Player, tank: GameUpdatePacket): Prom
   }
 
   if (item.type === ActionTypes.CLOTHES || item.type === ActionTypes.ANCES) {
+    if (player.inventory.isEquipped(itemId) && (itemId === 7384 || FULL_BODY_SUITS.has(itemId) || MORPH_ITEMS.has(itemId))) {
+      player.toggleTransform();
+      return;
+    }
     player.equipClothes(itemId);
     return;
   }

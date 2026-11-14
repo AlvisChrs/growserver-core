@@ -125,6 +125,8 @@ export class Player {
   public surgery: ActiveSurgery | null = null;
   /** World `/home` warps to, null when the player has not set one. */
   public homeWorld: string | null = null;
+  /** Name of the player who last whispered to this player (for `/r`). */
+  public lastWhisperFrom: string | null = null;
 
   public state: PlayerState = {
     x: 0,
@@ -603,21 +605,26 @@ export class Player {
     this.isTransformed = !this.isTransformed;
 
     if (this.isTransformed) {
-      this.playMods.add("transformed");
       if (this.inventory.clothes.feet === 7384) {
+        this.state.characterState |= (CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS);
+        this.playMods.add("transformed");
         this.sendTextBubble("`3Growformer, Roll Out!``", true);
         this.variants.sendOnConsoleMessage("`3Go-Go-Growformer: Activated! Transforming into vehicle mode!``");
         this.sendSfx("audio/jet_engine01.wav");
       } else if (FULL_BODY_SUITS.has(this.inventory.clothes.necklace)) {
+        this.state.characterState &= ~(CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS);
+        this.playMods.add("transformed");
         this.sendTextBubble("`5Hero mode engaged!``", true);
-        this.variants.sendOnConsoleMessage("`5Hero transformation activated!``");
+        this.variants.sendOnConsoleMessage("`5Hero transformation activated! Unleash the legend within!``");
         this.sendSfx("audio/change_clothes.wav");
       } else {
+        this.playMods.add("transformed");
         this.sendTextBubble("`2Transformed!``", true);
         this.variants.sendOnConsoleMessage("`2Transform mode activated!``");
         this.sendSfx("audio/jet_engine01.wav");
       }
     } else {
+      this.state.characterState &= ~(CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS);
       this.playMods.remove("transformed");
       this.sendTextBubble("`4Powering down...``", true);
       this.variants.sendOnConsoleMessage("`4Transform mode deactivated.``");

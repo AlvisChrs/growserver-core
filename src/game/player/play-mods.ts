@@ -93,9 +93,18 @@ for (const def of [
     addMessage: "You feel the instincts of a legendary hero!",
     removeMessage: "You stepped down from hero duty.",
     speed: 100,
+    punchPower: 250,
     punchRange: 1,
+    punchType: 29,
     charState: CHARACTER_STATE.DOUBLE_JUMP,
-    items: [...FULL_BODY_SUITS],
+    items: [
+      ...FULL_BODY_SUITS,
+      350, // Heroman Cape
+      2098, 2100, 2102, 2104, 2106, 2108, // Heroic Tights
+      2122, 2124, 2126, 2128, 2130, 2132, // Heroic Boots
+      2134, 2136, 2138, 2140, 2142, 2144, // Superhero Masks
+      2170, 2172, 2174, 2176, 2178, 2180, // Superheroine Tops
+    ],
   }),
   mod({
     id: "growformer_speed",
@@ -114,7 +123,7 @@ for (const def of [
     removeMessage: "Powering down...",
     speed: 250,
     punchType: 12,
-    charState: CHARACTER_STATE.DOUBLE_JUMP,
+    charState: CHARACTER_STATE.DOUBLE_JUMP | CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS,
   }),
 
   // --- world-driven ------------------------------------------------------------

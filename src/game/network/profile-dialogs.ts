@@ -9,6 +9,8 @@ import { ITEM_ID } from "../world/constants";
 import { worldManager } from "../world/world-manager";
 import { questDailyDialog, sendGoalsDialog } from "../quests";
 import { registerDialog } from "./dialog-handler";
+import { tradeManager } from "../trade/trade-manager";
+import { serverManager } from "../server/server-manager";
 
 /** Buttons of the wrench menu that open one of the client's RML pages. */
 const RML_PAGES: Record<string, string> = {
@@ -128,6 +130,7 @@ registerDialog("popup", (player, action) => {
   switch (button) {
     case "transform": {
       player.toggleTransform();
+      player.variants.sendOnDialogRequest(selfProfileDialog(player));
       return;
     }
     case "daily_quests": {
@@ -160,9 +163,30 @@ registerDialog("popup", (player, action) => {
       player.variants.sendOnDialogRequest(dialog.str());
       return;
     }
-    case "trade":
-    case "sendpm":
-    case "friend_add":
+    case "trade": {
+      if (!target) return;
+      tradeManager.invite(player, target);
+      return;
+    }
+    case "sendpm": {
+      if (!target) return;
+      const dialog = new DialogBuilder()
+        .defaultColor()
+        .addLabelWithIcon(`\`wMessage to ${target.displayName}\`\``, ITEM_ID.MAILBOX, "big")
+        .addInputBox("pm_text", "Message", "", 120)
+        .embed("targetName", target.tankIDName || target.displayName)
+        .endDialog("send_pm_end", "Cancel", "Send")
+        .str();
+      player.variants.sendOnDialogRequest(dialog);
+      return;
+    }
+    case "friend_add": {
+      if (!target) return;
+      player.variants.sendOnConsoleMessage(`\`2Friend request sent to \`$${target.displayName}\`2!\`\``);
+      target.variants.sendOnConsoleMessage(`\`2\`$${player.displayName} \`2wants to be your friend!\`\``);
+      target.sendTextBubble(`\`2Friend request from \`$${player.displayName}\`2!\`\``, true);
+      return;
+    }
     case "ignore_player":
     case "report_player":
       player.variants.sendOnConsoleMessage("`4That feature isn't available on this server yet.``");
@@ -180,4 +204,19 @@ registerDialog("popup", (player, action) => {
 
 registerDialog("worlds_list", () => {});
 registerDialog("clothes_end", () => {});
+registerDialog("send_pm_end", (player, action) => {
+  const targetName = action.get("targetName");
+  const text = action.get("pm_text").trim();
+  if (!targetName || !text) return;
+
+  const target = serverManager.getPlayerByName(targetName);
+  if (!target) {
+    return player.variants.sendOnConsoleMessage(`\`4Player \`o${targetName}\`4 is not online.\`\``);
+  }
+
+  player.variants.sendOnConsoleMessage(`CP:_PL:0_OID:_CT:[W]_ \`5PM to \`w${target.displayName}\`5: \`$${text}\`\``);
+  target.variants.sendOnConsoleMessage(`CP:_PL:0_OID:_CT:[W]_ \`5PM from \`w${player.displayName}\`5: \`$${text}\`\``);
+  target.sendSfx("audio/camerashutter.wav");
+  target.lastWhisperFrom = player.tankIDName || player.displayName;
+});
 registerDialog("wrench_end", () => {});

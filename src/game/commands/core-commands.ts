@@ -16,6 +16,8 @@ import { worldManager } from "../world/world-manager";
 import { SeedTile } from "../world/tiles/seed-tile";
 import { Collection } from "../../utils/collection";
 import { canUseCommand, commands, registerCommand, type ChatCommand } from "./registry";
+import { tradeManager } from "../trade/trade-manager";
+import { eventManager, GameEventType } from "../events/event-manager";
 
 const ROLE_NAMES = PLAYER_ROLE_NAMES;
 
@@ -1276,7 +1278,7 @@ registerCommand({
 
 registerCommand({
   name: "transform",
-  aliases: ["morph", "growformer"],
+  aliases: ["morph", "growformer", "hero"],
   description: "Toggle vehicle or robot transform mode with transformable items",
   cooldown: 1,
   execute(player) {
@@ -1319,5 +1321,155 @@ registerCommand({
     if (!args.length || !player.world) return;
     const action = args.join(" ");
     player.world.broadcastVariant(Variant.from("OnConsoleMessage", `\`6* ${player.formattedName} \`6${action}\`\``));
+  },
+});
+
+registerCommand({
+  name: "msg",
+  aliases: ["tell", "w", "whisper"],
+  description: "Send a private message to an online player",
+  usage: "/msg <player> <message>",
+  cooldown: 1,
+  execute(player, args) {
+    if (args.length < 2) {
+      return player.variants.sendOnConsoleMessage("`4Usage: /msg <player> <message>``");
+    }
+    const targetName = args[0]!;
+    const message = args.slice(1).join(" ").trim();
+    if (!message) return;
+
+    if (player.state.isMuted) {
+      return player.variants.sendOnConsoleMessage("`4You are muted and cannot send private messages.``");
+    }
+
+    const target = serverManager.getPlayerByName(targetName);
+    if (!target) {
+      return player.variants.sendOnConsoleMessage(`\`4Player \`o${targetName}\`4 is not online.\`\``);
+    }
+
+    if (target === player) {
+      return player.variants.sendOnConsoleMessage("`4You cannot message yourself.``");
+    }
+
+    player.variants.sendOnConsoleMessage(`CP:_PL:0_OID:_CT:[W]_ \`5PM to \`w${target.displayName}\`5: \`$${message}\`\``);
+    target.variants.sendOnConsoleMessage(`CP:_PL:0_OID:_CT:[W]_ \`5PM from \`w${player.displayName}\`5: \`$${message}\`\``);
+    target.sendSfx("audio/camerashutter.wav");
+    target.lastWhisperFrom = player.tankIDName || player.displayName;
+  },
+});
+
+registerCommand({
+  name: "r",
+  aliases: ["reply"],
+  description: "Reply to the last player who sent you a private message",
+  usage: "/r <message>",
+  cooldown: 1,
+  execute(player, args) {
+    if (!player.lastWhisperFrom) {
+      return player.variants.sendOnConsoleMessage("`4No one has sent you a private message yet.``");
+    }
+    const message = args.join(" ").trim();
+    if (!message) {
+      return player.variants.sendOnConsoleMessage("`4Usage: /r <message>``");
+    }
+
+    const target = serverManager.getPlayerByName(player.lastWhisperFrom);
+    if (!target) {
+      return player.variants.sendOnConsoleMessage(`\`4Player \`o${player.lastWhisperFrom}\`4 is no longer online.\`\``);
+    }
+
+    if (player.state.isMuted) {
+      return player.variants.sendOnConsoleMessage("`4You are muted and cannot send private messages.``");
+    }
+
+    player.variants.sendOnConsoleMessage(`CP:_PL:0_OID:_CT:[W]_ \`5PM to \`w${target.displayName}\`5: \`$${message}\`\``);
+    target.variants.sendOnConsoleMessage(`CP:_PL:0_OID:_CT:[W]_ \`5PM from \`w${player.displayName}\`5: \`$${message}\`\``);
+    target.sendSfx("audio/camerashutter.wav");
+    target.lastWhisperFrom = player.tankIDName || player.displayName;
+  },
+});
+
+registerCommand({
+  name: "trade",
+  description: "Start or accept a trade with an online player in the same world",
+  usage: "/trade <player>",
+  cooldown: 1,
+  execute(player, args) {
+    if (!args.length) {
+      return player.variants.sendOnConsoleMessage("`4Usage: /trade <player>``");
+    }
+    const targetName = args[0]!;
+    const target = serverManager.getPlayerByName(targetName);
+    if (!target) {
+      return player.variants.sendOnConsoleMessage(`\`4Player \`o${targetName}\`4 is not online.\`\``);
+    }
+    tradeManager.invite(player, target);
+  },
+});
+
+registerCommand({
+  name: "event",
+  aliases: ["events"],
+  description: "View current active game event and time left",
+  cooldown: 1,
+  execute(player) {
+    const current = eventManager.currentEvent;
+    if (!eventManager.isActive) {
+      player.variants.sendOnConsoleMessage("`oThere are no special game events active right now. Enjoy peaceful building!``");
+      return;
+    }
+
+    const remainingMins = Math.ceil(eventManager.remainingSeconds / 60);
+    player.variants.sendOnConsoleMessage(`\`2=== Active Event: \`$${current.title}\`2 ===\`\``);
+    player.variants.sendOnConsoleMessage(`\`o${current.description}`);
+    player.variants.sendOnConsoleMessage(`\`2Time Remaining: \`w${remainingMins} minute(s)\`\``);
+  },
+});
+
+registerCommand({
+  name: "startevent",
+  aliases: ["setevent"],
+  description: "Start or stop a server-wide event (pineapple, carnival, halloween, voucher, none)",
+  usage: "/startevent <pineapple|carnival|halloween|voucher|none> [minutes]",
+  role: PLAYER_ROLE.DEVELOPER,
+  cooldown: 1,
+  execute(player, args) {
+    if (!args.length) {
+      return player.variants.sendOnConsoleMessage("`4Usage: /startevent <pineapple|carnival|halloween|voucher|none> [minutes]``");
+    }
+
+    const typeStr = args[0]!.toLowerCase().trim();
+    const duration = args.length >= 2 ? Math.max(1, Number.parseInt(args[1]!, 10) || 60) : 60;
+
+    let targetType: GameEventType;
+    switch (typeStr) {
+      case "pineapple":
+        targetType = GameEventType.PINEAPPLE;
+        break;
+      case "carnival":
+        targetType = GameEventType.CARNIVAL;
+        break;
+      case "halloween":
+      case "ghost":
+        targetType = GameEventType.HALLOWEEN;
+        break;
+      case "voucher":
+        targetType = GameEventType.VOUCHER_DAYZ;
+        break;
+      case "none":
+      case "stop":
+      case "off":
+        targetType = GameEventType.NONE;
+        break;
+      default:
+        return player.variants.sendOnConsoleMessage("`4Invalid event type. Available: pineapple, carnival, halloween, voucher, none``");
+    }
+
+    eventManager.startEvent(targetType, duration);
+    if (targetType === GameEventType.NONE) {
+      player.variants.sendOnConsoleMessage("`2Event stopped successfully.``");
+    } else {
+      player.variants.sendOnConsoleMessage(`\`2Started event \`$${targetType}\`2 for \`w${duration} minutes\`2.\`\``);
+    }
   },
 });

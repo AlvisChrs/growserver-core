@@ -34,6 +34,17 @@ export class PlayerDB {
   }
 
   /**
+   * Retrieves a player by their primary ID regardless of soft-delete state.
+   */
+  public static async getByIdWithDeleted(id: number): Promise<PlayerRecord | undefined> {
+    return await db
+      .selectFrom("players")
+      .selectAll()
+      .where("id", "=", id)
+      .executeTakeFirst();
+  }
+
+  /**
    * Retrieves a player by their exact username (case-insensitive).
    */
   public static async getByName(name: string): Promise<PlayerRecord | undefined> {
@@ -44,6 +55,29 @@ export class PlayerDB {
       .where((eb) => eb(eb.fn("lower", ["name"]), "=", cleanName.toLowerCase()))
       .where("deleted_at", "is", null)
       .executeTakeFirst();
+  }
+
+  /**
+   * Retrieves a player by their exact username (case-insensitive), including soft-deleted ones.
+   */
+  public static async getByNameWithDeleted(name: string): Promise<PlayerRecord | undefined> {
+    const cleanName = name.trim();
+    return await db
+      .selectFrom("players")
+      .selectAll()
+      .where((eb) => eb(eb.fn("lower", ["name"]), "=", cleanName.toLowerCase()))
+      .executeTakeFirst();
+  }
+
+  /**
+   * Checks whether a player account is suspended (soft-deleted).
+   */
+  public static async isSuspended(nameOrId: string | number): Promise<boolean> {
+    const record =
+      typeof nameOrId === "number"
+        ? await this.getByIdWithDeleted(nameOrId)
+        : await this.getByNameWithDeleted(nameOrId);
+    return record?.deleted_at !== null && record?.deleted_at !== undefined;
   }
 
   /**

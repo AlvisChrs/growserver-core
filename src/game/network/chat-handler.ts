@@ -3,7 +3,7 @@ import { normalizeChatInput } from "../../utils/chat-input";
 import { Variant } from "../packets/variants";
 import type { Player } from "../player";
 import { executeCommand } from "../commands";
-import { PLAYER_ROLE } from "../../constants";
+import { CHARACTER_STATE, PLAYER_ROLE } from "../../constants";
 
 /**
  * Handles the `input` action: slash commands or world chat.
@@ -45,6 +45,18 @@ export async function handleChatInput(player: Player, rawText: string): Promise<
 export async function broadcastWorldChat(player: Player, rawMessage: string): Promise<void> {
   const world = player.world;
   if (!world) return;
+
+  if (player.state.isMuted || player.playMods.has("duct_tape")) {
+    player.sendTextBubble("`4Mmmph! (You are muted)``");
+    player.variants.sendOnConsoleMessage("`4You are muted and cannot talk in chat.``");
+    return;
+  }
+
+  if ((player.state.characterState & CHARACTER_STATE.IS_FROZEN) || player.playMods.has("frozen")) {
+    player.sendTextBubble("`4*Brrr! (You are frozen)*``");
+    player.variants.sendOnConsoleMessage("`4You are frozen and cannot move or chat!``");
+    return;
+  }
 
   // strip color codes from player chat so nobody can impersonate the server
   const message = rawMessage.replace(/`./g, "").trim();

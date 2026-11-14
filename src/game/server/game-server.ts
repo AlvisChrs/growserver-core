@@ -15,6 +15,8 @@ import { GameUpdatePacket } from "../packets/game-packet";
 import { PlayerDB, SessionDB } from "../../database/services";
 import { GameMessageMap } from "../network/game-message-handler";
 import { handleTankPacket } from "../network/tank-handler";
+import { DialogBuilder } from "../../utils/dialog-builder";
+import { ITEM_ID } from "../world/constants";
 
 export interface GameServerEvents {
   "server:started": (data: { port: number; serverLabel: string }) => void;
@@ -178,6 +180,31 @@ export class GameServer extends EventEmitter {
               player.auth.metadata.tankIDPass = text.get("tankIDPass") || "";
               player.auth.isAuthenticated = true;
 
+              // Check if account is suspended/banned before processing logon
+              const suspendedRecord = await PlayerDB.getByNameWithDeleted(player.tankIDName);
+              if (suspendedRecord && suspendedRecord.deleted_at) {
+                const banDialog = new DialogBuilder()
+                  .defaultColor()
+                  .addLabelWithIcon("`4Account Suspended``", ITEM_ID.WRENCH, "small")
+                  .addSpacer("small")
+                  .addSmallText("`4This GrowID account has been suspended by an administrator.``")
+                  .addSmallText("Status: `4Suspended / Banned``")
+                  .addSmallText("If you believe this was an error, please contact server support.")
+                  .addQuickExit()
+                  .endDialog("banned_account", "", "Ok")
+                  .str();
+
+                player.variants.sendOnConsoleMessage("`4Oops! This GrowID account is suspended by an administrator.``");
+                player.variants.sendOnDialogRequest(banDialog);
+                player.sendSfx("audio/cant_place_tile.wav");
+                setTimeout(() => {
+                  try {
+                    player.disconnect();
+                  } catch {}
+                }, 1500);
+                return;
+              }
+
               let dbPlayer = await PlayerDB.getByName(player.tankIDName);
               if (!dbPlayer) {
                 dbPlayer = await PlayerDB.create({
@@ -211,6 +238,31 @@ export class GameServer extends EventEmitter {
             const session = sessionToken ? await SessionDB.getByToken(sessionToken) : undefined;
             if (!session) {
               return player.variants.sendOnConsoleMessage(new TextColor().crazyRed("Invalid or expired session token, please login again.").str());
+            }
+
+            // Check if account associated with session is suspended
+            const suspendedSessionRecord = await PlayerDB.getByIdWithDeleted(session.player_id);
+            if (suspendedSessionRecord && suspendedSessionRecord.deleted_at) {
+              const banDialog = new DialogBuilder()
+                .defaultColor()
+                .addLabelWithIcon("`4Account Suspended``", ITEM_ID.WRENCH, "small")
+                .addSpacer("small")
+                .addSmallText("`4This GrowID account has been suspended by an administrator.``")
+                .addSmallText("Status: `4Suspended / Banned``")
+                .addSmallText("If you believe this was an error, please contact server support.")
+                .addQuickExit()
+                .endDialog("banned_account", "", "Ok")
+                .str();
+
+              player.variants.sendOnConsoleMessage("`4Oops! This GrowID account is suspended by an administrator.``");
+              player.variants.sendOnDialogRequest(banDialog);
+              player.sendSfx("audio/cant_place_tile.wav");
+              setTimeout(() => {
+                try {
+                  player.disconnect();
+                } catch {}
+              }, 1500);
+              return;
             }
 
             player.tankIDName = player.auth.tankIDName;

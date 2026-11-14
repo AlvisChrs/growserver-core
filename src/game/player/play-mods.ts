@@ -116,6 +116,17 @@ for (const def of [
     items: [7384],
   }),
   mod({
+    id: "nekorei_charm",
+    name: "NekoRei's Feline Charm",
+    displayItem: 8030,
+    addMessage: "Nyaa~ You feel the playful feline spirit of NekoRei's companion!",
+    removeMessage: "The feline companion takes a cozy catnap.",
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
+    speed: 80,
+    sound: "audio/change_clothes.wav",
+    items: [8030, 8032],
+  }),
+  mod({
     id: "transformed",
     name: "Transform Mode",
     displayItem: 7384,

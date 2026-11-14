@@ -15,7 +15,7 @@ import { ActionTypes, ITEM_ID, LOCKS } from "../world/constants";
 import { worldManager } from "../world/world-manager";
 import { SeedTile } from "../world/tiles/seed-tile";
 import { Collection } from "../../utils/collection";
-import { canUseCommand, commands, registerCommand, type ChatCommand } from "./registry";
+import { canUseCommand, commands, registerCommand, roleRank, type ChatCommand } from "./registry";
 import { tradeManager } from "../trade/trade-manager";
 import { eventManager, GameEventType } from "../events/event-manager";
 
@@ -25,13 +25,13 @@ const ROLE_NAMES = PLAYER_ROLE_NAMES;
  * Resolves a command target written as `/name` (exact GrowID) or `#id`
  * (database id) to an online player or a database record.
  */
-async function resolveTarget(raw: string): Promise<{ online?: Player; playerId?: number; name?: string } | null> {
+async function resolveTarget(raw: string, includeDeleted = false): Promise<{ online?: Player; playerId?: number; name?: string } | null> {
   if (raw.startsWith("#")) {
     const id = Number.parseInt(raw.slice(1), 10);
     if (Number.isNaN(id)) return null;
     const online = serverManager.players.find((player) => player.playerId === id);
     if (online) return { online, playerId: id, name: online.tankIDName };
-    const record = await PlayerDB.getById(id);
+    const record = includeDeleted ? await PlayerDB.getByIdWithDeleted(id) : await PlayerDB.getById(id);
     return record ? { playerId: record.id, name: record.name } : null;
   }
 
@@ -39,7 +39,7 @@ async function resolveTarget(raw: string): Promise<{ online?: Player; playerId?:
   if (!name) return null;
   const online = serverManager.players.find((player) => player.tankIDName.toLowerCase() === name);
   if (online) return { online, playerId: online.playerId, name: online.tankIDName };
-  const record = await PlayerDB.getByName(name);
+  const record = includeDeleted ? await PlayerDB.getByNameWithDeleted(name) : await PlayerDB.getByName(name);
   return record ? { playerId: record.id, name: record.name } : null;
 }
 
@@ -99,6 +99,9 @@ registerCommand({
   usage: "/sb <message>",
   cooldown: 5,
   execute(player, args) {
+    if (player.state.isMuted || player.playMods.has("duct_tape")) {
+      return player.variants.sendOnConsoleMessage("`4You are muted and cannot use super broadcast.``");
+    }
     if (args.length === 0) return player.variants.sendOnConsoleMessage("Message are required.");
     const message = args.join(" ").replace(/`./g, "");
     const location = player.currentWorld || "the menu";
@@ -118,7 +121,7 @@ registerCommand({
   name: "sdb",
   description: "Send a global message to everyone via a dialog box",
   usage: "/sdb <message>",
-  role: PLAYER_ROLE.DEVELOPER,
+  role: PLAYER_ROLE.MODERATOR,
   cooldown: 5,
   execute(player, args) {
     if (args.length === 0) return player.variants.sendOnConsoleMessage("Message are required.");
@@ -353,7 +356,7 @@ registerCommand({
   name: "ghost",
   aliases: ["unghost"],
   description: "Toggle ghost mode to walk through blocks.",
-  role: PLAYER_ROLE.DEVELOPER,
+  role: PLAYER_ROLE.SUPPORTER,
   cooldown: 2,
   execute(player) {
     player.state.isGhost = !player.state.isGhost;
@@ -379,7 +382,7 @@ registerCommand({
   aliases: ["punchid"],
   description: "Change your punch effect id",
   usage: "/pid <id>",
-  role: PLAYER_ROLE.DEVELOPER,
+  role: PLAYER_ROLE.SUPPORTER,
   cooldown: 1,
   execute(player, args) {
     const punchId = Number.parseInt(args[0] ?? "", 10);
@@ -558,6 +561,7 @@ registerCommand({
   name: "clearworld",
   aliases: ["nuke", "clean"],
   description: "Clear everything in your world (instant with /nuke)",
+  role: PLAYER_ROLE.DEVELOPER,
   cooldown: 5,
   execute(player, args) {
     const world = player.world;
@@ -606,20 +610,207 @@ registerCommand({
 });
 
 registerCommand({
-  name: "changename",
-  aliases: ["nick", "rename", "name"],
-  description: "Change your display name",
-  usage: "/nick <new name>",
+  name: "rename",
+  aliases: ["changename", "nick", "name"],
+  description: "Change your display name or another player's name",
+  usage: "/rename [target] <new name>",
   role: PLAYER_ROLE.DEVELOPER,
   cooldown: 2,
   async execute(player, args) {
-    const name = args.join(" ").trim();
-    if (!name) return player.variants.sendOnConsoleMessage("`4Usage: /changename <new name>");
+    if (args.length === 0) return player.variants.sendOnConsoleMessage("`4Usage: /rename [target] <new name>``");
 
+    // Check if targeting another player
+    if (args.length >= 2) {
+      const targetQuery = args[0];
+      const target = await resolveTarget(targetQuery);
+      if (target?.playerId) {
+        const newName = args.slice(1).join(" ").trim();
+        if (!newName) return player.variants.sendOnConsoleMessage("`4Invalid new name.``");
+        await PlayerDB.updateById(target.playerId, { display_name: newName });
+        if (target.online) {
+          target.online.displayName = newName;
+          target.online.world?.broadcastVariant(Variant.from({ netID: target.online.netID }, "OnNameChanged", target.online.formattedName));
+          target.online.sendCountryState();
+          target.online.variants.sendOnConsoleMessage(`\`2Your display name was changed to ${target.online.formattedName}\`2 by ${player.displayName}.\`\``);
+        }
+        return player.variants.sendOnConsoleMessage(`\`2Successfully renamed \`o${target.name}\`2 to \`o${newName}\`2.\`\``);
+      }
+    }
+
+    const name = args.join(" ").trim();
     player.displayName = name;
     await PlayerDB.updateById(player.playerId, { display_name: name });
     player.world?.broadcastVariant(Variant.from({ netID: player.netID }, "OnNameChanged", player.formattedName));
+    player.sendCountryState();
     player.variants.sendOnConsoleMessage(`Your display name has been changed to ${player.formattedName}.`);
+  },
+});
+
+registerCommand({
+  name: "warn",
+  aliases: ["warning"],
+  description: "Issue an official warning to a player",
+  usage: "/warn <target> <reason>",
+  role: PLAYER_ROLE.GUARDIAN,
+  cooldown: 1,
+  async execute(player, args) {
+    const rawTarget = args[0];
+    if (!rawTarget || args.length < 2) return sendTargetUsage(player, "/warn <target> <reason>");
+    const target = await resolveTarget(rawTarget);
+    if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
+
+    const reason = args.slice(1).join(" ");
+    const warnDialog = new DialogBuilder()
+      .defaultColor()
+      .addLabelWithIcon("`4Official Server Warning``", ITEM_ID.WRENCH, "small")
+      .addSpacer("small")
+      .addSmallText(`\`4You have received an official warning from staff (\`w${player.displayName}\`4):\`\``)
+      .addSpacer("small")
+      .addSmallText(`Reason: \`o${reason}\`\``)
+      .addSpacer("small")
+      .addSmallText("Please respect server rules `/rules` to avoid account suspension.")
+      .addQuickExit()
+      .endDialog("warn_end", "", "I Understand")
+      .str();
+
+    target.online.variants.sendOnDialogRequest(warnDialog);
+    target.online.variants.sendOnConsoleMessage(`\`4[WARNING from ${player.displayName}]: \`o${reason}\`\``);
+    target.online.sendSfx("audio/cant_place_tile.wav");
+    player.variants.sendOnConsoleMessage(`\`2Successfully issued warning to \`o${target.name}\`2.`);
+  },
+});
+
+registerCommand({
+  name: "mute",
+  description: "Mute a player from chat",
+  usage: "/mute <target> [minutes] [reason]",
+  role: PLAYER_ROLE.GUARDIAN,
+  cooldown: 1,
+  async execute(player, args) {
+    const rawTarget = args[0];
+    if (!rawTarget) return sendTargetUsage(player, "/mute <target> [minutes] [reason]");
+    const target = await resolveTarget(rawTarget);
+    if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
+
+    if (target.online.isDeveloper || roleRank(target.online.role) >= roleRank(player.role)) {
+      return player.variants.sendOnConsoleMessage("`4You cannot mute equal or higher ranked staff.``");
+    }
+
+    let minutes = 0;
+    let reasonIndex = 1;
+    if (args[1] && /^\d+$/.test(args[1])) {
+      minutes = Number.parseInt(args[1], 10);
+      reasonIndex = 2;
+    }
+    const reason = args.slice(reasonIndex).join(" ") || "Muted by staff.";
+
+    target.online.state.isMuted = true;
+    target.online.playMods.add("duct_tape");
+    target.online.sendTextBubble("`4Mmmph! (You have been muted)``", true);
+    target.online.variants.sendOnConsoleMessage(`\`4You have been muted by ${player.displayName}${minutes > 0 ? ` for ${minutes}m` : ""}: \`o${reason}\`\``);
+    target.online.sendSfx("audio/cant_place_tile.wav");
+
+    if (minutes > 0) {
+      setTimeout(() => {
+        if (target.online && target.online.state.isMuted) {
+          target.online.state.isMuted = false;
+          target.online.playMods.remove("duct_tape");
+          target.online.variants.sendOnConsoleMessage("`2Your mute has expired. You can now chat again.``");
+        }
+      }, minutes * 60 * 1000);
+    }
+
+    player.variants.sendOnConsoleMessage(`\`2Successfully muted \`o${target.name}\`2${minutes > 0 ? ` for ${minutes} minute(s)` : ""}.`);
+  },
+});
+
+registerCommand({
+  name: "unmute",
+  description: "Unmute a player",
+  usage: "/unmute <target>",
+  role: PLAYER_ROLE.GUARDIAN,
+  cooldown: 1,
+  async execute(player, args) {
+    const rawTarget = args[0];
+    if (!rawTarget) return sendTargetUsage(player, "/unmute <target>");
+    const target = await resolveTarget(rawTarget);
+    if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
+
+    target.online.state.isMuted = false;
+    target.online.playMods.remove("duct_tape");
+    target.online.variants.sendOnConsoleMessage(`\`2You have been unmuted by ${player.displayName}. You can now chat again.\`\``);
+    player.variants.sendOnConsoleMessage(`\`2Successfully unmuted \`o${target.name}\`2.`);
+  },
+});
+
+registerCommand({
+  name: "freeze",
+  description: "Freeze a player in place",
+  usage: "/freeze <target>",
+  role: PLAYER_ROLE.GUARDIAN,
+  cooldown: 1,
+  async execute(player, args) {
+    const rawTarget = args[0];
+    if (!rawTarget) return sendTargetUsage(player, "/freeze <target>");
+    const target = await resolveTarget(rawTarget);
+    if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
+
+    if (target.online.isDeveloper || roleRank(target.online.role) >= roleRank(player.role)) {
+      return player.variants.sendOnConsoleMessage("`4You cannot freeze equal or higher ranked staff.``");
+    }
+
+    target.online.state.characterState |= CHARACTER_STATE.IS_FROZEN;
+    target.online.playMods.add("frozen");
+    target.online.variants.sendOnSetFreezeState(target.online.netID, true);
+    target.online.sendCharacterState();
+    target.online.sendTextBubble("`4*Brrr! (You have been frozen)*``", true);
+    target.online.variants.sendOnConsoleMessage(`\`4You have been frozen by ${player.displayName}.\`\``);
+    player.variants.sendOnConsoleMessage(`\`2Successfully froze \`o${target.name}\`2.`);
+  },
+});
+
+registerCommand({
+  name: "unfreeze",
+  aliases: ["thaw"],
+  description: "Unfreeze a frozen player",
+  usage: "/unfreeze <target>",
+  role: PLAYER_ROLE.GUARDIAN,
+  cooldown: 1,
+  async execute(player, args) {
+    const rawTarget = args[0];
+    if (!rawTarget) return sendTargetUsage(player, "/unfreeze <target>");
+    const target = await resolveTarget(rawTarget);
+    if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
+
+    target.online.state.characterState &= ~CHARACTER_STATE.IS_FROZEN;
+    target.online.playMods.remove("frozen");
+    target.online.variants.sendOnSetFreezeState(target.online.netID, false);
+    target.online.sendCharacterState();
+    target.online.variants.sendOnConsoleMessage(`\`2You have been unfrozen by ${player.displayName}.\`\``);
+    player.variants.sendOnConsoleMessage(`\`2Successfully unfroze \`o${target.name}\`2.`);
+  },
+});
+
+registerCommand({
+  name: "curse",
+  description: "Curse a player with the dark aura",
+  usage: "/curse <target>",
+  role: PLAYER_ROLE.GUARDIAN,
+  cooldown: 1,
+  async execute(player, args) {
+    const rawTarget = args[0];
+    if (!rawTarget) return sendTargetUsage(player, "/curse <target>");
+    const target = await resolveTarget(rawTarget);
+    if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
+
+    if (target.online.isDeveloper || roleRank(target.online.role) >= roleRank(player.role)) {
+      return player.variants.sendOnConsoleMessage("`4You cannot curse equal or higher ranked staff.``");
+    }
+
+    target.online.state.characterState |= CHARACTER_STATE.IS_CURSED;
+    target.online.sendCharacterState();
+    target.online.variants.sendOnConsoleMessage(`\`4You have been cursed by ${player.displayName}!\`\``);
+    player.variants.sendOnConsoleMessage(`\`2Successfully cursed \`o${target.name}\`2.`);
   },
 });
 
@@ -643,7 +834,7 @@ registerCommand({
   execute(player) {
     const staff = serverManager.players
       .toArray()
-      .filter((p) => p.isModerator || p.isDeveloper);
+      .filter((p) => p.isModerator || p.isDeveloper || p.isGuardian);
     if (staff.length === 0) {
       return player.variants.sendOnConsoleMessage("`4There are no moderators online right now.``");
     }
@@ -677,7 +868,7 @@ registerCommand({
       if (target.online.world !== player.world) {
         return player.variants.sendOnConsoleMessage("`4That player is not in this world.``");
       }
-      if (target.online.isDeveloper || target.online.isModerator) {
+      if (target.online.isDeveloper || target.online.isModerator || target.online.isGuardian) {
         return player.variants.sendOnConsoleMessage("`4You cannot kick a staff member.``");
       }
       target.online.variants.sendOnConsoleMessage(`\`4You were kicked from this world: \`o${reason}\`\``);
@@ -701,16 +892,51 @@ registerCommand({
   async execute(player, args) {
     const rawTarget = args[0];
     if (!rawTarget) return sendTargetUsage(player, "/ban <target> [reason]");
-    const target = await resolveTarget(rawTarget);
+    const target = await resolveTarget(rawTarget, true);
     if (!target?.playerId) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 not found.\`\``);
+
+    if (target.playerId === player.playerId) {
+      return player.variants.sendOnConsoleMessage("`4You cannot ban yourself!``");
+    }
+
+    if (target.online) {
+      if (target.online.isDeveloper || roleRank(target.online.role) >= roleRank(player.role)) {
+        return player.variants.sendOnConsoleMessage("`4You cannot ban an administrator or equal/higher rank staff member.``");
+      }
+    } else {
+      const record = await PlayerDB.getByIdWithDeleted(target.playerId);
+      if (record && roleRank(record.role_id) >= roleRank(player.role)) {
+        return player.variants.sendOnConsoleMessage("`4You cannot ban an administrator or equal/higher rank staff member.``");
+      }
+    }
+
+    const reason = args.slice(1).join(" ") || "Banned by administrator.";
 
     await PlayerDB.softDelete(target.playerId);
     if (target.online) {
-      const reason = args.slice(1).join(" ") || "Banned by administrator.";
-      target.online.variants.sendOnConsoleMessage(`\`4You have been banned: \`o${reason}`);
-      target.online.disconnect();
+      const banDialog = new DialogBuilder()
+        .defaultColor()
+        .addLabelWithIcon("`4Account Suspended``", ITEM_ID.WRENCH, "small")
+        .addSpacer("small")
+        .addSmallText("`4You have been suspended from GrowServer!``")
+        .addSmallText(`Admin: \`w${player.displayName}\`\``)
+        .addSmallText(`Reason: \`o${reason}\`\``)
+        .addSmallText("If you believe this ban is a mistake, contact server administration.")
+        .addQuickExit()
+        .endDialog("ban_notice", "", "Ok")
+        .str();
+
+      target.online.variants.sendOnDialogRequest(banDialog);
+      target.online.variants.sendOnConsoleMessage(`\`4[ALERT] You have been banned by ${player.displayName}: \`o${reason}\`\``);
+      target.online.sendSfx("audio/cant_place_tile.wav");
+      const targetPeer = target.online;
+      setTimeout(() => {
+        try {
+          targetPeer.disconnect();
+        } catch {}
+      }, 1500);
     }
-    player.variants.sendOnConsoleMessage(`\`2Successfully banned \`o${target.name}\`2.`);
+    player.variants.sendOnConsoleMessage(`\`2Successfully banned \`o${target.name}\`2 (Reason: ${reason}).`);
   },
 });
 
@@ -723,7 +949,7 @@ registerCommand({
   async execute(player, args) {
     const rawTarget = args[0];
     if (!rawTarget) return sendTargetUsage(player, "/unban <target>");
-    const target = await resolveTarget(rawTarget);
+    const target = await resolveTarget(rawTarget, true);
     if (!target?.playerId) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 not found.\`\``);
 
     await PlayerDB.restore(target.playerId);
@@ -1001,7 +1227,7 @@ registerCommand({
   name: "invis",
   aliases: ["invisible", "vanish"],
   description: "Toggle invisibility",
-  role: PLAYER_ROLE.DEVELOPER,
+  role: PLAYER_ROLE.MODERATOR,
   cooldown: 2,
   execute(player) {
     const isCurrentlyInvisible = (player.state.characterState & CHARACTER_STATE.IS_INVISIBLE) !== 0;
@@ -1102,10 +1328,16 @@ registerCommand({
   name: "heal",
   aliases: ["cure", "god"],
   description: "Heal status, remove curses, and restore effects",
-  role: PLAYER_ROLE.DEVELOPER,
+  usage: "/heal [target]",
+  role: PLAYER_ROLE.GUARDIAN,
   cooldown: 1,
-  execute(player) {
-    player.state.characterState &= ~(
+  async execute(player, args) {
+    let subject = player;
+    if (args.length > 0) {
+      const target = await resolveTarget(args[0]);
+      if (target?.online) subject = target.online;
+    }
+    subject.state.characterState &= ~(
       CHARACTER_STATE.IS_CURSED |
       CHARACTER_STATE.IS_DUCTAPED |
       CHARACTER_STATE.IS_FROZEN |
@@ -1113,10 +1345,17 @@ registerCommand({
       CHARACTER_STATE.IS_HIT_BY_LAVA |
       CHARACTER_STATE.IS_EGGED
     );
-    if (player.playMods.has("malpractice")) player.playMods.remove("malpractice");
+    subject.state.isMuted = false;
+    if (subject.playMods.has("malpractice")) subject.playMods.remove("malpractice");
+    if (subject.playMods.has("duct_tape")) subject.playMods.remove("duct_tape");
+    if (subject.playMods.has("frozen")) subject.playMods.remove("frozen");
 
-    player.sendCharacterState();
-    player.variants.sendOnConsoleMessage("`2You feel refreshed! Negative effects and injuries healed.``");
+    subject.sendCharacterState();
+    subject.variants.sendOnSetFreezeState(subject.netID, false);
+    subject.variants.sendOnConsoleMessage("`2You feel refreshed! Negative effects and injuries healed.``");
+    if (subject !== player) {
+      player.variants.sendOnConsoleMessage(`\`2Successfully healed \`o${subject.displayName}\`2.`);
+    }
   },
 });
 

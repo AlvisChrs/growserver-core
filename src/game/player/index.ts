@@ -434,7 +434,12 @@ export class Player {
     const removed = this.inventory.removeItem(itemId, amount);
     if (removed > 0) {
       if (notifyClient) this.variants.sendModifyItemInventory(itemId, -removed);
-      if (wasEquipped && !this.inventory.isEquipped(itemId)) this.onClothesChanged(itemId, false);
+      if (wasEquipped && !this.inventory.isEquipped(itemId)) {
+        if (this.isTransformed && !this.hasTransformItem() && !this.isDeveloper) {
+          this.untransform();
+        }
+        this.onClothesChanged(itemId, false);
+      }
       this.scheduleInventorySave();
     }
     return removed;
@@ -558,8 +563,8 @@ export class Player {
 
   public unequipClothes(itemId: number): void {
     if (this.inventory.unequipById(itemId)) {
-      if (this.isTransformed && !this.canTransform()) {
-        this.toggleTransform();
+      if (this.isTransformed && !this.hasTransformItem() && !this.isDeveloper) {
+        this.untransform();
       }
       this.onClothesChanged(itemId, false);
     }
@@ -578,19 +583,41 @@ export class Player {
   }
 
   /**
-   * Whether the player can enter or toggle transform mode.
-   * True if wearing a transform item (like Go-Go-Growformer!), a full-body suit,
-   * is already transformed, or has developer privileges.
+   * Whether the player is currently wearing an item that grants transformation capability.
    */
-  public canTransform(): boolean {
-    if (this.isTransformed) return true;
-    if (this.isDeveloper) return true;
+  public hasTransformItem(): boolean {
     if (this.inventory.clothes.feet === 7384) return true;
     if (FULL_BODY_SUITS.has(this.inventory.clothes.necklace)) return true;
     for (const id of MORPH_ITEMS) {
       if (this.inventory.isEquipped(id)) return true;
     }
     return false;
+  }
+
+  /**
+   * Whether the player can enter or toggle transform mode.
+   * True if wearing a transform item (like Go-Go-Growformer!), a full-body suit,
+   * or has developer privileges.
+   */
+  public canTransform(): boolean {
+    if (this.isDeveloper) return true;
+    return this.hasTransformItem();
+  }
+
+  /**
+   * Untransforms the avatar, cleaning up character states, play mods, and visuals.
+   */
+  public untransform(): void {
+    if (!this.isTransformed) return;
+    this.isTransformed = false;
+    this.state.characterState &= ~(CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS);
+    this.playMods.remove("transformed");
+    this.sendTextBubble("`4Powering down...``", true);
+    this.variants.sendOnConsoleMessage("`4Transform mode deactivated.``");
+    this.sendSfx("audio/power_down.wav");
+    this.applyPlayMods();
+    this.sendClothesToWorld();
+    this.sendCharacterState();
   }
 
   /**
@@ -648,9 +675,21 @@ export class Player {
   }
 
   private onClothesChanged(itemId: number, equipped: boolean): void {
+    if (!equipped && this.isTransformed && !this.hasTransformItem() && !this.isDeveloper) {
+      this.untransform();
+    }
+
     const info = getItemInfo(itemId);
     const message = equipped ? info?.func?.add : info?.func?.rem;
     if (message) this.variants.sendOnConsoleMessage(message);
+
+    // Special visual feedback for NekoRei set
+    if (itemId === 8030 || itemId === 8032) {
+      if (equipped) {
+        this.sendTextBubble("`5Nyaa~ Meow! 🐾``", true);
+        this.variants.sendOnConsoleMessage("`5NekoRei's feline charm radiates around you!``");
+      }
+    }
 
     this.applyPlayMods();
     this.sendClothesToWorld();

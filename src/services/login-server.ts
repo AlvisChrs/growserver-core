@@ -300,6 +300,20 @@ export async function createLoginServer(): Promise<void> {
 
     // If credentials are present, attempt automatic validation and redirect to validate route
     if (username && password) {
+      // Check if player is suspended
+      const suspended = await PlayerDB.getByNameWithDeleted(username);
+      if (suspended && suspended.deleted_at) {
+        const errorMsg = "This GrowID account has been suspended by an administrator.";
+        const template = getTemplateForRequest(c, "dashboard.html");
+        const html = await renderTemplate(template, {
+          data,
+          error: errorMsg,
+          growId: username,
+          activeTab: "login",
+        });
+        return c.html(html, 403);
+      }
+
       const accountWithPlayer = await AccountDB.getWithPlayer("credential", username);
       let player = accountWithPlayer?.player;
       let storedPasswordHash = accountWithPlayer?.account.password;
@@ -434,6 +448,22 @@ export async function createLoginServer(): Promise<void> {
     const { growId, password, data: parsedData } = parsed.data;
 
     // 1. Try to find account with player data using Better-Auth style join
+    const suspended = await PlayerDB.getByNameWithDeleted(growId);
+    if (suspended && suspended.deleted_at) {
+      const errorMsg = "This GrowID account has been suspended by an administrator.";
+      if (isJson) {
+        return c.json({ status: "error", message: errorMsg }, 403);
+      }
+      const template = getTemplateForRequest(c, "dashboard.html");
+      const html = await renderTemplate(template, {
+        data: parsedData || data,
+        error: errorMsg,
+        growId,
+        activeTab: "login",
+      });
+      return c.html(html, 403);
+    }
+
     const accountWithPlayer = await AccountDB.getWithPlayer("credential", growId);
 
     let player = accountWithPlayer?.player;

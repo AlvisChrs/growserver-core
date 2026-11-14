@@ -226,12 +226,14 @@ export enum PLAYER_ROLE {
   MODERATOR = 2,
   SUPPORTER = 3,
   OWNER = 4,
+  GUARDIAN = 5,
 }
 
 /** Display names of the roles. */
 export const PLAYER_ROLE_NAMES: Record<PLAYER_ROLE, string> = {
   [PLAYER_ROLE.BASIC]: "User",
   [PLAYER_ROLE.SUPPORTER]: "Supporter",
+  [PLAYER_ROLE.GUARDIAN]: "Guardian",
   [PLAYER_ROLE.MODERATOR]: "Moderator",
   [PLAYER_ROLE.DEVELOPER]: "Developer",
   [PLAYER_ROLE.OWNER]: "Owner",
@@ -241,10 +243,12 @@ export const PLAYER_ROLE_NAMES: Record<PLAYER_ROLE, string> = {
 export function playerRoleRank(role: PLAYER_ROLE): number {
   switch (role) {
     case PLAYER_ROLE.OWNER:
-      return 4;
+      return 5;
     case PLAYER_ROLE.DEVELOPER:
-      return 3;
+      return 4;
     case PLAYER_ROLE.MODERATOR:
+      return 3;
+    case PLAYER_ROLE.GUARDIAN:
       return 2;
     case PLAYER_ROLE.SUPPORTER:
       return 1;

@@ -64,6 +64,10 @@ export async function broadcastWorldChat(player: Player, rawMessage: string): Pr
       ccode = "5";
       chatcode = "5";
       break;
+    case PLAYER_ROLE.GUARDIAN:
+      ccode = "3";
+      chatcode = "3";
+      break;
     case PLAYER_ROLE.SUPPORTER:
       ccode = "e";
       chatcode = "e";

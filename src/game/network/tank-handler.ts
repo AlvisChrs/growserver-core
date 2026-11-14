@@ -6,7 +6,7 @@ import { useConsumable } from "../item/consumables";
 import type { GameUpdatePacket } from "../packets/game-packet";
 import { Variant } from "../packets/variants";
 import type { Player } from "../player";
-import { ActionTypes, ITEM_ID } from "../world/constants";
+import { ActionTypes, ITEM_ID, LockPermission, TileFlags } from "../world/constants";
 import { isPlaceableType, tileFrom } from "../world/tiles";
 import type { World } from "../world/world";
 import { worldManager } from "../world/world-manager";
@@ -163,6 +163,13 @@ async function TileActivateRequest(player: Player, tank: GameUpdatePacket, world
   // the main door always leads out, even when its door data went missing
   if (block?.fg === ITEM_ID.MAIN_DOOR) return player.leaveWorld();
   if (!block?.door) return;
+
+  // Private door check: only owner, lock admins, or developers can enter non-public doors
+  if (!(block.flags & TileFlags.PUBLIC) && !player.isDeveloper && !(await world.hasTilePermission(player, block, LockPermission.BUILD))) {
+    player.sendTextBubble("`4This door is locked!``", true);
+    player.variants.sendOnPlayPositioned("audio/door_shut.wav", player.netID);
+    return;
+  }
 
   const [rawWorld, rawId] = (block.door.destination ?? "").split(":");
   const targetWorld = rawWorld?.trim().toUpperCase() || world.name;

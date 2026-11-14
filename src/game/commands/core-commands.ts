@@ -145,7 +145,7 @@ registerCommand({
   name: "warp",
   description: "Warp to another world or door.",
   usage: "/warp <world name:door id>",
-  role: PLAYER_ROLE.MODERATOR,
+  role: PLAYER_ROLE.BASIC,
   cooldown: 2,
   async execute(player, args) {
     const destination = args[0];
@@ -427,13 +427,13 @@ registerCommand({
 registerCommand({
   name: "giverole",
   description: "Change a player's role.",
-  usage: "/giverole <target> <0 user|1 developer|2 moderator|3 supporter|4 owner>",
+  usage: "/giverole <target> <0 user|1 developer|2 moderator|3 supporter|4 owner|5 guardian>",
   role: PLAYER_ROLE.DEVELOPER,
   cooldown: 1,
   async execute(player, args) {
     const [rawTarget, rawRole] = args;
     const role = Number.parseInt(rawRole ?? "", 10) as PLAYER_ROLE;
-    if (!rawTarget || !(role in ROLE_NAMES)) return sendTargetUsage(player, "/giverole <target> <0|1|2|3|4>");
+    if (!rawTarget || !(role in ROLE_NAMES)) return sendTargetUsage(player, "/giverole <target> <0|1|2|3|4|5>");
 
     const target = await resolveTarget(rawTarget);
     if (!target?.playerId) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 not found.\`\``);
@@ -441,11 +441,93 @@ registerCommand({
     await PlayerDB.updateById(target.playerId, { role_id: role });
     if (target.online) {
       target.online.role = role;
+      target.online.realRole = role;
+      target.online.refreshAvatar();
       target.online.variants.sendOnConsoleMessage(`\`2Your role has been changed to \`o${ROLE_NAMES[role]}\`2 by an administrator!\`\``);
-      target.online.sendCountryState();
-      if (target.online.world) target.online.world.broadcastVariant(Variant.from({ netID: target.online.netID }, "OnNameChanged", target.online.formattedName));
     }
     player.variants.sendOnConsoleMessage(`\`2Successfully changed role of \`o${target.name}\`2 to \`o${ROLE_NAMES[role]}\`2.\`\``);
+  },
+});
+
+const ROLE_INPUT_MAP: Record<string, PLAYER_ROLE> = {
+  "0": PLAYER_ROLE.BASIC,
+  user: PLAYER_ROLE.BASIC,
+  player: PLAYER_ROLE.BASIC,
+  basic: PLAYER_ROLE.BASIC,
+  biasa: PLAYER_ROLE.BASIC,
+  normal: PLAYER_ROLE.BASIC,
+
+  "1": PLAYER_ROLE.DEVELOPER,
+  dev: PLAYER_ROLE.DEVELOPER,
+  developer: PLAYER_ROLE.DEVELOPER,
+
+  "2": PLAYER_ROLE.MODERATOR,
+  mod: PLAYER_ROLE.MODERATOR,
+  moderator: PLAYER_ROLE.MODERATOR,
+
+  "3": PLAYER_ROLE.SUPPORTER,
+  supporter: PLAYER_ROLE.SUPPORTER,
+  vip: PLAYER_ROLE.SUPPORTER,
+
+  "4": PLAYER_ROLE.OWNER,
+  owner: PLAYER_ROLE.OWNER,
+
+  "5": PLAYER_ROLE.GUARDIAN,
+  guardian: PLAYER_ROLE.GUARDIAN,
+  guard: PLAYER_ROLE.GUARDIAN,
+};
+
+registerCommand({
+  name: "role",
+  aliases: ["setrole", "myrole"],
+  description: "Switch your active role/disguise or set another player's role",
+  usage: "/role <dev|mod|guardian|supporter|user|owner> OR /role <target> <role>",
+  role: PLAYER_ROLE.BASIC,
+  cooldown: 1,
+  async execute(player, args) {
+    if (!player.canManageRoles) {
+      return player.variants.sendOnConsoleMessage("`4You don't have permission to manage roles.``");
+    }
+
+    if (args.length === 0) {
+      player.variants.sendOnConsoleMessage(`\`2Your current role: \`o${ROLE_NAMES[player.role]}\`2 (Original: \`o${ROLE_NAMES[player.realRole]}\`2)`);
+      player.variants.sendOnConsoleMessage("`2Available roles: \`$dev, mod, guardian, supporter, user, owner``");
+      player.variants.sendOnConsoleMessage("`2Usage: \`/role <role>\`\` to change yourself, or \`/role <target> <role>\`\` to change another player.");
+      return;
+    }
+
+    // Single argument: self role change (/role dev, /role mod, /role guardian, /role user)
+    if (args.length === 1) {
+      const input = args[0]!.toLowerCase().trim();
+      const targetRole = ROLE_INPUT_MAP[input];
+      if (targetRole === undefined) {
+        return player.variants.sendOnConsoleMessage("`4Invalid role. Available: dev, mod, guardian, supporter, user, owner``");
+      }
+
+      player.role = targetRole;
+      player.refreshAvatar();
+      player.variants.sendOnConsoleMessage(`\`2Your active role is now: \`$${ROLE_NAMES[targetRole]}\`2! (Disguise/Test mode active)`);
+      return;
+    }
+
+    // Two arguments: set another player's role (/role <target> <role>)
+    const [rawTarget, rawRole] = args;
+    const targetRole = ROLE_INPUT_MAP[rawRole!.toLowerCase().trim()];
+    if (targetRole === undefined) {
+      return player.variants.sendOnConsoleMessage("`4Invalid role. Available: dev, mod, guardian, supporter, user, owner``");
+    }
+
+    const target = await resolveTarget(rawTarget!);
+    if (!target?.playerId) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 not found.\`\``);
+
+    await PlayerDB.updateById(target.playerId, { role_id: targetRole });
+    if (target.online) {
+      target.online.role = targetRole;
+      target.online.realRole = targetRole;
+      target.online.refreshAvatar();
+      target.online.variants.sendOnConsoleMessage(`\`2Your role has been set to \`o${ROLE_NAMES[targetRole]}\`2 by \`$${player.displayName}\`2!\`\``);
+    }
+    player.variants.sendOnConsoleMessage(`\`2Successfully set role of \`o${target.name}\`2 to \`o${ROLE_NAMES[targetRole]}\`2.\`\``);
   },
 });
 
@@ -570,19 +652,41 @@ registerCommand({
 
 registerCommand({
   name: "kick",
-  description: "Kick a player from the server",
+  description: "Kick a player from the server or current world",
   usage: "/kick <target> [reason]",
-  role: PLAYER_ROLE.MODERATOR,
+  role: PLAYER_ROLE.BASIC,
   cooldown: 1,
   async execute(player, args) {
     const rawTarget = args[0];
     if (!rawTarget) return sendTargetUsage(player, "/kick <target> [reason]");
     const target = await resolveTarget(rawTarget);
     if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
-    const reason = args.slice(1).join(" ") || "Kicked by administrator.";
+
+    const isStaff = player.isModerator || player.isGuardian || player.isDeveloper;
+    const isWorldAuth = player.world && (player.isWorldOwner || player.world.isWorldAdmin(player.playerId));
+
+    if (!isStaff && !isWorldAuth) {
+      return player.variants.sendOnConsoleMessage("`4You must be the world owner or admin to kick players here.``");
+    }
+
+    const reason = args.slice(1).join(" ") || (isStaff ? "Kicked by administrator." : "Kicked by world owner.");
+
+    if (!isStaff) {
+      if (target.online.world !== player.world) {
+        return player.variants.sendOnConsoleMessage("`4That player is not in this world.``");
+      }
+      if (target.online.isDeveloper || target.online.isModerator) {
+        return player.variants.sendOnConsoleMessage("`4You cannot kick a staff member.``");
+      }
+      target.online.variants.sendOnConsoleMessage(`\`4You were kicked from this world: \`o${reason}\`\``);
+      await target.online.leaveWorld();
+      player.variants.sendOnConsoleMessage(`\`2Successfully kicked \`o${target.name}\`2 from the world.\`\``);
+      return;
+    }
+
     target.online.variants.sendOnConsoleMessage(`\`4You were kicked: \`o${reason}`);
     target.online.disconnect();
-    player.variants.sendOnConsoleMessage(`\`2Successfully kicked \`o${target.name}\`2.`);
+    player.variants.sendOnConsoleMessage(`\`2Successfully kicked \`o${target.name}\`2 from the server.`);
   },
 });
 
@@ -629,14 +733,31 @@ registerCommand({
   name: "pull",
   description: "Pull a player to your current position",
   usage: "/pull <target>",
-  role: PLAYER_ROLE.MODERATOR,
+  role: PLAYER_ROLE.BASIC,
   cooldown: 1,
   async execute(player, args) {
     const rawTarget = args[0];
     if (!rawTarget) return sendTargetUsage(player, "/pull <target>");
+    if (!player.world) return player.variants.sendOnConsoleMessage("`4You must be in a world to use this command.``");
+
+    const isStaff = player.isModerator || player.isGuardian || player.isDeveloper;
+    const isWorldAuth = player.isWorldOwner || player.world.isWorldAdmin(player.playerId);
+
+    if (!isStaff && !isWorldAuth) {
+      return player.variants.sendOnConsoleMessage("`4You must be the world owner or admin to pull players here.``");
+    }
+
     const target = await resolveTarget(rawTarget);
     if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
-    if (!player.world) return;
+
+    if (!isStaff) {
+      if (target.online.world !== player.world) {
+        return player.variants.sendOnConsoleMessage("`4That player is not in this world.``");
+      }
+      if (target.online.isDeveloper || target.online.isModerator) {
+        return player.variants.sendOnConsoleMessage("`4You cannot pull a staff member.``");
+      }
+    }
 
     if (target.online.world !== player.world) {
       await target.online.enterWorld(player.world.name, Math.floor(player.x / 32), Math.floor(player.y / 32));
@@ -1160,5 +1281,43 @@ registerCommand({
   cooldown: 1,
   execute(player) {
     player.toggleTransform();
+  },
+});
+
+registerCommand({
+  name: "who",
+  aliases: ["players", "listplayers"],
+  description: "List players in the current world",
+  cooldown: 1,
+  execute(player) {
+    const world = player.world;
+    if (!world) return;
+    const names = world.players.map((p) => p.formattedName).join(", ");
+    player.variants.sendOnConsoleMessage(`\`oPlayers in this world (${world.players.length}): ${names}`);
+  },
+});
+
+registerCommand({
+  name: "rules",
+  description: "View server rules",
+  cooldown: 2,
+  execute(player) {
+    player.variants.sendOnConsoleMessage("`2=== GrowServer Rules ===``");
+    player.variants.sendOnConsoleMessage("`o1. Be respectful to other players. No harassment or hate speech.");
+    player.variants.sendOnConsoleMessage("`o2. No scamming, duping, or exploiting bugs.");
+    player.variants.sendOnConsoleMessage("`o3. Follow instructions from Moderators and Developers.");
+    player.variants.sendOnConsoleMessage("`2Have fun building and exploring!``");
+  },
+});
+
+registerCommand({
+  name: "me",
+  description: "Express an action in chat",
+  usage: "/me <action>",
+  cooldown: 1,
+  execute(player, args) {
+    if (!args.length || !player.world) return;
+    const action = args.join(" ");
+    player.world.broadcastVariant(Variant.from("OnConsoleMessage", `\`6* ${player.formattedName} \`6${action}\`\``));
   },
 });

@@ -14,6 +14,8 @@ const ROLE_BY_NAME: Record<string, PLAYER_ROLE> = {
   dev: PLAYER_ROLE.DEVELOPER,
   moderator: PLAYER_ROLE.MODERATOR,
   mod: PLAYER_ROLE.MODERATOR,
+  guardian: PLAYER_ROLE.GUARDIAN,
+  guard: PLAYER_ROLE.GUARDIAN,
   supporter: PLAYER_ROLE.SUPPORTER,
 };
 

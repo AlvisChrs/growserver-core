@@ -81,6 +81,8 @@ export class Player {
   public tankIDName = "";
   public displayName = "";
   public role: PLAYER_ROLE = PLAYER_ROLE.BASIC;
+  /** Original/highest assigned role, preserved across test disguise / role changes. */
+  public realRole: PLAYER_ROLE = PLAYER_ROLE.BASIC;
   public gems = 0;
   public level = 1;
   public xp = 0;
@@ -150,8 +152,28 @@ export class Player {
     return playerRoleRank(this.role) >= playerRoleRank(PLAYER_ROLE.MODERATOR);
   }
 
+  /** Guardian role. */
+  public get isGuardian(): boolean {
+    return this.role === PLAYER_ROLE.GUARDIAN;
+  }
+
   public get isOwner(): boolean {
     return this.role === PLAYER_ROLE.OWNER;
+  }
+
+  /** Whether player has permission to switch roles (Owner/Developer). */
+  public get canManageRoles(): boolean {
+    return playerRoleRank(this.realRole) >= playerRoleRank(PLAYER_ROLE.DEVELOPER) ||
+           playerRoleRank(this.role) >= playerRoleRank(PLAYER_ROLE.DEVELOPER);
+  }
+
+  /** Pixel coordinates convenience getters. */
+  public get x(): number {
+    return this.state.x;
+  }
+
+  public get y(): number {
+    return this.state.y;
   }
 
   /** Country shown on the name tag; developers get the "rt" badge. */
@@ -194,6 +216,7 @@ export class Player {
     this.tankIDName = record.name;
     this.displayName = record.display_name || record.name;
     this.role = (record.role_id ?? PLAYER_ROLE.BASIC) as PLAYER_ROLE;
+    this.realRole = this.role;
     this.gems = record.gems ?? 0;
     this.level = record.level || 1;
     this.xp = record.xp ?? 0;
@@ -265,6 +288,8 @@ export class Player {
         return `\`8@${title}${this.displayName}\`\``;
       case PLAYER_ROLE.MODERATOR:
         return `\`5@${title}${this.displayName}\`\``;
+      case PLAYER_ROLE.GUARDIAN:
+        return `\`3@${title}${this.displayName}\`\``;
       case PLAYER_ROLE.SUPPORTER:
         return `\`e${title}${this.displayName}\`\``;
     }
@@ -289,11 +314,23 @@ export class Player {
       displayName: this.formattedName,
       country: this.country,
       invis: this.state.isGhost ? 1 : 0,
-      mstate: this.isModerator && !this.isDeveloper ? 1 : 0,
+      mstate: (this.isModerator || this.isGuardian) && !this.isDeveloper ? 1 : 0,
       smstate: this.isDeveloper ? 1 : 0,
     };
     if (local) options.type = "local";
     return options;
+  }
+
+  /** Re-sends avatar spawn, country state, and name to all players in the world when role or visual state updates. */
+  public refreshAvatar(): void {
+    if (!this.world) return;
+    this.variants.sendOnSpawn(this.spawnOptions(true));
+    this.sendCountryState();
+    this.world.broadcastVariant(Variant.from({ netID: this.netID }, "OnNameChanged", this.formattedName));
+    for (const other of this.world.players) {
+      if (other === this) continue;
+      other.variants.sendOnSpawn(this.spawnOptions(false));
+    }
   }
 
   /**

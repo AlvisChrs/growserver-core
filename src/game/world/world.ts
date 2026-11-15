@@ -13,7 +13,7 @@ import { serverManager } from "../server/server-manager";
 import { tileFrom } from "./tiles";
 import { upgradeXenonite } from "./tiles/xenonite-tile";
 import { isAntigravityActive } from "./tiles/antigravity-tile";
-import { DEFAULT_MUSIC_BPM, ActionTypes, CLIENT_UNAMPLIFIED_MUSIC_TYPE, ITEM_ID, JAMMERS, MUSIC_BLOCKS, LockPermission, SIGNAL_JAMMER, TileFlags, WEATHER_CLEAR, WORLD_DATA_VERSION } from "./constants";
+import { DEFAULT_MUSIC_BPM, ActionTypes, CLIENT_UNAMPLIFIED_MUSIC_TYPE, ITEM_ID, JAMMERS, MUSIC_BLOCKS, LockPermission, SIGNAL_JAMMER, TileFlags, WEATHER_CLEAR, WORLD_DATA_VERSION, isWorldLockItem, isRoyalLock } from "./constants";
 import { worldManager } from "./world-manager";
 import type { DroppedItem, TileData, WorldData, XenoniteSettings } from "./types";
 
@@ -535,9 +535,17 @@ export class World {
     const mods = this.worldMods.map((mod) => ` \`0[\`2${mod}\`\`\`0]\`\``).join("");
     player.variants.sendOnConsoleMessage(`World \`w${this.name}\`\`${mods} entered.  There are \`w${this.players.length - 1}\`\` other people here, \`w${serverManager.getTotalPlayersCount()}\`\` online.`);
 
+    const lockTile = this.worldLockTile;
     const ownerName = await this.getOwnerName();
-    if (ownerName) {
-      player.variants.sendOnConsoleMessage(`\`p[\`0${this.name} \`oWorld Locked by ${ownerName}\`#]`);
+    if (ownerName && lockTile) {
+      const lockMeta = getItem(lockTile.fg);
+      const lockLabel = lockMeta?.name ? (lockMeta.name.endsWith("Lock") ? `${lockMeta.name.slice(0, -4).trim()} Locked` : `${lockMeta.name}ed`) : "World Locked";
+      player.variants.sendOnConsoleMessage(`\`p[\`0${this.name} \`o${lockLabel} by ${ownerName}\`#]`);
+    }
+
+    if (lockTile?.worldLockData?.royalDecree) {
+      player.variants.sendOnConsoleMessage(`\`5[Royal Decree]\`\` ${lockTile.worldLockData.royalDecree}`);
+      player.sendTextBubble(`\`5[Royal Decree]\`\` ${lockTile.worldLockData.royalDecree}`, false);
     }
 
     const others = this.players.filter((other) => other !== player);
@@ -766,8 +774,8 @@ export class World {
       return permissionType === LockPermission.NONE;
     }
 
-    if (this.data.worldLockIndex !== undefined) {
-      const worldLock = this.getTileByIndex(this.data.worldLockIndex);
+    if (this.isWorldLocked) {
+      const worldLock = this.worldLockTile;
       if (worldLock?.lock) {
         if (worldLock.flags & TileFlags.PUBLIC) return true;
         if (worldLock.lock.adminIds.includes(playerId)) return true;
@@ -780,24 +788,61 @@ export class World {
     return true;
   }
 
+  /** The tile containing the world lock, if the world is locked. Self-healing fallback if worldLockIndex is stale. */
+  public get worldLockTile(): TileData | undefined {
+    if (this.data.worldLockIndex !== undefined) {
+      const tile = this.data.blocks[this.data.worldLockIndex];
+      if (tile && (tile.worldLockData !== undefined || (tile.lock !== undefined && isWorldLockItem(tile.fg)))) return tile;
+    }
+
+    const foundIndex = this.data.blocks.findIndex(
+      (b) => b.worldLockData !== undefined || (b.lock !== undefined && isWorldLockItem(b.fg)),
+    );
+    if (foundIndex !== -1) {
+      this.data.worldLockIndex = foundIndex;
+      return this.data.blocks[foundIndex];
+    }
+
+    delete this.data.worldLockIndex;
+    return undefined;
+  }
+
+  /** Whether the world is locked by any world-level lock. */
+  public get isWorldLocked(): boolean {
+    return this.worldLockTile !== undefined;
+  }
+
+  /** Whether the world is locked by a Royal Lock variant. */
+  public get isRoyalLocked(): boolean {
+    const tile = this.worldLockTile;
+    return tile ? isRoyalLock(tile.fg) : false;
+  }
+
+  /** Checks if a player is silenced by the Royal Lock in this world. */
+  public isSilencePeasantsActive(playerId: number): boolean {
+    const tile = this.worldLockTile;
+    if (!tile?.worldLockData?.silencePeasants) return false;
+    if (tile.lock?.ownerPlayerId === playerId) return false;
+    if (tile.lock?.adminIds.includes(playerId)) return false;
+    return true;
+  }
+
   /** Whether the player is on the world lock's access list. */
   public isWorldAdmin(playerId: number): boolean {
-    if (this.data.worldLockIndex === undefined) return false;
-    const worldLock = this.getTileByIndex(this.data.worldLockIndex);
-    return worldLock?.lock?.adminIds.includes(playerId) ?? false;
+    return this.worldLockTile?.lock?.adminIds.includes(playerId) ?? false;
   }
 
   /** Database id of the world lock owner, if the world is locked. */
   public getOwnerPlayerId(): number | undefined {
-    if (this.data.worldLockIndex === undefined) return undefined;
-    const lock = this.getTileByIndex(this.data.worldLockIndex);
-    return lock?.lock && lock.worldLockData ? lock.lock.ownerPlayerId : undefined;
+    return this.worldLockTile?.lock?.ownerPlayerId;
   }
 
   /** Display name of the world lock owner. */
   public async getOwnerName(): Promise<string | undefined> {
     const ownerId = this.getOwnerPlayerId();
     if (ownerId === undefined) return undefined;
+    const online = serverManager.players.find((p) => p.playerId === ownerId);
+    if (online) return online.displayName;
     const owner = await PlayerDB.getById(ownerId);
     return owner?.display_name ?? owner?.name;
   }
@@ -816,6 +861,8 @@ export class World {
   public async getTileOwnerName(tile: TileData): Promise<string | undefined> {
     const ownerId = this.getTileOwnerPlayerId(tile);
     if (ownerId === undefined) return undefined;
+    const online = serverManager.players.find((p) => p.playerId === ownerId);
+    if (online) return online.displayName;
     const owner = await PlayerDB.getById(ownerId);
     return owner?.display_name ?? owner?.name;
   }

@@ -7,7 +7,7 @@ import { FloodFill } from "../flood-fill";
 import { tileFrom } from "./index";
 import type { World } from "../world";
 import type { LockParent, TileData } from "../types";
-import { ActionTypes, ITEM_ID, LockPermission, LOCKS, TileFlags } from "../constants";
+import { ActionTypes, ITEM_ID, LockPermission, LOCKS, TileFlags, isRoyalLock } from "../constants";
 
 /** Sound played when a lock is applied. */
 const USE_LOCK_SOUND = "audio/use_lock.wav";
@@ -97,6 +97,14 @@ registerDialog("area_lock_edit", async (player, action) => {
     if (action.contains("tempo")) worldLock.bpm = Math.max(20, Math.min(200, action.getInt("tempo", 0, worldLock.bpm)));
     if (action.contains("minimum_level")) worldLock.minLevel = Math.max(1, action.getInt("minimum_level", 0, worldLock.minLevel));
 
+    if (isRoyalLock(block.fg)) {
+      worldLock.silencePeasants = action.get("silence_peasants") === "1";
+      worldLock.royalRainbows = action.get("royal_rainbows") === "1";
+      if (action.contains("royal_decree")) {
+        worldLock.royalDecree = action.get("royal_decree").trim().slice(0, 100);
+      }
+    }
+
     // the home world is a per-player setting stored on the account
     const wantsHome = action.get("home_world") === "1";
     if (world.getOwnerPlayerId() === player.playerId && wantsHome !== (player.homeWorld === world.name)) {
@@ -106,7 +114,7 @@ registerDialog("area_lock_edit", async (player, action) => {
   } else {
     lock.ignoreEmptyAir = action.get("ignore_empty") === "1";
     if (block.fg === ITEM_ID.BUILDERS_LOCK) {
-      lock.permission = action.get("build_only") === "1" ? LockPermission.BUILD : (lockMeta?.defaultPermission ?? LockPermission.NONE);
+      lock.permission = action.get("build_only") === "1" ? LockPermission.BUILD : LockPermission.BREAK;
       lock.adminLimited = action.get("limit_admin") === "1";
     }
   }

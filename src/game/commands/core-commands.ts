@@ -11,11 +11,12 @@ import { serverManager } from "../server/server-manager";
 import { registerDialog } from "../network/dialog-handler";
 import { homeWorldDialog } from "../network/home-world-dialog";
 import { questDailyDialog, sendGoalsDialog } from "../quests";
-import { ActionTypes, ITEM_ID, LOCKS, LockPermission, WEATHER_CLEAR } from "../world/constants";
+import { ActionTypes, ITEM_ID, LOCKS, LockPermission, TileFlags, WEATHER_CLEAR } from "../world/constants";
 import { generateDefaultWorld } from "../world/generation/default";
 import { worldManager } from "../world/world-manager";
 import { SeedTile } from "../world/tiles/seed-tile";
 import { ProviderTile } from "../world/tiles/provider-tile";
+import { tileFrom } from "../world/tiles";
 import { Collection } from "../../utils/collection";
 import { canUseCommand, commands, registerCommand, roleRank, type ChatCommand } from "./registry";
 import { tradeManager } from "../trade/trade-manager";
@@ -1593,9 +1594,14 @@ registerCommand({
   cooldown: 5,
   execute(player) {
     const kit = [
-      { id: 242, count: 200 }, // World Lock
-      { id: 1796, count: 200 }, // Diamond Lock
-      { id: 7188, count: 200 }, // Blue Gem Lock
+      { id: ITEM_ID.WORLD_LOCK, count: 200 },
+      { id: ITEM_ID.DIAMOND_LOCK, count: 200 },
+      { id: ITEM_ID.BLUE_GEM_LOCK, count: 200 },
+      { id: ITEM_ID.ROYAL_LOCK, count: 200 },
+      { id: ITEM_ID.BUILDERS_LOCK, count: 200 },
+      { id: ITEM_ID.SMALL_LOCK, count: 200 },
+      { id: ITEM_ID.BIG_LOCK, count: 200 },
+      { id: ITEM_ID.HUGE_LOCK, count: 200 },
       { id: 5480, count: 1 }, // Rayman's Fists
       { id: 362, count: 1 }, // Angel Wings
       { id: 736, count: 1 }, // Play Wings / Dragon
@@ -1607,7 +1613,126 @@ registerCommand({
     for (const item of kit) {
       player.addItemInven(item.id, item.count);
     }
-    player.variants.sendOnConsoleMessage("`2Received the \`$Ultimate Admin Starter Pack\`2 (Rayman, BGLs, DLs, Wings, Tools)!\`\``");
+    player.variants.sendOnConsoleMessage("`2Received the \`$Ultimate Admin Starter Pack\`2 (WLs, DLs, BGLs, Royal, Builder, Rayman, Wings, Tools)!\`\``");
+  },
+});
+
+registerCommand({
+  name: "locks",
+  aliases: ["getlocks", "lockpack"],
+  description: "Receive 200 of all lock types (WL, DL, BGL, Royal Lock, Builder's Lock, Area Locks)",
+  role: PLAYER_ROLE.SUPPORTER,
+  cooldown: 2,
+  execute(player) {
+    const lockList = [
+      { id: ITEM_ID.WORLD_LOCK, count: 200 },
+      { id: ITEM_ID.DIAMOND_LOCK, count: 200 },
+      { id: ITEM_ID.BLUE_GEM_LOCK, count: 200 },
+      { id: ITEM_ID.ROYAL_LOCK, count: 200 },
+      { id: ITEM_ID.BUILDERS_LOCK, count: 200 },
+      { id: ITEM_ID.SMALL_LOCK, count: 200 },
+      { id: ITEM_ID.BIG_LOCK, count: 200 },
+      { id: ITEM_ID.HUGE_LOCK, count: 200 },
+      { id: ITEM_ID.EMERALD_LOCK, count: 200 },
+      { id: ITEM_ID.RUBY_LOCK, count: 200 },
+      { id: ITEM_ID.ROBOTIC_LOCK, count: 200 },
+    ];
+    for (const lock of lockList) {
+      player.addItemInven(lock.id, lock.count);
+    }
+    player.variants.sendOnConsoleMessage("`2Received \`$200x of all Lock types\`2 (WL, DL, BGL, Royal, Builder, Small, Big, Huge, Emerald, Ruby, Robotic)!`");
+  },
+});
+
+registerCommand({
+  name: "lockworld",
+  aliases: ["claimworld", "worldlock"],
+  description: "Directly locks the current world for yourself (options: wl, dl, royal)",
+  role: PLAYER_ROLE.DEVELOPER,
+  cooldown: 2,
+  async execute(player, args) {
+    const world = player.world;
+    if (!world) return;
+
+    const typeArg = (args[0] || "wl").toLowerCase();
+    let lockId: number = ITEM_ID.WORLD_LOCK;
+    if (typeArg.includes("royal")) lockId = ITEM_ID.ROYAL_LOCK;
+    else if (typeArg.includes("dl") || typeArg.includes("diamond")) lockId = ITEM_ID.DIAMOND_LOCK;
+    else if (typeArg.includes("bgl") || typeArg.includes("blue")) lockId = ITEM_ID.BLUE_GEM_LOCK;
+
+    const lockMeta = getItem(lockId);
+    const tileX = Math.floor(player.state.x / 32);
+    const tileY = Math.floor(player.state.y / 32);
+    let targetTile = world.getTileAt(tileX, tileY);
+
+    if (!targetTile || targetTile.fg !== 0) {
+      targetTile = world.data.blocks.find((b) => b.fg === 0 && b.y >= 10);
+    }
+    if (!targetTile) {
+      return player.variants.sendOnConsoleMessage("`4No suitable empty tile found to place the world lock.`");
+    }
+
+    targetTile.fg = lockId;
+    targetTile.flags |= TileFlags.TILEEXTRA;
+    targetTile.lock = {
+      ownerPlayerId: player.playerId,
+      permission: LockPermission.NONE,
+      adminIds: [],
+      adminLimited: false,
+      ignoreEmptyAir: false,
+      ownedTiles: [],
+    };
+    targetTile.worldLockData = {
+      bpm: 100,
+      customMusicBlocksDisabled: false,
+      invisMusicBlocks: false,
+      minLevel: 1,
+    };
+    world.data.worldLockIndex = targetTile.x + targetTile.y * world.width;
+    world.refreshNameColors();
+    tileFrom(world, targetTile).tileUpdate();
+    world.markDirty();
+
+    const lockName = lockMeta?.name ?? "World Lock";
+    const lockAction = lockName.endsWith("Lock") ? `${lockName.slice(0, -4).trim()} Locked` : `${lockName}ed`;
+    const message = `\`5[\`w${world.name} \`ohas been \`$${lockAction}\`\` by ${player.displayName}\`5]`;
+    for (const p of world.players) {
+      p.variants.sendOnConsoleMessage(message);
+      p.variants.sendOnTalkBubble(player.netID, message, false);
+    }
+    player.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 successfully locked with \`$${lockName}\`\`!`);
+  },
+});
+
+registerCommand({
+  name: "unlockworld",
+  aliases: ["unclaimworld", "removeworldlock"],
+  description: "Removes the world lock from the current world",
+  role: PLAYER_ROLE.DEVELOPER,
+  cooldown: 2,
+  async execute(player) {
+    const world = player.world;
+    if (!world) return;
+    const lockTile = world.worldLockTile;
+    if (!lockTile) {
+      return player.variants.sendOnConsoleMessage("`4This world does not have a world lock.`");
+    }
+
+    const lockMeta = getItem(lockTile.fg);
+    const lockName = lockMeta?.name ?? "World Lock";
+    lockTile.fg = 0;
+    delete lockTile.lock;
+    delete lockTile.worldLockData;
+    delete world.data.worldLockIndex;
+    world.refreshNameColors();
+    tileFrom(world, lockTile).tileUpdate();
+    world.markDirty();
+
+    const message = `\`5[\`\`\`w${world.name}\`\` has had its \`$${lockName}\`\` removed by staff!\`5]\`\``;
+    for (const p of world.players) {
+      p.variants.sendOnConsoleMessage(message);
+    }
+    player.variants.sendOnConsoleMessage(`\`2Successfully removed \`$${lockName}\`\` from \`w${world.name}\`\`!`);
   },
 });
 

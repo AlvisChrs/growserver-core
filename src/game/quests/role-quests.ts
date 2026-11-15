@@ -74,7 +74,7 @@ function grantItems(player: Player, itemId: number, amount: number): void {
  * this same function for their future systems.
  */
 export function addRoleXp(player: Player, role: RoleId, amount: number): void {
-  player.quests.addRoleXp(role, amount);
+  player.quests?.addRoleXp(role, amount);
 }
 
 /** The role section of the goals dialog: progress bar plus reward button. */

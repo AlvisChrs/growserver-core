@@ -52,6 +52,12 @@ export async function broadcastWorldChat(player: Player, rawMessage: string): Pr
     return;
   }
 
+  if (world.isSilencePeasantsActive?.(player.playerId) && !player.isModerator && !player.isDeveloper) {
+    player.sendTextBubble("`4Silence, peasants! You cannot speak in the King's realm.``");
+    player.variants.sendOnConsoleMessage("`4Silence, peasants! You cannot speak in the King's realm.``");
+    return;
+  }
+
   if ((player.state.characterState & CHARACTER_STATE.IS_FROZEN) || player.playMods.has("frozen")) {
     player.sendTextBubble("`4*Brrr! (You are frozen)*``");
     player.variants.sendOnConsoleMessage("`4You are frozen and cannot move or chat!``");

@@ -296,8 +296,14 @@ export class Player {
         return `\`e${title}${this.displayName}\`\``;
     }
 
-    if (this.isWorldOwner) return `\`2${title}${this.displayName}\`\``;
-    if (this.world?.isWorldAdmin(this.playerId)) return `\`2${title}${this.displayName}\`\``;
+    if (this.isWorldOwner) {
+      if (this.world?.isRoyalLocked) return `\`^👑 ${title}${this.displayName}\`\``;
+      return `\`2${title}${this.displayName}\`\``;
+    }
+    if (this.world?.isWorldAdmin(this.playerId)) {
+      if (this.world?.isRoyalLocked) return `\`^⚔️ ${title}${this.displayName}\`\``;
+      return `\`2${title}${this.displayName}\`\``;
+    }
     return `\`w${title}${this.displayName}\`\``;
   }
 

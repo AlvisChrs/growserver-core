@@ -7,7 +7,7 @@ import type { Player } from "../../player";
 import { Tile } from "../tile";
 import { FloodFill } from "../flood-fill";
 import { tileFrom, tileUpdateMultiple } from "./index";
-import { ITEM_ID, LockPermission, LOCKS, TileExtraTypes, TileFlags, WORLD_DATA_VERSION } from "../constants";
+import { ITEM_ID, LockPermission, LOCKS, TileExtraTypes, TileFlags, WORLD_DATA_VERSION, isAreaLock, isWorldLockItem, isRoyalLock } from "../constants";
 
 /** One entry of `LOCKS`: an area lock and how many tiles it may own. */
 type AreaLockMeta = (typeof LOCKS)[number];
@@ -46,12 +46,12 @@ export class LockTile extends Tile {
         await this.notifyNoLocksAllowed(player);
         return false;
       } else if (!areaLock) {
-        this.notifyOnlyOneWorldLock(player);
+        this.notifyOnlyOneWorldLock(player, itemMeta.name ?? "World Lock");
         return false;
       }
     } else if (this.data.lockedBy) {
       const owningLock = this.world.getTileAt(this.data.lockedBy.parentX, this.data.lockedBy.parentY);
-      if (owningLock?.lock?.ownerPlayerId !== player.playerId) {
+      if (owningLock?.lock?.ownerPlayerId !== player.playerId && !player.isDeveloper) {
         await this.notifyNoLocksAllowed(player);
         return false;
       }
@@ -64,8 +64,8 @@ export class LockTile extends Tile {
 
     // a world lock cannot coexist with other players' area locks
     const othersAreaLock = this.world.data.blocks.find((tile) => tile.lock && tile.lock.ownerPlayerId !== player.playerId);
-    if (othersAreaLock && !areaLock) {
-      player.sendTextBubble("Your `$World Lock`` can't be placed in this world unless everyone else's locks are removed.", false);
+    if (othersAreaLock && !areaLock && !player.isDeveloper) {
+      player.sendTextBubble(`Your \`$${itemMeta.name}\`\` can't be placed in this world unless everyone else's locks are removed.`, false);
       return false;
     }
 
@@ -75,7 +75,7 @@ export class LockTile extends Tile {
     if (areaLock) {
       this.handleAreaLock(player, areaLock);
     } else {
-      await this.handleWorldLock(player);
+      await this.handleWorldLock(player, itemMeta);
     }
 
     this.world.playPositioned(USE_LOCK_SOUND, player.netID);
@@ -83,7 +83,9 @@ export class LockTile extends Tile {
   }
 
   public override async onDestroy(player: Player): Promise<void> {
-    const removedWorldLock = !!this.data.worldLockData;
+    const itemMeta = getItem(this.data.fg);
+    const lockName = itemMeta?.name ?? "World Lock";
+    const removedWorldLock = !!this.data.worldLockData || isWorldLockItem(this.data.fg);
     const originalOwner = this.data.lock?.ownerPlayerId;
     await super.onDestroy(player);
 
@@ -92,8 +94,8 @@ export class LockTile extends Tile {
       player.setHomeWorld(null);
     }
 
-    if (this.data.worldLockData) {
-      this.notifyWorldLockRemove();
+    if (this.data.worldLockData || this.world.data.worldLockIndex === this.index) {
+      this.notifyWorldLockRemove(lockName);
       delete this.world.data.worldLockIndex;
       delete this.data.worldLockData;
     } else if (this.data.lock) {
@@ -111,6 +113,7 @@ export class LockTile extends Tile {
     }
 
     delete this.data.lock;
+    this.world.refreshNameColors();
   }
 
   public override async onPunchFail(player: Player): Promise<void> {
@@ -155,9 +158,12 @@ export class LockTile extends Tile {
       return false;
     }
 
+    const isRoyal = isRoyalLock(itemMeta.id ?? 0);
+    const dialogTitle = isRoyal ? `\`wEdit Ye ${itemMeta.name}\`\`` : `\`wEdit ${itemMeta.name}\`\``;
+
     const dialog = new DialogBuilder()
       .defaultColor()
-      .addLabelWithIcon(`\`wEdit ${itemMeta.name}\`\``, itemMeta.id ?? 0, "big")
+      .addLabelWithIcon(dialogTitle, itemMeta.id ?? 0, "big")
       .embed("tilex", this.data.x)
       .embed("tiley", this.data.y)
       .addLabel("Access list:")
@@ -197,7 +203,19 @@ export class LockTile extends Tile {
         .addCheckbox("invisible_music", "Make Custom Music Block Invisible", worldLock.invisMusicBlocks ? "selected" : "not_selected")
         .addCheckbox("home_world", "Set as Home World", player.homeWorld === this.world.name ? "selected" : "not_selected")
         .addInputBox("minimum_level", "World Level:", worldLock.minLevel, 3)
-        .addSmallText("Set minimum world entry level.")
+        .addSmallText("Set minimum world entry level.");
+
+      if (isRoyal) {
+        dialog
+          .addSpacer("small")
+          .addSmallText("`e--- Ye Royal Options ---``")
+          .addCheckbox("silence_peasants", "Silence, peasants! (Mute non-admins)", worldLock.silencePeasants ? "selected" : "not_selected")
+          .addCheckbox("royal_rainbows", "Rainbows for the King! (Royal shimmer)", worldLock.royalRainbows ? "selected" : "not_selected")
+          .addInputBox("royal_decree", "Royal Decree:", worldLock.royalDecree ?? "", 30)
+          .addSmallText("Proclamation announced to visitors upon arrival.");
+      }
+
+      dialog
         .addButton("session_length", "Set World Timer (NOT IMPLEMENTED)")
         .addButton("set_category", "Category: None (NOT IMPLEMENTED)");
     }
@@ -275,7 +293,7 @@ export class LockTile extends Tile {
   }
 
   /** Turns this tile into the world lock and announces it. */
-  private async handleWorldLock(player: Player): Promise<void> {
+  private async handleWorldLock(player: Player, itemMeta: ItemDefinition): Promise<void> {
     const owner = await PlayerDB.getById(player.playerId);
     const ownerName = owner?.display_name ?? owner?.name ?? player.displayName;
 
@@ -297,24 +315,28 @@ export class LockTile extends Tile {
 
     this.world.data.worldLockIndex = this.index;
 
-    const message = `\`5[\`w${this.world.name} \`ohas been \`$World Locked\`\` by ${ownerName}\`5]`;
+    const lockName = itemMeta.name ?? "World Lock";
+    const lockAction = lockName.endsWith("Lock") ? `${lockName.slice(0, -4).trim()} Locked` : `${lockName}ed`;
+    const message = `\`5[\`w${this.world.name} \`ohas been \`$${lockAction}\`\` by ${ownerName}\`5]`;
     for (const other of this.world.players) {
       other.variants.sendOnTalkBubble(player.netID, message, false);
       other.variants.sendOnConsoleMessage(message);
     }
 
+    // Immediately update world owner name tags to green/royal crown
+    this.world.refreshNameColors();
     this.tileUpdate();
   }
 
-  private notifyWorldLockRemove(): void {
-    const message = `\`5[\`\`\`w${this.world.name}\`\` has had its \`$World Lock\`\` removed!\`5]\`\``;
+  private notifyWorldLockRemove(lockName = "World Lock"): void {
+    const message = `\`5[\`\`\`w${this.world.name}\`\` has had its \`$${lockName}\`\` removed!\`5]\`\``;
     for (const other of this.world.players) {
       other.variants.sendOnConsoleMessage(message);
     }
   }
 
-  private notifyOnlyOneWorldLock(player: Player): void {
-    player.sendTextBubble("Only one `$World Lock`` can be placed in a world, you'd have to remove the other one first.", false);
+  private notifyOnlyOneWorldLock(player: Player, lockName = "World Lock"): void {
+    player.sendTextBubble(`Only one \`$${lockName}\`\` can be placed in a world, you'd have to remove the other one first.`, false);
   }
 
   private async notifyNoLocksAllowed(player: Player): Promise<void> {

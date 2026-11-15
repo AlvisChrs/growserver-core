@@ -186,6 +186,12 @@ export interface WorldLockData {
   customMusicBlocksDisabled: boolean;
   invisMusicBlocks: boolean;
   minLevel: number;
+  /** Silence peasants option: mutes non-admin visitors from speaking in chat. */
+  silencePeasants?: boolean;
+  /** Rainbows for the king: grants royal shimmer effect. */
+  royalRainbows?: boolean;
+  /** Royal decree proclamation displayed to players upon entering the world. */
+  royalDecree?: string;
 }
 
 /** The lock tile itself. */

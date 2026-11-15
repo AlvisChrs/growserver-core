@@ -44,10 +44,33 @@ export const ITEM_ID = {
   WRENCH: 32,
   GEMS: 112,
   WORLD_LOCK: 242,
-  GROWTOKEN: 1486,
+  SMALL_LOCK: 202,
+  BIG_LOCK: 204,
+  HUGE_LOCK: 206,
   DIAMOND_LOCK: 1796,
+  EMERALD_LOCK: 2408,
+  ROBOTIC_LOCK: 2950,
+  RUBY_LOCK: 4428,
+  ROYAL_LOCK: 4802,
   BUILDERS_LOCK: 4994,
+  HARMONIC_LOCK: 5260,
+  GUILD_LOCK: 5814,
+  BUNNY_LOCK: 5980,
   BLUE_GEM_LOCK: 7188,
+  ECTO_LOCK: 8470,
+  MY_FIRST_WORLD_LOCK: 9640,
+  LEGENDARY_LOCK: 10410,
+  BLOOD_DRAGON_LOCK: 11550,
+  PRINCE_OF_PERSIA_LOCK: 11586,
+  RADICAL_CITY_LOCK: 11902,
+  ASSASSINS_CREED_LOCK: 12654,
+  RAYMAN_LOCK: 13200,
+  STEAMPUNK_LOCK: 13636,
+  IMMORTALS_FENYX_RISING_LOCK: 14296,
+  ENCHANTED_LOCK: 14536,
+  ROYAL_ENCHANTED_LOCK: 14538,
+  PAX_ROMANA_LOCK: 16014,
+  GROWTOKEN: 1486,
   RAYMANS_FIST: 5480,
   VIP_ENTRANCE: 3798,
   ROULETTE_WHEEL: 758,
@@ -468,8 +491,28 @@ export enum BlockFlags2 {
 
 /** Area locks: how many tiles each one can own. */
 export const LOCKS = [
-  { id: 202, maxTiles: 10, defaultPermission: LockPermission.FULL }, // Small Lock
-  { id: 204, maxTiles: 48, defaultPermission: LockPermission.FULL }, // Big Lock
-  { id: 206, maxTiles: 200, defaultPermission: LockPermission.FULL }, // Huge Lock
-  { id: 4994, maxTiles: 200, defaultPermission: LockPermission.BREAK }, // Builder's Lock
+  { id: ITEM_ID.SMALL_LOCK, maxTiles: 10, defaultPermission: LockPermission.FULL }, // Small Lock
+  { id: ITEM_ID.BIG_LOCK, maxTiles: 48, defaultPermission: LockPermission.FULL }, // Big Lock
+  { id: ITEM_ID.HUGE_LOCK, maxTiles: 200, defaultPermission: LockPermission.FULL }, // Huge Lock
+  { id: ITEM_ID.BUILDERS_LOCK, maxTiles: 200, defaultPermission: LockPermission.BREAK }, // Builder's Lock
 ];
+
+/** Whether an item is an area-limited lock (Small, Big, Huge, Builder's). */
+export function isAreaLock(itemId: number): boolean {
+  return LOCKS.some((lock) => lock.id === itemId);
+}
+
+/** Whether an item is a world-level lock that locks the whole map (World, Diamond, Royal, etc.). */
+export function isWorldLockItem(itemId: number): boolean {
+  return !isAreaLock(itemId);
+}
+
+/** Whether an item is a Royal Lock variant. */
+export function isRoyalLock(itemId: number): boolean {
+  return itemId === ITEM_ID.ROYAL_LOCK || itemId === ITEM_ID.ROYAL_ENCHANTED_LOCK;
+}
+
+/** Whether an item is a Builder's Lock. */
+export function isBuilderLock(itemId: number): boolean {
+  return itemId === ITEM_ID.BUILDERS_LOCK;
+}

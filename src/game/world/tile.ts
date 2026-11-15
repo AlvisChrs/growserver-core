@@ -120,11 +120,12 @@ export class Tile {
     if (this.data.lockedBy) {
       const lockParent = this.world.getTileAt(this.data.lockedBy.parentX, this.data.lockedBy.parentY);
       if (lockParent?.lock && lockParent.fg === ITEM_ID.BUILDERS_LOCK) {
-        player.sendTextBubble("This lock allows building only!", false);
+        player.sendTextBubble("This lock allows breaking only!", false);
+        this.sendLockSound(player);
+        return;
       }
-    } else {
-      await this.sendAreaOwner(player);
     }
+    await this.sendAreaOwner(player);
     this.sendLockSound(player);
   }
 
@@ -170,8 +171,11 @@ export class Tile {
       const lockParent = this.world.getTileAt(this.data.lockedBy.parentX, this.data.lockedBy.parentY);
       if (lockParent?.lock && lockParent.fg === ITEM_ID.BUILDERS_LOCK) {
         player.sendTextBubble("This lock allows building only!", false);
+        this.sendLockSound(player);
+        return;
       }
     }
+    await this.sendAreaOwner(player);
     this.sendLockSound(player);
   }
 
@@ -427,7 +431,11 @@ export class Tile {
   private async sendAreaOwner(player: Player): Promise<void> {
     const ownerName = await this.world.getTileOwnerName(this.data);
     if (!ownerName) return;
-    player.sendTextBubble(`That area is owned by ${ownerName}`);
+    if (this.world.isWorldLocked && !this.data.lockedBy) {
+      player.sendTextBubble(`This world is owned by ${ownerName}`);
+    } else {
+      player.sendTextBubble(`That area is owned by ${ownerName}`);
+    }
   }
 
   /**

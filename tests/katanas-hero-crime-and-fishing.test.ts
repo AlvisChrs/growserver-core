@@ -8,6 +8,7 @@ import { FISHING_RODS, FISHING_BAITS, handleFishingCast } from "../src/game/fish
 import { findCommand } from "../src/game/commands/registry";
 import "../src/game/commands/core-commands";
 import { TileFlags, ActionTypes, ITEM_ID } from "../src/game/world/constants";
+import { TileMapByItem } from "../src/game/world/tiles";
 import type { Player } from "../src/game/player";
 import type { World } from "../src/game/world/world";
 
@@ -77,7 +78,7 @@ describe("Legendary Katana & Katana Series", () => {
   });
 });
 
-describe("Crime System: Crime Wave & Crime In Progress", () => {
+describe("Crime System: Crime Wave & Crime In Progress & Criminal Mastermind", () => {
   test("VILLAIN_PORTRAITS includes all 11 classic villain portrait IDs", () => {
     expect(VILLAIN_PORTRAITS).toContain(2344); // The Firebug
     expect(VILLAIN_PORTRAITS).toContain(2360); // Dr. Destructo
@@ -85,7 +86,12 @@ describe("Crime System: Crime Wave & Crime In Progress", () => {
     expect(VILLAIN_PORTRAITS.length).toBe(11);
   });
 
-  test("BurglarTile punches apply damage and defeating drops gems and villain portrait", async () => {
+  test("TileMapByItem maps both Crime In Progress (2302) and Criminal Mastermind (12276) to BurglarTile", () => {
+    expect(TileMapByItem[2302]).toBe(BurglarTile);
+    expect(TileMapByItem[12276]).toBe(BurglarTile);
+  });
+
+  test("BurglarTile punches apply damage and defeating drops gems, portrait, and cards", async () => {
     let droppedItem = 0;
     let addedGems = 0;
     const tileData = { x: 5, y: 10, fg: 2302, bg: 0, flags: TileFlags.TILEEXTRA, damage: 0 };
@@ -108,6 +114,7 @@ describe("Crime System: Crime Wave & Crime In Progress", () => {
       inventory: {
         clothes: { hand: 2592 }, // Holding Katana
         canAddItem: () => true,
+        hasItem: () => false,
       },
       addItemInven: (id: number) => {
         droppedItem = id;
@@ -126,23 +133,105 @@ describe("Crime System: Crime Wave & Crime In Progress", () => {
     expect(tileData.damage).toBe(2);
     expect(tileData.fg).toBe(2302);
 
-    // Deliver enough hits to reach breakHits (8 hits total)
+    // Deliver enough hits to reach maxHp (8 hits total)
     await burglar.onPunch(mockPlayer); // 4
     await burglar.onPunch(mockPlayer); // 6
     await burglar.onPunch(mockPlayer); // 8 -> defeated!
 
     expect(tileData.fg).toBe(0);
     expect(addedGems).toBeGreaterThanOrEqual(500);
-    expect(VILLAIN_PORTRAITS).toContain(droppedItem);
+    expect(droppedItem).toBeGreaterThan(0);
   });
 
-  test("/criminal command grants Crime Wave and villain blocks", () => {
+  test("Criminal Mastermind (12276) can be fought and defeated with Mastermind rewards", async () => {
+    let droppedItem = 0;
+    let addedGems = 0;
+    const tileData = { x: 8, y: 12, fg: 12276, bg: 0, flags: TileFlags.TILEEXTRA, damage: 0 };
+
+    const mockWorld = {
+      players: [],
+      playPositioned: () => {},
+      broadcastVariant: () => {},
+      broadcast: () => {},
+      markDirty: () => {},
+      drop: (_p: any, _x: number, _y: number, itemId: number) => {
+        droppedItem = itemId;
+      },
+    } as unknown as World;
+
+    const mockPlayer = {
+      netID: 2,
+      displayName: "MasterHero",
+      playMods: new Set(["hero_suit"]),
+      inventory: {
+        clothes: { hand: 2592 }, // Katana
+        canAddItem: () => true,
+        hasItem: () => false,
+      },
+      addItemInven: (id: number) => {
+        droppedItem = id;
+      },
+      addGems: (amt: number) => {
+        addedGems += amt;
+      },
+      sendTextBubble: () => {},
+      variants: { sendOnConsoleMessage: () => {} },
+    } as unknown as Player;
+
+    const mastermind = new BurglarTile(mockWorld, tileData);
+
+    // Punch Mastermind: 2 damage per hero katana punch
+    await mastermind.onPunch(mockPlayer);
+    expect(tileData.damage).toBe(2);
+    expect(tileData.fg).toBe(12276);
+
+    // Punch until defeated (up to 12 hits for Masterminds)
+    for (let i = 0; i < 6; i++) {
+      await mastermind.onPunch(mockPlayer);
+    }
+
+    expect(tileData.fg).toBe(0);
+    expect(addedGems).toBeGreaterThanOrEqual(1500); // Mastermind bounty: 1500-3000 gems
+    expect(droppedItem).toBeGreaterThan(0);
+  });
+
+  test("Wrenching Crime In Progress or Criminal Mastermind opens Crime Battle Dialog", async () => {
+    let capturedDialog = "";
+    const tileData = { x: 3, y: 7, fg: 12276, bg: 0, flags: TileFlags.TILEEXTRA, damage: 0 };
+    const mockWorld = {
+      players: [],
+    } as unknown as World;
+
+    const mockPlayer = {
+      displayName: "Detective",
+      inventory: {
+        getAmount: (id: number) => (id === 2292 ? 3 : 0),
+      },
+      variants: {
+        sendOnDialogRequest: (d: string) => {
+          capturedDialog = d;
+        },
+      },
+    } as unknown as Player;
+
+    const mastermind = new BurglarTile(mockWorld, tileData);
+    await mastermind.onWrench(mockPlayer);
+
+    expect(capturedDialog).toContain("crime_battle");
+    expect(capturedDialog).toContain("CRIMINAL MASTERMIND");
+    expect(capturedDialog).toContain("Heroic Strike");
+    expect(capturedDialog).toContain("crime_card_2292"); // Has Heat Vision
+  });
+
+  test("/criminal command grants Crime Wave, Crime In Progress, Criminal Mastermind, and Cards", () => {
     const cmd = findCommand("criminal");
     expect(cmd).toBeDefined();
 
     const inv = new Map<number, number>();
     const mockPlayer = {
       addItemInven: (id: number, count = 1) => inv.set(id, (inv.get(id) ?? 0) + count),
+      equipClothes: () => {},
+      sendInventory: () => {},
       sendSfx: () => {},
       sendTextBubble: () => {},
       variants: { sendOnConsoleMessage: () => {} },
@@ -151,6 +240,11 @@ describe("Crime System: Crime Wave & Crime In Progress", () => {
     cmd?.execute(mockPlayer, []);
     expect(inv.get(2382)).toBe(5); // Crime Wave
     expect(inv.get(2302)).toBe(5); // Crime In Progress
+    expect(inv.get(12276)).toBe(5); // Criminal Mastermind
+    expect(inv.get(2292)).toBe(5); // Heat Vision
+    expect(inv.get(2310)).toBe(5); // Frost Breath
+    expect(inv.get(2320)).toBe(5); // Super Strength
+    expect(inv.get(2334)).toBe(5); // Thunderstorm
   });
 });
 

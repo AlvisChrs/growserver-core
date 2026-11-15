@@ -2101,16 +2101,41 @@ registerCommand({
 
 registerCommand({
   name: "criminal",
-  aliases: ["villain", "crime"],
-  description: "Receive Crime Wave consumable and Crime In Progress blocks",
+  aliases: ["villain", "crime", "mastermind", "superhero"],
+  description: "Receive Crime Wave, Crime In Progress, Criminal Mastermind, and full deck of Superpower Cards",
   role: PLAYER_ROLE.USER,
   execute(player) {
-    player.addItemInven(2382, 5); // Crime Wave
-    player.addItemInven(2302, 5); // Crime In Progress
-    player.addItemInven(2360, 1); // Dr. Destructo Portrait
+    // Spawners & Villains
+    player.addItemInven(2382, 5);  // Crime Wave (consumable spawner)
+    player.addItemInven(2302, 5);  // Crime In Progress block
+    player.addItemInven(12276, 5); // Criminal Mastermind NPC block
+    player.addItemInven(2360, 1);  // Dr. Destructo Portrait
+
+    // Superhero Gear
+    player.addItemInven(2142, 1);  // Superhero Mask - Black
+
+    // Complete elemental deck of Superpower Cards
+    const cards = [
+      { id: 2292, count: 5 }, // Heat Vision (Fire)
+      { id: 2294, count: 5 }, // Incinerate (Fire)
+      { id: 2308, count: 5 }, // Ice Shards (Ice)
+      { id: 2310, count: 5 }, // Frost Breath (Ice)
+      { id: 2320, count: 5 }, // Super Strength (Muscle)
+      { id: 2326, count: 5 }, // Crush (Muscle)
+      { id: 2332, count: 5 }, // Shocking Fist (Lightning)
+      { id: 2334, count: 5 }, // Thunderstorm (Lightning)
+    ];
+
+    for (const card of cards) {
+      player.addItemInven(card.id, card.count);
+    }
+
+    player.equipClothes(2142);
+    player.sendInventory();
     player.sendSfx("audio/alarm.wav");
-    player.sendTextBubble("`4Villainous schemes in motion!``", true);
-    player.variants.sendOnConsoleMessage("`4Received Crime Wave and Crime In Progress blocks! Use Crime Wave to summon villains!``");
+    player.sendTextBubble("`4Villainous schemes in motion! Superhero cards ready!``", true);
+    player.variants.sendOnConsoleMessage("`4[Crimefighting]: Received Crime Wave (#2382), Crime In Progress (#2302), Criminal Mastermind (#12276), and Superpower Cards!``");
+    player.variants.sendOnConsoleMessage("`oTip: Place Criminal Mastermind or Crime in Progress and wrench or punch to battle! Counter elements for 3x critical damage! (Fire > Muscle > Lightning > Ice > Fire)``");
   },
 });
 

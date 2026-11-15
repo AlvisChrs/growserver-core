@@ -110,8 +110,9 @@ export const TileMapByItem: Partial<Record<number, TileClass>> = {
   15224: NpcTile,
   13546: NpcTile,
   1790: NpcTile,
-  // Crime In Progress villain block
+  // Crime In Progress & Criminal Mastermind villain blocks
   2302: BurglarTile,
+  12276: BurglarTile,
   // Surgery practice robots & hospital bed
   4296: SurgeryRobotTile, // Surg-E Anatomical Dummy
   8558: SurgeryRobotTile, // Train-E

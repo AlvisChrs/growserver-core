@@ -60,6 +60,26 @@ function mod(input: ModInput): PlayModDef {
   return { duration: 0, items: [], charState: 0, ...input };
 }
 
+/**
+ * All mobility back-slot items (wings, capes, jetpacks, auras, spirits, gliders)
+ * that grant Double Jump in Growtopia.
+ */
+export const ALL_MOBILITY_BACK_ITEMS: readonly number[] = [
+  156, 160, 350, 362, 678, 736, 818, 1166, 1206, 1460, 1550, 1574, 1672, 1674, 1738, 1762, 1784, 1824, 1934, 1936,
+  1938, 1960, 1970, 2050, 2158, 2160, 2162, 2164, 2166, 2168, 2254, 2256, 2258, 2260, 2262, 2264, 2390, 2392, 2438, 2538,
+  2642, 2722, 2778, 2982, 3104, 3112, 3114, 3120, 3134, 3144, 3512, 3858, 4156, 4534, 4880, 4970, 4972, 4986, 5020, 5206,
+  5738, 5754, 6004, 6144, 6284, 6334, 6694, 6758, 6818, 6842, 7084, 7104, 7150, 7196, 7204, 7214, 7304, 7412, 7502, 7582,
+  7734, 7834, 7910, 7914, 7916, 8024, 8026, 8194, 8286, 8302, 8308, 8552, 8576, 8578, 8580, 8582, 8620, 8862, 8914, 9006,
+  9064, 9088, 9094, 9114, 9182, 9190, 9210, 9320, 9322, 9352, 9394, 9408, 9422, 9428, 9446, 9610, 9712, 9760, 10054, 10168,
+  10170, 10172, 10178, 10180, 10182, 10184, 10188, 10210, 10332, 10338, 10424, 10500, 10502, 10644, 10684, 10718, 10726, 10772, 10806, 10892,
+  11016, 11050, 11238, 11288, 11290, 11294, 11300, 11350, 11352, 11386, 11462, 11478, 11482, 11504, 11510, 11544, 11588, 11660, 11662, 11664,
+  11666, 11766, 11790, 11870, 11992, 12174, 12234, 12306, 12354, 12376, 12406, 12414, 12634, 12638, 12640, 12842, 12848, 12856, 12892, 12996,
+  13002, 13062, 13106, 13108, 13140, 13198, 13228, 13266, 13372, 13408, 13418, 13432, 13434, 13458, 13460, 13608, 13680, 13692, 13714, 13836,
+  13838, 13840, 13938, 13968, 14004, 14006, 14016, 14086, 14218, 14232, 14234, 14390, 14506, 14550, 14552, 14566, 14596, 14604, 14632, 14694,
+  14722, 14756, 14800, 14836, 14866, 14990, 14992, 15104, 15106, 15196, 15230, 15380, 15392, 15416, 15460, 15466, 15548, 15550, 15654, 15780,
+  15800, 15826, 15850, 15890, 15944, 15946, 15970, 15980, 15982, 15984, 16012, 16134, 16216, 16218, 16262, 16316, 16360, 16444,
+];
+
 /** Every play mod the server knows, keyed by id. */
 export const PLAY_MODS: Collection<string, PlayModDef> = new Collection();
 
@@ -73,7 +93,71 @@ for (const def of [
     addMessage: "You can jump in mid-air!  It's like flying, but less.",
     removeMessage: "Gravity - it's the law.",
     charState: CHARACTER_STATE.DOUBLE_JUMP,
-    items: [156, 350, 362, 678, 736, 1166, 3112, 1206, 1460, 1550, 1574, 1672, 1674, 1738, 1784, 1824, 1934, 1936, 1938, 2254, 2256, 2258, 2260, 2262, 2264, 6162, 4184, 3104, 3114, 3120, 3134, 3144, 3576, 3604, 3762, 3514, 4820, 4412, 4428, 4440, 4442, 4534],
+    items: [...ALL_MOBILITY_BACK_ITEMS],
+  }),
+  mod({
+    id: "golden_angel_float",
+    name: "Golden Flight",
+    displayItem: 1460,
+    addMessage: "`6Blessed wings lift your spirit with gentle floating!``",
+    removeMessage: "You settle back to Earth.",
+    gravity: 600,
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
+    items: [1460],
+  }),
+  mod({
+    id: "davinci_glider",
+    name: "Da Vinci Glider",
+    displayItem: 8286,
+    addMessage: "`3Genius engineering allows smooth gliding!``",
+    removeMessage: "Gliding wings tucked away.",
+    gravity: 500,
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
+    items: [8286],
+  }),
+  mod({
+    id: "phoenix_flame",
+    name: "Phoenix Ascendance",
+    displayItem: 1674,
+    addMessage: "`4From the ashes! Fiery wings grant power and agility!``",
+    removeMessage: "The embers cool down.",
+    speed: 60,
+    punchType: 19,
+    punchPower: 250,
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
+    items: [1674],
+  }),
+  mod({
+    id: "rainbow_wings",
+    name: "Rainbow Wings",
+    displayItem: 1672,
+    addMessage: "`oRainbow colors radiate beneath your wings!``",
+    removeMessage: "The rainbow fades.",
+    speed: 80,
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
+    items: [1672],
+  }),
+  mod({
+    id: "rift_cape",
+    name: "Rift in Time",
+    displayItem: 10424,
+    addMessage: "`5A rift in time, here I come! Dimensional energies surround you.``",
+    removeMessage: "Dimensional anomaly stabilized.",
+    speed: 80,
+    punchPower: 250,
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
+    items: [10424],
+  }),
+  mod({
+    id: "rift_wings",
+    name: "Dimensional Rift",
+    displayItem: 11478,
+    addMessage: "`5Cosmic rift wings flutter through dimensional spacetime!``",
+    removeMessage: "Rift wings rested.",
+    speed: 100,
+    punchPower: 300,
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
+    items: [11478],
   }),
   mod({ id: "the_one_ring", name: "The One Ring", displayItem: 1904, addMessage: "No one will take your precious!", removeMessage: "I guess someone took your precious.", charState: CHARACTER_STATE.IS_INVISIBLE, items: [1904] }),
   mod({ id: "legendary", name: "Legendary!", displayItem: 1782, addMessage: "You should be very very nice to your pet.", removeMessage: "You feel lonely.", punchPower: 300, punchDamage: 4, punchType: 21, items: [1782] }),

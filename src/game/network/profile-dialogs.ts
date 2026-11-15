@@ -11,6 +11,7 @@ import { questDailyDialog, sendGoalsDialog } from "../quests";
 import { registerDialog } from "./dialog-handler";
 import { tradeManager } from "../trade/trade-manager";
 import { serverManager } from "../server/server-manager";
+import { riftCapeDialog, riftWingsDialog } from "../item/configurable-items";
 
 /** Buttons of the wrench menu that open one of the client's RML pages. */
 const RML_PAGES: Record<string, string> = {
@@ -83,6 +84,13 @@ export function selfProfileDialog(player: Player): string {
     dialog.addButton("transform", player.isTransformed ? "`4Untransform!``" : "`2Transform!``");
   }
 
+  if (player.effectiveClothes.back === 10424 || player.inventory.hasItem(10424)) {
+    dialog.addButton("customize_rift_cape", "`5Customize Rift Cape``");
+  }
+  if (player.effectiveClothes.back === 11478 || player.inventory.hasItem(11478)) {
+    dialog.addButton("customize_rift_wings", "`5Customize Rift Wings``");
+  }
+
   dialog
     .addTextBox(`\`oTime played: \`w${formatDuration(player.playtime)}\`\``)
     .addTextBox(`\`oPlaying since: \`w${since}\`\` (\`w${player.accountAgeDays}\`\` ${player.accountAgeDays === 1 ? "day" : "days"} ago)\`\``)
@@ -126,8 +134,16 @@ registerDialog("popup", (player, action) => {
   const target = player.world?.players.find((other) => other.netID === targetNetId);
 
   // Quick shortcuts are only present in the player's own wrench popup.
-  if (["home_world", "daily_quests", "role_goals", "my_worlds", "transform"].includes(button) && targetNetId !== player.netID) return;
+  if (["home_world", "daily_quests", "role_goals", "my_worlds", "transform", "customize_rift_cape", "customize_rift_wings"].includes(button) && targetNetId !== player.netID) return;
   switch (button) {
+    case "customize_rift_cape": {
+      player.variants.sendOnDialogRequest(riftCapeDialog(player));
+      return;
+    }
+    case "customize_rift_wings": {
+      player.variants.sendOnDialogRequest(riftWingsDialog(player));
+      return;
+    }
     case "transform": {
       player.toggleTransform();
       player.variants.sendOnDialogRequest(selfProfileDialog(player));

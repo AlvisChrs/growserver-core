@@ -184,7 +184,16 @@ function Info(player: Player, action: TextParser): void {
     dialog.addSpacer("small").addSmallText("`3This item can't be destroyed - smashing it will return it to your backpack if you have room!");
   }
 
-  player.variants.sendOnDialogRequest(dialog.addButton("info_end", "OK").str());
+  if (itemId === 10424) {
+    dialog.addSpacer("small");
+    dialog.addButton("customize_rift_cape", "`5Customize Rift Cape``");
+  } else if (itemId === 11478) {
+    dialog.addSpacer("small");
+    dialog.addButton("customize_rift_wings", "`5Customize Rift Wings``");
+  }
+
+  dialog.addSpacer("small").addQuickExit().endDialog("info_end", "", "OK");
+  player.variants.sendOnDialogRequest(dialog.str());
 }
 
 function Trash(player: Player, action: TextParser): void {

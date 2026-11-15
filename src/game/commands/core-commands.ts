@@ -21,6 +21,7 @@ import { Collection } from "../../utils/collection";
 import { canUseCommand, commands, registerCommand, roleRank, type ChatCommand } from "./registry";
 import { tradeManager } from "../trade/trade-manager";
 import { eventManager, GameEventType } from "../events/event-manager";
+import { riftCapeDialog, riftWingsDialog } from "../item/configurable-items";
 
 const ROLE_NAMES = PLAYER_ROLE_NAMES;
 
@@ -430,27 +431,39 @@ registerDialog("search_item", (player, action) => {
   player.variants.sendOnConsoleMessage(`Added \`6${item.name}\`\` (200) to your inventory.`);
 });
 
-const GHOST_STATE = CHARACTER_STATE.WALK_IN_BLOCKS | CHARACTER_STATE.DOUBLE_JUMP | CHARACTER_STATE.HAVE_FLYING_PINEAPPLE;
+const GHOST_STATE = CHARACTER_STATE.WALK_IN_BLOCKS | CHARACTER_STATE.DOUBLE_JUMP | CHARACTER_STATE.HAVE_FLYING_PINEAPPLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
 
 registerCommand({
   name: "ghost",
   aliases: ["unghost"],
-  description: "Toggle ghost mode to walk through blocks.",
+  description: "Toggle ghost mode to walk through blocks with haunted shadows.",
   role: PLAYER_ROLE.MODERATOR,
   cooldown: 2,
   execute(player) {
     player.state.isGhost = !player.state.isGhost;
+    const world = player.world;
+    const px = player.state.x + 10;
+    const py = player.state.y + 16;
 
     if (player.state.isGhost) {
       player.state.characterState |= GHOST_STATE;
-      player.variants.sendOnConsoleMessage("`2Ghost mode enabled``. You can now walk through blocks!");
+      if (world) {
+        world.broadcastVariant(Variant.from("OnParticleEffect", 3, [px, py]));
+        world.playPositioned("audio/spooky.wav", player.netID);
+      }
+      player.variants.sendOnConsoleMessage("`2Ghost mode enabled``. Haunted shadows swirl as you walk through blocks!");
       // semi-transparent white appearance
       for (const other of player.world?.players ?? [player]) {
         other.variants.sendClothes(player.netID, player.effectiveClothes, 0xffffff80);
       }
     } else {
       player.state.characterState &= ~GHOST_STATE;
-      player.variants.sendOnConsoleMessage("`4Ghost mode disabled``. You are back to normal.");
+      if (world) {
+        world.broadcastVariant(Variant.from("OnParticleEffect", 3, [px, py]));
+        world.broadcastVariant(Variant.from("OnParticleEffect", 12, [px, py]));
+        world.playPositioned("audio/teleport.wav", player.netID);
+      }
+      player.variants.sendOnConsoleMessage("`4Ghost mode disabled``. You materialize back to normal.");
       player.sendClothesToWorld();
     }
     player.sendCharacterState();
@@ -1348,17 +1361,31 @@ registerCommand({
 registerCommand({
   name: "invis",
   aliases: ["invisible", "vanish"],
-  description: "Toggle invisibility",
+  description: "Toggle invisibility with spooky shadow vanish and reappear effects",
   role: PLAYER_ROLE.MODERATOR,
   cooldown: 2,
   execute(player) {
     const isCurrentlyInvisible = (player.state.characterState & CHARACTER_STATE.IS_INVISIBLE) !== 0;
+    const world = player.world;
+    const px = player.state.x + 10;
+    const py = player.state.y + 16;
+
     if (isCurrentlyInvisible) {
-      player.state.characterState &= ~CHARACTER_STATE.IS_INVISIBLE;
-      player.variants.sendOnConsoleMessage("`4Invisibility disabled.``");
+      player.state.characterState &= ~(CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS);
+      if (world) {
+        world.broadcastVariant(Variant.from("OnParticleEffect", 3, [px, py]));
+        world.broadcastVariant(Variant.from("OnParticleEffect", 12, [px, py]));
+        world.playPositioned("audio/teleport.wav", player.netID);
+      }
+      player.sendClothesToWorld();
+      player.variants.sendOnConsoleMessage("`4Invisibility disabled. You step back into reality.``");
     } else {
-      player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE;
-      player.variants.sendOnConsoleMessage("`2Invisibility enabled! You are now invisible.``");
+      player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
+      if (world) {
+        world.broadcastVariant(Variant.from("OnParticleEffect", 3, [px, py]));
+        world.playPositioned("audio/spooky.wav", player.netID);
+      }
+      player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadows veil your presence.``");
     }
     player.sendCharacterState();
   },
@@ -2462,5 +2489,48 @@ registerCommand({
     player.sendTextBubble("`2Received Surg-E dummies and all 14 surgical tools!``", true);
     player.variants.sendOnConsoleMessage("`2[Surgery]: Received Surg-E dummies (#4296), Train-E (#8558), and 50x of each surgical tool!``");
     player.variants.sendOnConsoleMessage("`oTip: Place Surg-E (#4296) and punch or wrench it to practice surgery.`");
+  },
+});
+
+registerCommand({
+  name: "rift",
+  aliases: ["riftcape", "riftwings", "configrift"],
+  description: "Customize appearance and effects for Rift Cape (#10424) or Rift Wings (#11478)",
+  usage: "/rift [cape|wings]",
+  role: PLAYER_ROLE.BASIC,
+  cooldown: 1,
+  execute(player, args) {
+    const sub = args[0]?.toLowerCase();
+    const hasCape = player.effectiveClothes.back === 10424 || player.inventory.hasItem(10424);
+    const hasWings = player.effectiveClothes.back === 11478 || player.inventory.hasItem(11478);
+
+    if (sub === "wings" || (hasWings && !hasCape && sub !== "cape")) {
+      player.variants.sendOnDialogRequest(riftWingsDialog(player));
+      return;
+    }
+
+    if (sub === "cape" || (hasCape && !hasWings && sub !== "wings")) {
+      player.variants.sendOnDialogRequest(riftCapeDialog(player));
+      return;
+    }
+
+    if (hasCape && hasWings) {
+      // Both owned: open cape by default or dialog
+      player.variants.sendOnDialogRequest(riftCapeDialog(player));
+      player.variants.sendOnConsoleMessage("`oTip: Type \`/rift wings\`\` to customize your Rift Wings!``");
+      return;
+    }
+
+    if (!hasCape && !hasWings) {
+      if (player.isDeveloper) {
+        player.addItemInven(10424, 1);
+        player.addItemInven(11478, 1);
+        player.sendInventory();
+        player.variants.sendOnConsoleMessage("`2[Developer]: Added Rift Cape (#10424) and Rift Wings (#11478) to your inventory! Opening Rift Cape Customization...``");
+        player.variants.sendOnDialogRequest(riftCapeDialog(player));
+        return;
+      }
+      return player.variants.sendOnConsoleMessage("`4You need to own or equip a Rift Cape (#10424) or Rift Wings (#11478) to customize them.``");
+    }
   },
 });

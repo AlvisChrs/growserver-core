@@ -55,6 +55,33 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
     }
   }
 
+  // Special mobility back-item & rift particle trails
+  const backItem = player.effectiveClothes.back;
+  if (backItem) {
+    const now = Date.now();
+    if (now - (player.lastBackParticleAt ?? 0) >= 300) {
+      if (backItem === 10424 && (player.riftCapeConfig?.particleTrail ?? true)) {
+        player.lastBackParticleAt = now;
+        world.broadcastVariant(Variant.from("OnParticleEffect", 12, [data.posX + 10, data.posY + 16]));
+      } else if (backItem === 11478 && (player.riftWingsConfig?.particleTrail ?? true)) {
+        player.lastBackParticleAt = now;
+        world.broadcastVariant(Variant.from("OnParticleEffect", 12, [data.posX + 10, data.posY + 16]));
+      } else if (backItem === 1674) {
+        player.lastBackParticleAt = now;
+        world.broadcastVariant(Variant.from("OnParticleEffect", 45, [data.posX + 10, data.posY + 16]));
+      } else if (backItem === 1672) {
+        player.lastBackParticleAt = now;
+        world.broadcastVariant(Variant.from("OnParticleEffect", 14, [data.posX + 10, data.posY + 16]));
+      } else if (backItem === 2256) {
+        player.lastBackParticleAt = now;
+        world.broadcastVariant(Variant.from("OnParticleEffect", 46, [data.posX + 10, data.posY + 16]));
+      } else if (backItem === 1550) {
+        player.lastBackParticleAt = now;
+        world.broadcastVariant(Variant.from("OnParticleEffect", 36, [data.posX + 10, data.posY + 16]));
+      }
+    }
+  }
+
   // tile the player is standing on, only reported when not punching
   if (data.tileX > 0 || data.tileY > 0) return;
   const block =

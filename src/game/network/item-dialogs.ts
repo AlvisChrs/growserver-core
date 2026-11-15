@@ -3,6 +3,7 @@ import { CADUCEUS_ID } from "../quests/constants";
 import type { Player } from "../player";
 import { ActionTypes, ITEM_ID } from "../world/constants";
 import { registerDialog } from "./dialog-handler";
+import { riftCapeDialog, riftWingsDialog } from "../item/configurable-items";
 
 /**
  * Dialog returns for backpack actions (drop, trash) and the gazette.
@@ -17,6 +18,15 @@ function parseCount(player: Player, raw: string): number | null {
 }
 
 registerDialog("gazzette_end", () => {});
+
+registerDialog("info_end", (player, action) => {
+  const button = action.get("buttonClicked");
+  if (button === "customize_rift_cape") {
+    player.variants.sendOnDialogRequest(riftCapeDialog(player));
+  } else if (button === "customize_rift_wings") {
+    player.variants.sendOnDialogRequest(riftWingsDialog(player));
+  }
+});
 
 registerDialog("drop_end", (player, action) => {
   const itemId = action.getInt("itemID", 0, 0);

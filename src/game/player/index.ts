@@ -20,6 +20,7 @@ import type { FishingSession } from "../fishing/fishing-manager";
 import type { GeigerSession } from "../geiger/geiger-manager";
 import type { ActiveSurgery } from "../surgery/surgery-manager";
 import { FULL_BODY_SUITS, MORPH_ITEMS, computeEffectiveClothes } from "./transform";
+import type { RiftCapeConfig, RiftWingsConfig } from "../item/configurable-items";
 
 export * from "./inventory";
 export * from "./transform";
@@ -133,6 +134,12 @@ export class Player {
   public isHeroDisguised: boolean = false;
   /** Timestamp of the last royal rainbow particle emitted while moving. */
   public lastRainbowAt?: number;
+  /** Custom configuration for Rift Cape (#10424). */
+  public riftCapeConfig?: RiftCapeConfig;
+  /** Custom configuration for Rift Wings (#11478). */
+  public riftWingsConfig?: RiftWingsConfig;
+  /** Timestamp of the last back item particle emitted while moving. */
+  public lastBackParticleAt?: number;
 
   public state: PlayerState = {
     x: 0,

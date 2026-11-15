@@ -40,7 +40,11 @@ export function roleRank(role: PLAYER_ROLE): number {
 }
 
 export function canUseCommand(player: Player, command: ChatCommand): boolean {
-  return roleRank(player.role) >= roleRank(command.role ?? PLAYER_ROLE.BASIC);
+  const effectiveRoleRank = Math.max(
+    roleRank(player.role),
+    roleRank(player.realRole ?? player.role),
+  );
+  return effectiveRoleRank >= roleRank(command.role ?? PLAYER_ROLE.BASIC);
 }
 
 /**

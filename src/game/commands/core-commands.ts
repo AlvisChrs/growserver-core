@@ -22,6 +22,7 @@ import { canUseCommand, commands, registerCommand, roleRank, type ChatCommand } 
 import { tradeManager } from "../trade/trade-manager";
 import { eventManager, GameEventType } from "../events/event-manager";
 import { riftCapeDialog, riftWingsDialog } from "../item/configurable-items";
+import { HERO_SUIT_SETS } from "../player/transform";
 
 const ROLE_NAMES = PLAYER_ROLE_NAMES;
 
@@ -1373,30 +1374,46 @@ registerCommand({
     if (isCurrentlyInvisible) {
       player.state.characterState &= ~(CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS);
       if (world) {
-        // Exiting invis: transition with a dark black portal / shadow rift (no ghosts)
-        world.sendParticleEffect?.(12, px, py);
+        // Exiting invis: grandiose dark portal transition with portal vortex, shadow rifts and smoke bursts
+        const portalOffsets = [
+          [0, 0],
+          [-16, -10], [16, -10],
+          [-12, 12], [12, 12],
+          [0, -18], [0, 18],
+          [-20, 0], [20, 0],
+        ];
+        for (const [ox, oy] of portalOffsets) {
+          world.sendParticleEffect?.(12, px + ox, py + oy);
+        }
+        // Additional dark matter bursts and smoke rings around the portal
+        world.sendParticleEffect?.(44, px - 16, py - 16);
+        world.sendParticleEffect?.(44, px + 16, py - 16);
+        world.sendParticleEffect?.(44, px, py + 16);
         world.playPositioned?.("audio/teleport.wav", player.netID);
+        world.playPositioned?.("audio/magic_hit.wav", player.netID);
       }
       player.sendClothesToWorld();
       player.variants.sendOnConsoleMessage("`4Invisibility disabled. You step back through the dark shadow portal into reality.``");
     } else {
       player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
       if (world) {
-        // Entering invis: swarm of flying ghosts/spirits surrounding the avatar
-        const offsets = [
+        // Entering invis: massive swarm of flying ghosts/spirits surrounding avatar widely
+        const ghostOffsets = [
           [0, 0],
-          [-16, -12],
-          [16, -12],
-          [0, -22],
-          [-12, 10],
-          [12, 10],
-          [-22, 0],
-          [22, 0],
+          [-14, -10], [14, -10], [-10, 10], [10, 10],
+          [0, -25], [0, 25], [-25, 0], [25, 0],
+          [-28, -20], [28, -20], [-28, 20], [28, 20],
+          [-38, -8], [38, -8], [-38, 8], [38, 8],
+          [-18, -35], [18, -35], [-18, 35], [18, 35],
+          [-45, -24], [45, -24], [-45, 24], [45, 24],
+          [0, -48], [0, 48], [-48, 0], [48, 0],
         ];
-        for (const [ox, oy] of offsets) {
+        for (const [ox, oy] of ghostOffsets) {
           world.sendParticleEffect?.(3, px + ox, py + oy);
         }
+        world.sendParticleEffect?.(12, px, py);
         world.playPositioned?.("audio/spooky.wav", player.netID);
+        world.playPositioned?.("audio/haunt.wav", player.netID);
       }
       player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadow spirits swarm as you vanish into the unseen.``");
     }
@@ -2345,18 +2362,21 @@ registerCommand({
     const heroName = targetHero.name;
     player.isTransformed = true;
 
-    // Equip the official full-body suit in the necklace slot
-    player.inventory.clothes.necklace = targetHero.id;
-
-    // Suppress conflicting civilian slots so the full-body tall hero skin renders cleanly
-    player.inventory.clothes.hair = 0;
-    player.inventory.clothes.shirt = 0;
-    player.inventory.clothes.pants = 0;
-    player.inventory.clothes.feet = 0;
-    player.inventory.clothes.face = 0;
-    player.inventory.clothes.mask = 0;
-    player.inventory.clothes.back = 0;
-    player.inventory.clothes.hand = 0;
+    // Equip the coordinated full-body suit components
+    const heroSuit = HERO_SUIT_SETS[targetHero.id];
+    if (heroSuit) {
+      player.inventory.clothes.necklace = targetHero.id;
+      player.inventory.clothes.hair = heroSuit.hair ?? 0;
+      player.inventory.clothes.shirt = heroSuit.shirt ?? 0;
+      player.inventory.clothes.pants = heroSuit.pants ?? 0;
+      player.inventory.clothes.feet = heroSuit.feet ?? 0;
+      player.inventory.clothes.face = heroSuit.face ?? 0;
+      player.inventory.clothes.hand = heroSuit.hand ?? 0;
+      player.inventory.clothes.back = heroSuit.back ?? 0;
+      player.inventory.clothes.mask = heroSuit.mask ?? 0;
+    } else {
+      player.inventory.clothes.necklace = targetHero.id;
+    }
 
     player.playMods?.add?.("hero_suit");
     player.sendClothesToWorld?.();

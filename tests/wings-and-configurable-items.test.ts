@@ -61,7 +61,7 @@ describe("Invis & Ghost Haunted Shadows & Visual Effects", () => {
 
     const consoleMsgs: string[] = [];
     const broadcastVariants: unknown[] = [];
-    let playedSound = "";
+    const playedSounds: string[] = [];
 
     const mockMod = {
       role: PLAYER_ROLE.MODERATOR,
@@ -80,7 +80,7 @@ describe("Invis & Ghost Haunted Shadows & Visual Effects", () => {
           broadcastVariants.push({ id, x, y });
         },
         playPositioned: (sound: string) => {
-          playedSound = sound;
+          playedSounds.push(sound);
         },
       },
       variants: {
@@ -94,17 +94,17 @@ describe("Invis & Ghost Haunted Shadows & Visual Effects", () => {
     await invisCmd?.execute(mockMod, []);
     expect((mockMod.state.characterState & CHARACTER_STATE.IS_INVISIBLE) !== 0).toBe(true);
     expect((mockMod.state.characterState & CHARACTER_STATE.HAVE_HAUNTED_SHADOWS) !== 0).toBe(true);
-    expect(playedSound).toBe("audio/spooky.wav");
+    expect(playedSounds).toContain("audio/spooky.wav");
     expect(broadcastVariants.length).toBeGreaterThan(0);
     expect(consoleMsgs.some((m) => m.includes("Invisibility enabled"))).toBe(true);
 
     // Turn INVIS OFF
-    playedSound = "";
+    playedSounds.length = 0;
     broadcastVariants.length = 0;
     await invisCmd?.execute(mockMod, []);
     expect((mockMod.state.characterState & CHARACTER_STATE.IS_INVISIBLE) === 0).toBe(true);
     expect((mockMod.state.characterState & CHARACTER_STATE.HAVE_HAUNTED_SHADOWS) === 0).toBe(true);
-    expect(playedSound).toBe("audio/teleport.wav");
+    expect(playedSounds).toContain("audio/teleport.wav");
     expect(broadcastVariants.length).toBeGreaterThan(0);
     expect(consoleMsgs.some((m) => m.includes("Invisibility disabled"))).toBe(true);
   });
@@ -185,13 +185,13 @@ describe("Configurable Items (Rift Cape & Rift Wings)", () => {
     expect(dialogSent).toContain("Rift Cape Customization");
   });
 
-  test("Rift custom colors are correctly packed into RGB numbers for clothing updates", () => {
+  test("Rift custom colors are correctly packed into Proton 32-bit RGBA numbers with full alpha", () => {
     const red = [255, 0, 0] as [number, number, number];
-    const packedRed = ((red[0] & 0xff) << 16) | ((red[1] & 0xff) << 8) | (red[2] & 0xff);
-    expect(packedRed).toBe(0xff0000);
+    const packedRed = (((red[2] & 0xff) << 24) | ((red[1] & 0xff) << 16) | ((red[0] & 0xff) << 8) | 0xff) >>> 0;
+    expect(packedRed).toBe(0x0000ffff);
 
     const cyan = [0, 220, 255] as [number, number, number];
-    const packedCyan = ((cyan[0] & 0xff) << 16) | ((cyan[1] & 0xff) << 8) | (cyan[2] & 0xff);
-    expect(packedCyan).toBe(0x00dcff);
+    const packedCyan = (((cyan[2] & 0xff) << 24) | ((cyan[1] & 0xff) << 16) | ((cyan[0] & 0xff) << 8) | 0xff) >>> 0;
+    expect(packedCyan).toBe(0xffdc00ff);
   });
 });

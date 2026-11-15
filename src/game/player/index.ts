@@ -66,6 +66,56 @@ export enum PlayerStateFlags {
 /** Items that can never leave the backpack. */
 const PROTECTED_ITEMS: ReadonlySet<number> = new Set([ITEM_ID.FIST, ITEM_ID.WRENCH]);
 
+/**
+ * Maps specific weapons/hand items to their true visual punch animations in Growtopia.
+ */
+export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
+  // Katana series (punchType 8 = iconic Katana blade slice)
+  2592: 8,  // Legendary Katana
+  9058: 29, // Cursed Katana (slasher dark cut)
+  11118: 8, // Sonic Buster Katana
+  13710: 8, // Dark Magic Katana
+  16428: 8, // Immortal Sonic Buster Katana
+
+  // Scythes (punchType 29 = sweeping reaper blade slash)
+  1068: 29,  // Hand Scythe
+  1484: 29,  // Atomic Shadow Scythe
+  2386: 29,  // Heavenly Scythe
+  2572: 29,  // Flame Scythe
+  4166: 29,  // Death's Scythe
+  7098: 29,  // Apocalypse Scythe
+  9032: 29,  // Scythe of the Underworld
+  10498: 29, // Candy Cane Scythe
+  11006: 29, // Soul Scythe
+  11464: 29, // Ice Dragon Scythe
+  13400: 29, // Bamboo Scythe
+  13828: 29, // Soul Harvester's Scythe
+  15574: 29, // Scythed Hero Scythes
+
+  // Dragon Hands
+  900: 19,   // Dragon Hand (Fire dragon breath punch)
+  1378: 2,   // Ice Dragon Hand (Frost breath punch)
+
+  // Fists & Boxing Gloves
+  96: 1,     // Just One Boxing Glove
+  7940: 1,   // Flaming Boxing Gloves
+  5480: 6,   // Rayman's Fist (Disembodied floating fists)
+  12018: 6,  // Rok's Fists
+
+  // Guns & Mecha
+  1780: 5,   // Legendbot-009 (Exploding rockets)
+  1958: 10,  // Death Ray (Optic laser)
+  12014: 10, // Dal's Phasers
+  3716: 69,  // Hunting Ghosts / Neutron Pack (Neutron beam)
+  3066: 57,  // Fire Hose (Water stream)
+
+  // Bows & Staves
+  278: 20,   // Heart Bow (Cupid hearts)
+  1874: 24,  // Ring of Force (Force ring)
+  4746: 75,  // Energized Horn (Horn lightning)
+  10406: 2,  // Staff of Deepest Winter (Ice)
+};
+
 export class Player {
   /** Global unique player identifier (e.g. "server-17091:0") */
   public id: string;
@@ -132,8 +182,10 @@ export class Player {
   public heroOriginalClothes?: PlayerClothes;
   /** Whether cosmetic /hero disguise is currently active. */
   public isHeroDisguised: boolean = false;
-  /** Timestamp of the last royal rainbow particle emitted while moving. */
+  /** Timestamp and coordinates of the last royal rainbow particle emitted while moving. */
   public lastRainbowAt?: number;
+  public lastRainbowX?: number;
+  public lastRainbowY?: number;
   /** Custom configuration for Rift Cape (#10424). */
   public riftCapeConfig?: RiftCapeConfig;
   /** Custom configuration for Rift Wings (#11478). */
@@ -723,11 +775,12 @@ export class Player {
   public get effectiveCapeColor(): number {
     if (this.effectiveClothes.back === 10424 || this.inventory.clothes.back === 10424) {
       const rgb = this.riftCapeConfig?.capeRgb ?? DEFAULT_RIFT_CAPE_CONFIG.capeRgb;
-      return ((rgb[0] & 0xff) << 16) | ((rgb[1] & 0xff) << 8) | (rgb[2] & 0xff);
+      // Growtopia Proton 32-bit RGBA color format: 0xBBGGRRAA with alpha = 0xff
+      return (((rgb[2] & 0xff) << 24) | ((rgb[1] & 0xff) << 16) | ((rgb[0] & 0xff) << 8) | 0xff) >>> 0;
     }
     if (this.effectiveClothes.back === 11478 || this.inventory.clothes.back === 11478) {
       const rgb = this.riftWingsConfig?.wingsRgb ?? DEFAULT_RIFT_WINGS_CONFIG.wingsRgb;
-      return ((rgb[0] & 0xff) << 16) | ((rgb[1] & 0xff) << 8) | (rgb[2] & 0xff);
+      return (((rgb[2] & 0xff) << 24) | ((rgb[1] & 0xff) << 16) | ((rgb[0] & 0xff) << 8) | 0xff) >>> 0;
     }
     return 0;
   }
@@ -735,7 +788,7 @@ export class Player {
   public get effectiveCollarColor(): number {
     if (this.effectiveClothes.back === 10424 || this.inventory.clothes.back === 10424) {
       const rgb = this.riftCapeConfig?.collarRgb ?? DEFAULT_RIFT_CAPE_CONFIG.collarRgb;
-      return ((rgb[0] & 0xff) << 16) | ((rgb[1] & 0xff) << 8) | (rgb[2] & 0xff);
+      return (((rgb[2] & 0xff) << 24) | ((rgb[1] & 0xff) << 16) | ((rgb[0] & 0xff) << 8) | 0xff) >>> 0;
     }
     return 0;
   }
@@ -781,9 +834,23 @@ export class Player {
   /** Punch effect id forced with /pid; null uses the active mods' punch type. */
   public customPunchId: number | null = null;
 
-  /** Punch effect id: forced, or the one of the active mods, 0 for the plain fist. */
+  /** Punch effect id: forced, or the one of the active mods, weapon punch, or 0 for plain fist. */
   public get punchId(): number {
-    return this.customPunchId ?? this.characterStats.punchType;
+    if (this.customPunchId !== null) return this.customPunchId;
+    if (this.characterStats.punchType) return this.characterStats.punchType;
+
+    // Check Robot Automaton mode
+    if (this.isTransformed && this.inventory.clothes.feet === 7384) {
+      return 5; // Exploding rockets
+    }
+
+    // Check equipped weapon in hand slot
+    const handItem = this.effectiveClothes.hand || this.inventory.clothes.hand;
+    if (handItem && WEAPON_PUNCH_TYPES[handItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[handItem]!;
+    }
+
+    return 0;
   }
 
   /** Sends the country/name-tag state of this player and every player around. */

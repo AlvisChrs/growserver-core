@@ -827,6 +827,18 @@ export class World {
     return true;
   }
 
+  /** Checks if Royal Rainbows are active for a player in this world. */
+  public isRoyalRainbowsActive(player: Player): boolean {
+    const tile = this.worldLockTile;
+    if (!tile || !isRoyalLock(tile.fg)) return false;
+    const rainbows = tile.worldLockData?.royalRainbows ?? true;
+    if (!rainbows) return false;
+    if (player.isDeveloper || player.isModerator) return true;
+    if (tile.lock?.ownerPlayerId === player.playerId) return true;
+    if (tile.lock?.adminIds.includes(player.playerId)) return true;
+    return false;
+  }
+
   /** Whether the player is on the world lock's access list. */
   public isWorldAdmin(playerId: number): boolean {
     return this.worldLockTile?.lock?.adminIds.includes(playerId) ?? false;

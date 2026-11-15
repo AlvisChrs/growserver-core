@@ -45,7 +45,7 @@ export class LockTile extends Tile {
     const areaLock = LOCKS.find((l) => l.id === itemMeta.id);
 
     if (worldOwnerId !== undefined) {
-      if (worldOwnerId !== player.playerId && !player.isDeveloper) {
+      if (worldOwnerId !== player.playerId && !player.isDeveloper && !player.isModerator) {
         await this.notifyNoLocksAllowed(player);
         return false;
       } else if (!areaLock) {
@@ -54,7 +54,7 @@ export class LockTile extends Tile {
       }
     } else if (this.data.lockedBy) {
       const owningLock = this.world.getTileAt(this.data.lockedBy.parentX, this.data.lockedBy.parentY);
-      if (owningLock?.lock?.ownerPlayerId !== player.playerId && !player.isDeveloper) {
+      if (owningLock?.lock?.ownerPlayerId !== player.playerId && !player.isDeveloper && !player.isModerator) {
         await this.notifyNoLocksAllowed(player);
         return false;
       }
@@ -67,7 +67,7 @@ export class LockTile extends Tile {
 
     // a world lock cannot coexist with other players' area locks
     const othersAreaLock = this.world.data.blocks.find((tile) => tile.lock && tile.lock.ownerPlayerId !== player.playerId);
-    if (othersAreaLock && !areaLock && !player.isDeveloper) {
+    if (othersAreaLock && !areaLock && !player.isDeveloper && !player.isModerator) {
       player.sendTextBubble(`Your \`$${itemMeta.name}\`\` can't be placed in this world unless everyone else's locks are removed.`, false);
       return false;
     }
@@ -342,6 +342,7 @@ export class LockTile extends Tile {
     // Immediately update world owner name tags to green/royal crown
     this.world.refreshNameColors();
     this.tileUpdate();
+    this.world.markDirty();
   }
 
   private notifyWorldLockRemove(lockName = "World Lock"): void {

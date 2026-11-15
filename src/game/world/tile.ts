@@ -77,6 +77,7 @@ export class Tile {
     // the client takes the placed block out of its backpack on its own when
     // it receives the tile change echo above
     if (!this.placementSource) player.removeItemInven(itemId, 1, false);
+    this.world.markDirty();
     return true;
   }
 
@@ -91,7 +92,7 @@ export class Tile {
     }
 
     const currentFg = getItem(this.data.fg);
-    if (currentFg?.id && (currentFg.flags ?? 0) & BlockFlags.MOD && !player.isDeveloper) {
+    if (currentFg?.id && (currentFg.flags ?? 0) & BlockFlags.MOD && !player.isDeveloper && !player.isModerator) {
       player.sendTextBubble("Can't put anything behind that!");
       player.sendPlayPositioned("audio/cant_place_tile.wav");
       return false;
@@ -112,6 +113,7 @@ export class Tile {
     );
 
     if (!this.placementSource) player.removeItemInven(itemId, 1, false);
+    this.world.markDirty();
     return true;
   }
 
@@ -140,7 +142,7 @@ export class Tile {
     if (!itemMeta) return false;
     const flags = itemMeta.flags ?? 0;
 
-    if (!player.isDeveloper) {
+    if (!player.isDeveloper && !player.isModerator) {
       if (!(await this.world.hasTilePermission(player, this.data, LockPermission.BREAK)) && !(flags & BlockFlags.PUBLIC)) {
         await this.onPunchFail(player);
         return false;
@@ -256,6 +258,8 @@ export class Tile {
         ),
       );
     }
+
+    this.world.markDirty();
   }
 
   /**

@@ -68,7 +68,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect(effective).toEqual(raw);
   });
 
-  test("Go-Go-Growformer! vehicle mode renders car vehicle cleanly", () => {
+  test("Go-Go-Growformer! vehicle mode renders robot automaton cleanly", () => {
     const raw: PlayerClothes = {
       hair: 100,
       shirt: 200,
@@ -84,12 +84,55 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
 
     const effective = computeEffectiveClothes(raw, true);
     expect(effective.feet).toBe(GROWFORMER);
-    expect(effective.shirt).toBe(0);
-    expect(effective.pants).toBe(0);
-    expect(effective.hair).toBe(0);
+    expect(effective.shirt).toBe(1780);
+    expect(effective.pants).toBe(6384);
+    expect(effective.hair).toBe(16132);
+    expect(effective.back).toBe(7582);
     expect(effective.face).toBe(0);
-    expect(effective.hand).toBe(0);
-    expect(effective.back).toBe(156);
+    expect(effective.mask).toBe(0);
+  });
+
+  test("Transformed assassin hero suits render full-body iconic outfits", () => {
+    const ezioRaw: PlayerClothes = {
+      hair: 0,
+      shirt: 0,
+      pants: 0,
+      feet: 0,
+      face: 0,
+      hand: 0,
+      back: 0,
+      mask: 0,
+      necklace: EZIO,
+      ances: 0,
+    };
+    const ezioEffective = computeEffectiveClothes(ezioRaw, true);
+    expect(ezioEffective.hair).toBe(7080);
+    expect(ezioEffective.shirt).toBe(7082);
+    expect(ezioEffective.back).toBe(7084);
+    expect(ezioEffective.pants).toBe(7086);
+    expect(ezioEffective.hand).toBe(7088);
+    expect(ezioEffective.face).toBe(7090);
+    expect(ezioEffective.feet).toBe(7094);
+
+    const altairRaw: PlayerClothes = {
+      hair: 0,
+      shirt: 0,
+      pants: 0,
+      feet: 0,
+      face: 0,
+      hand: 0,
+      back: 0,
+      mask: 0,
+      necklace: 12646,
+      ances: 0,
+    };
+    const altairEffective = computeEffectiveClothes(altairRaw, true);
+    expect(altairEffective.hair).toBe(12740);
+    expect(altairEffective.shirt).toBe(12742);
+    expect(altairEffective.back).toBe(11016);
+    expect(altairEffective.pants).toBe(12744);
+    expect(altairEffective.hand).toBe(11020);
+    expect(altairEffective.feet).toBe(12746);
   });
 
   test("Hero suits are registered in WEARABLE_MODS and grant hero stats", () => {
@@ -116,14 +159,14 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect(transformMod?.speed).toBe(250);
     expect(transformMod?.punchType).toBe(20); // Official Legendbot exploding rockets punch
     expect((transformMod?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
-    expect((transformMod?.charState ?? 0) & CHARACTER_STATE.NO_BODY).not.toBe(0);
-    expect((transformMod?.charState ?? 0) & CHARACTER_STATE.NO_HANDS).not.toBe(0);
+    expect((transformMod?.charState ?? 0) & CHARACTER_STATE.NO_BODY).toBe(0);
+    expect((transformMod?.charState ?? 0) & CHARACTER_STATE.NO_HANDS).toBe(0);
 
     const transformedStats = computeStats([{ id: "transformed", expiresAt: 0 }]);
     expect(transformedStats.speed).toBe(1200 + 250);
     expect(transformedStats.punchType).toBe(20);
     expect((transformedStats.charState & CHARACTER_STATE.DOUBLE_JUMP) !== 0).toBe(true);
-    expect((transformedStats.charState & CHARACTER_STATE.NO_BODY) !== 0).toBe(true);
-    expect((transformedStats.charState & CHARACTER_STATE.NO_HANDS) !== 0).toBe(true);
+    expect((transformedStats.charState & CHARACTER_STATE.NO_BODY) !== 0).toBe(false);
+    expect((transformedStats.charState & CHARACTER_STATE.NO_HANDS) !== 0).toBe(false);
   });
 });

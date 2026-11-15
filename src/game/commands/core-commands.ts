@@ -448,8 +448,8 @@ registerCommand({
     if (player.state.isGhost) {
       player.state.characterState |= GHOST_STATE;
       if (world) {
-        world.broadcastVariant(Variant.from("OnParticleEffect", 3, [px, py]));
-        world.playPositioned("audio/spooky.wav", player.netID);
+        world.sendParticleEffect?.(3, px, py);
+        world.playPositioned?.("audio/spooky.wav", player.netID);
       }
       player.variants.sendOnConsoleMessage("`2Ghost mode enabled``. Haunted shadows swirl as you walk through blocks!");
       // semi-transparent white appearance
@@ -459,9 +459,9 @@ registerCommand({
     } else {
       player.state.characterState &= ~GHOST_STATE;
       if (world) {
-        world.broadcastVariant(Variant.from("OnParticleEffect", 3, [px, py]));
-        world.broadcastVariant(Variant.from("OnParticleEffect", 12, [px, py]));
-        world.playPositioned("audio/teleport.wav", player.netID);
+        world.sendParticleEffect?.(3, px, py);
+        world.sendParticleEffect?.(12, px, py);
+        world.playPositioned?.("audio/teleport.wav", player.netID);
       }
       player.variants.sendOnConsoleMessage("`4Ghost mode disabled``. You materialize back to normal.");
       player.sendClothesToWorld();
@@ -1373,17 +1373,17 @@ registerCommand({
     if (isCurrentlyInvisible) {
       player.state.characterState &= ~(CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS);
       if (world) {
-        world.broadcastVariant(Variant.from("OnParticleEffect", 3, [px, py]));
-        world.broadcastVariant(Variant.from("OnParticleEffect", 12, [px, py]));
-        world.playPositioned("audio/teleport.wav", player.netID);
+        world.sendParticleEffect?.(3, px, py);
+        world.sendParticleEffect?.(12, px, py);
+        world.playPositioned?.("audio/teleport.wav", player.netID);
       }
       player.sendClothesToWorld();
       player.variants.sendOnConsoleMessage("`4Invisibility disabled. You step back into reality.``");
     } else {
       player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
       if (world) {
-        world.broadcastVariant(Variant.from("OnParticleEffect", 3, [px, py]));
-        world.playPositioned("audio/spooky.wav", player.netID);
+        world.sendParticleEffect?.(3, px, py);
+        world.playPositioned?.("audio/spooky.wav", player.netID);
       }
       player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadows veil your presence.``");
     }
@@ -1574,7 +1574,7 @@ registerCommand({
     if (!world) return;
     const x = player.state.x + 10;
     const y = player.state.y + 16;
-    world.broadcastVariant(Variant.from("OnParticleEffect", id, [x, y]));
+    world.sendParticleEffect(id, x, y);
     player.variants.sendOnConsoleMessage(`\`2Spawned particle effect ID \`o${id}\`2 at (${Math.round(x)}, ${Math.round(y)})!\`\``);
   },
 });
@@ -2311,19 +2311,42 @@ registerCommand({
       return;
     }
 
-    // Default: Ezio Auditore (11560) or specific Assassin's Creed hero
-    const suitId = choice === "altair" ? 12646 : choice === "bayek" ? 12650 : choice === "sam" ? 11558 : 11560;
+    // Specific Assassin's Creed hero or default Ezio Auditore
     const heroName = choice === "altair" ? "Altair" : choice === "bayek" ? "Bayek" : choice === "sam" ? "Sam Fisher" : "Ezio Auditore";
-
     player.isTransformed = true;
-    player.inventory.clothes.hair = 7080;  // Ezio's Hood
-    player.inventory.clothes.shirt = 7082; // Ezio's Vest
-    player.inventory.clothes.back = 7084;  // Ezio's Cape
-    player.inventory.clothes.pants = 7086; // Ezio's Trousers
-    player.inventory.clothes.hand = 7088;  // Ezio's Armguards
-    player.inventory.clothes.face = 7090;  // Ezio's Beard
-    player.inventory.clothes.feet = 7094;  // Ezio's Boots
-    player.inventory.clothes.necklace = suitId; // Ezio/Hero Full-Body Suit!
+
+    if (choice === "altair") {
+      player.inventory.clothes.hair = 12740;  // Altair's Hood
+      player.inventory.clothes.shirt = 12742; // Altair's Vest
+      player.inventory.clothes.pants = 12744; // Altair's Trousers
+      player.inventory.clothes.feet = 12746;  // Altair's Boots
+      player.inventory.clothes.back = 11016;  // Dark Assassin's Cape
+      player.inventory.clothes.hand = 11020;  // Dark Assassin's Armguards
+      player.inventory.clothes.face = 0;
+      player.inventory.clothes.mask = 0;
+      player.inventory.clothes.necklace = 12646; // Altair
+    } else if (choice === "bayek") {
+      player.inventory.clothes.hair = 0;
+      player.inventory.clothes.mask = 12748;  // Bayek's Hood
+      player.inventory.clothes.shirt = 12750; // Bayek's Vest
+      player.inventory.clothes.pants = 12752; // Bayek's Trousers
+      player.inventory.clothes.feet = 12754;  // Bayek's Boots
+      player.inventory.clothes.back = 11016;
+      player.inventory.clothes.hand = 11020;
+      player.inventory.clothes.face = 0;
+      player.inventory.clothes.necklace = 12650; // Bayek
+    } else {
+      // Default: Ezio Auditore (11560)
+      player.inventory.clothes.hair = 7080;  // Ezio's Hood
+      player.inventory.clothes.shirt = 7082; // Ezio's Vest
+      player.inventory.clothes.back = 7084;  // Ezio's Cape
+      player.inventory.clothes.pants = 7086; // Ezio's Trousers
+      player.inventory.clothes.hand = 7088;  // Ezio's Armguards
+      player.inventory.clothes.face = 7090;  // Ezio's Beard
+      player.inventory.clothes.feet = 7094;  // Ezio's Boots
+      player.inventory.clothes.mask = 0;
+      player.inventory.clothes.necklace = 11560; // Ezio
+    }
 
     player.playMods?.add?.("hero_suit");
     player.sendClothesToWorld?.();

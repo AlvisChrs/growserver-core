@@ -76,6 +76,9 @@ describe("Invis & Ghost Haunted Shadows & Visual Effects", () => {
         broadcastVariant: (v: unknown) => {
           broadcastVariants.push(v);
         },
+        sendParticleEffect: (id: number, x: number, y: number) => {
+          broadcastVariants.push({ id, x, y });
+        },
         playPositioned: (sound: string) => {
           playedSound = sound;
         },
@@ -122,6 +125,7 @@ describe("Invis & Ghost Haunted Shadows & Visual Effects", () => {
         players: [],
         broadcastVariant: () => {},
         playPositioned: () => {},
+        sendParticleEffect: () => {},
       },
       variants: {
         sendOnConsoleMessage: () => {},

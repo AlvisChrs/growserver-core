@@ -45,12 +45,14 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
   world.broadcast(tank.parse()!, player.id);
 
   // Royal Lock rainbow trail for owner, admins, and developers when enabled
-  if (world.isRoyalLocked && world.worldLockTile?.worldLockData?.royalRainbows) {
+  const worldLock = world.worldLockTile?.worldLockData;
+  const royalRainbowsActive = world.isRoyalLocked && (worldLock?.royalRainbows ?? true);
+  if (royalRainbowsActive) {
     if (world.getOwnerPlayerId() === player.playerId || world.isWorldAdmin(player.playerId) || player.isDeveloper) {
       const now = Date.now();
       if (now - (player.lastRainbowAt ?? 0) >= 300) {
         player.lastRainbowAt = now;
-        world.broadcastVariant(Variant.from("OnParticleEffect", 14, [data.posX + 10, data.posY + 16]));
+        world.sendParticleEffect(14, data.posX + 10, data.posY + 16);
       }
     }
   }
@@ -62,22 +64,22 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
     if (now - (player.lastBackParticleAt ?? 0) >= 300) {
       if (backItem === 10424 && (player.riftCapeConfig?.particleTrail ?? true)) {
         player.lastBackParticleAt = now;
-        world.broadcastVariant(Variant.from("OnParticleEffect", 12, [data.posX + 10, data.posY + 16]));
+        world.sendParticleEffect(12, data.posX + 10, data.posY + 16);
       } else if (backItem === 11478 && (player.riftWingsConfig?.particleTrail ?? true)) {
         player.lastBackParticleAt = now;
-        world.broadcastVariant(Variant.from("OnParticleEffect", 12, [data.posX + 10, data.posY + 16]));
+        world.sendParticleEffect(12, data.posX + 10, data.posY + 16);
       } else if (backItem === 1674) {
         player.lastBackParticleAt = now;
-        world.broadcastVariant(Variant.from("OnParticleEffect", 45, [data.posX + 10, data.posY + 16]));
+        world.sendParticleEffect(45, data.posX + 10, data.posY + 16);
       } else if (backItem === 1672) {
         player.lastBackParticleAt = now;
-        world.broadcastVariant(Variant.from("OnParticleEffect", 14, [data.posX + 10, data.posY + 16]));
+        world.sendParticleEffect(14, data.posX + 10, data.posY + 16);
       } else if (backItem === 2256) {
         player.lastBackParticleAt = now;
-        world.broadcastVariant(Variant.from("OnParticleEffect", 46, [data.posX + 10, data.posY + 16]));
+        world.sendParticleEffect(46, data.posX + 10, data.posY + 16);
       } else if (backItem === 1550) {
         player.lastBackParticleAt = now;
-        world.broadcastVariant(Variant.from("OnParticleEffect", 36, [data.posX + 10, data.posY + 16]));
+        world.sendParticleEffect(36, data.posX + 10, data.posY + 16);
       }
     }
   }

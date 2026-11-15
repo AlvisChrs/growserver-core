@@ -405,7 +405,7 @@ for (const def of [
     removeMessage: "Powering down...",
     speed: 250,
     punchType: 20,
-    charState: CHARACTER_STATE.DOUBLE_JUMP | CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS,
+    charState: CHARACTER_STATE.DOUBLE_JUMP,
   }),
 
   // --- world-driven ------------------------------------------------------------

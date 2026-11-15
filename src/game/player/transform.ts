@@ -45,24 +45,46 @@ export const MORPH_ITEMS: ReadonlySet<number> = new Set([
 export function computeEffectiveClothes(clothes: Readonly<PlayerClothes>, isTransformed = false): PlayerClothes {
   const effective: PlayerClothes = { ...clothes };
 
-  if (isTransformed && FULL_BODY_SUITS.has(clothes.necklace)) {
-    // In full-body hero suit mode (Ezio, Altair, etc.), hide human torso, pants, hair, face, and shoes so the suit renders cleanly
-    effective.shirt = 0;
-    effective.pants = 0;
-    effective.hair = 0;
-    effective.face = 0;
-    effective.mask = 0;
-    effective.feet = 0;
-  }
-
-  if (isTransformed && clothes.feet === 7384) {
-    // In vehicle mode, hide human torso, pants, hair, and face so the car base renders cleanly
-    effective.shirt = 0;
-    effective.pants = 0;
-    effective.hair = 0;
-    effective.face = 0;
-    effective.mask = 0;
-    effective.hand = 0;
+  if (isTransformed) {
+    if (clothes.necklace === 11560) {
+      // Full-body Ezio Auditore: hooded assassin cowl, vest, cape, trousers, armguards, beard, boots
+      effective.hair = 7080;
+      effective.shirt = 7082;
+      effective.back = 7084;
+      effective.pants = 7086;
+      effective.hand = 7088;
+      effective.face = 7090;
+      effective.feet = 7094;
+      effective.mask = 0;
+    } else if (clothes.necklace === 12646) {
+      // Full-body Altair: Mentor hood, vest, cape, trousers, armguards, boots
+      effective.hair = 12740;
+      effective.shirt = 12742;
+      effective.back = 11016;
+      effective.pants = 12744;
+      effective.hand = 11020;
+      effective.feet = 12746;
+      effective.face = 0;
+      effective.mask = 0;
+    } else if (clothes.necklace === 12650) {
+      // Full-body Bayek of Siwa
+      effective.hair = 0;
+      effective.mask = 12748;
+      effective.shirt = 12750;
+      effective.back = 11016;
+      effective.pants = 12752;
+      effective.hand = 11020;
+      effective.feet = 12754;
+      effective.face = 0;
+    } else if (clothes.feet === 7384) {
+      // Growformer Robot Automaton: Legendbot chassis, robot legs, wings, and helmet
+      effective.shirt = 1780;  // Legendbot-009
+      effective.pants = 6384;  // Robot Legs
+      effective.hair = 16132;  // Robotic Helmet
+      effective.back = 7582;   // Robotic MK.IV Wings
+      effective.face = 0;
+      effective.mask = 0;
+    }
   }
 
   return effective;

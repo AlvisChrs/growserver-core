@@ -190,7 +190,7 @@ function triggerRiftEffect(player: Player, summary: string): void {
   const py = player.state.y + 16;
 
   if (world) {
-    world.broadcastVariant(Variant.from("OnParticleEffect", 12, [px, py]));
+    world.sendParticleEffect(12, px, py);
     world.playPositioned("audio/magic_hit.wav", player.netID);
   }
 

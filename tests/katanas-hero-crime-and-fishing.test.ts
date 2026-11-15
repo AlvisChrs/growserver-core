@@ -31,18 +31,18 @@ describe("Legendary Katana & Katana Series", () => {
 
   test("Elemental and cursed katanas are equipped with distinctive custom slash punch effects", () => {
     const cursed = WEARABLE_MODS.get(9058);
-    expect(cursed?.punchType).toBe(43);
+    expect(cursed?.punchType).toBe(29); // Blood-red slasher dark cut
     expect(cursed?.punchPower).toBe(300);
 
     const sonic = WEARABLE_MODS.get(11118);
-    expect(sonic?.punchType).toBe(43);
+    expect(sonic?.punchType).toBe(8); // Cyan sonic energy wave blast
     expect(sonic?.speed).toBe(120);
 
     const dark = WEARABLE_MODS.get(13710);
-    expect(dark?.punchType).toBe(43);
+    expect(dark?.punchType).toBe(13); // Dark shadow reaper slash
 
     const immortal = WEARABLE_MODS.get(16428);
-    expect(immortal?.punchType).toBe(43);
+    expect(immortal?.punchType).toBe(8); // Enhanced sonic blast
     expect(immortal?.speed).toBe(140);
     expect((immortal?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
   });

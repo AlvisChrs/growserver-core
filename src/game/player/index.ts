@@ -76,25 +76,37 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   5980: 80,  // Floating Fists
   12018: 80, // Rok's Fists
 
-  // Katanas & Japanese Blades (43 = Iconic blade slice & anime slash)
-  2592: 43,  // Legendary Katana
-  3838: 43,  // Dueling Katanas
+  // Katanas & Japanese Blades:
+  // 43 = Legendary golden multi-blade anime slice
+  // 29 = Cursed Katana (blood-red slasher dark cut)
+  // 13 = Dark Magic Katana (dark shadow reaper slash)
+  // 8 = Sonic Buster Katana (cyan sonic blast / energy wave)
+  2592: 43,  // Legendary Katana (Golden anime slice)
+  3838: 43,  // Dueling Katanas (Twin blade slice)
   7830: 43,  // Heartsword
   7832: 43,  // Golden Heartsword
-  9058: 43,  // Cursed Katana
+  9058: 29,  // Cursed Katana (Blood-red slasher dark cut)
   9116: 43,  // Red Laser Scimitar
   9118: 43,  // Green Laser Scimitar
   9120: 43,  // Blue Laser Scimitar
   9122: 43,  // Purple Laser Scimitar
   10402: 43, // Christmas Tree Sword
-  11118: 43, // Sonic Buster Katana
+  11118: 8,  // Sonic Buster Katana (Cyan sonic blast wave)
   11298: 43, // Sakura's Revenge
   12342: 43, // Mageblade
-  13710: 43, // Dark Magic Katana
+  13710: 13, // Dark Magic Katana (Dark shadow reaper slash)
   14018: 43, // Greatest Swordsman's Dual Wield
   14380: 43, // Fierce Wingman Blades
   14764: 43, // Blade of Revolt
-  16428: 43, // Immortal Sonic Buster Katana
+  16428: 8,  // Immortal Sonic Buster Katana (Enhanced sonic blast)
+
+  // Growsabers (43 = Saber plasma slash)
+  802: 43,   // Red Growsaber
+  804: 43,   // Black Growsaber
+  806: 43,   // Green Growsaber
+  808: 43,   // Blue Growsaber
+  810: 43,   // Flamesaber
+  812: 43,   // Double Growsaber
 
   // Scythes (13 = Reaper dark soul slash, 36 = Heavenly, 42 = Flame)
   1068: 13,  // Hand Scythe
@@ -139,19 +151,40 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   1676: 17,  // Squirt Gun
   1710: 18,  // Keytar
   1748: 19,  // Flamethrower
-  1780: 20,  // Legendbot-009
+  1780: 20,  // Legendbot-009 (Rocket missile punch)
   1958: 8,   // Death Ray (Alternate ID)
   2752: 45,  // Pineapple Launcher
   3066: 57,  // Fire Hose
   3300: 64,  // Party Blaster
   3716: 69,  // Neutron Gun / Pack
+  4464: 3,   // AK-8087 (Bullet projectile)
   4474: 72,  // Skull Launcher
+  4508: 8,   // Unearthly Synthoid (Laser beam)
   4840: 78,  // Balloon Launcher
   6058: 9,   // Dual Six-Shooters
+  9082: 20,  // Rocket-Powered Warhammer (Rocket slam)
+  9698: 8,   // Arm Blaster (Mega laser blast)
   10626: 8,  // Rose Rifle
   10724: 3,  // Lil Growpeep's Baaaa Blaster
   11312: 8,  // Spider Sniper
   12014: 8,  // Dal's Phasers
+  12024: 8,  // Mine Laser Drill
+  12300: 43, // Arm Blades (Blade slash)
+  12374: 20, // Mighty Legend Gauntlets (Spirit / rocket punch)
+  14306: 8,  // Captain Laserhawk's Arm (Laser blast)
+
+  // Swords, Knives & Slicers (29 = Slasher slice, 43 = Blade slice)
+  1980: 29,  // Claw Glove
+  2636: 43,  // Rapier
+  2908: 29,  // Carrot Sword
+  3070: 29,  // Fire Ax
+  3108: 29,  // Chainsaw Hand
+  3160: 43,  // Sword And Shield
+  3162: 43,  // Twin Swords
+  3466: 29,  // Slasher
+  3588: 29,  // Climbing Picks
+  4506: 29,  // Machete
+  8942: 43,  // Dual Crescent Blade
 
   // Bows & Crossbows (4 = Arrow, 2 = Hearts, 44 = Electric)
   278: 2,    // Heart Bow
@@ -236,9 +269,11 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   15192: 50, // Good Witch's Wand
   15858: 50, // Staff of the North Star
 
-  // Fists & Boxing Gloves
+  // Fists, Boxing Gloves & Fans
   96: 1,     // Boxing Gloves
   7940: 1,   // Flaming Boxing Gloves
+  9304: 1,   // Brutal Hand Fans
+  11990: 1,  // Baby Guzzler
 
   // Face: Eyes & Visors
   138: 1,    // Cyclopean Visor (Optic blast)
@@ -248,6 +283,7 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   2476: 39,  // Burning Eyes (Fiery flame punch)
   2976: 10,  // Cybernetic Eye
   10336: 39, // Black Burning Eyes (Dark flame punch)
+  14294: 10, // Captain Laserhawk's Eye (Optic zap)
 
   // Hair / Head: Eyes, Horns, Crowns & Wigs
   306: 14,   // Rainbow Wig (Rainbow burst)
@@ -260,6 +296,14 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   4750: 75,  // Double Energized Horns (Horn lightning)
   8372: 8,   // Giant Eye Head (Baleful optic gaze)
   9034: 19,  // Horns of the Underworld (Demon flame)
+
+  // Shirt: Legendary Armor & Robot Suits
+  1780: 20,  // Legendbot-009 (Rocket missile punch)
+  12424: 20, // Mighty Legend Armor (Rocket missile punch)
+  14310: 8,  // Captain Laserhawk's Shirt (Laser blast)
+
+  // Pants: Robot Legs & Combat Greaves
+  6384: 5,   // Robot Legs (Rocket thruster stomp)
 
   // Back: Wings & Capes
   160: 19,   // Demon Wings (Dark flame)
@@ -283,6 +327,7 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   1946: 25,  // Ice Calf Leash (Frost beam)
   1968: 13,  // Death's Scarf (Dark pulse)
   2066: 31,  // Cosmic Unicorn Bracelet (Cosmic pulse)
+  12288: 13, // Pet Punching Ghost (Ghost spirit slash)
 
   // Masks
   912: 6,    // Dragon Mask (Dragon fire)
@@ -292,7 +337,9 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   8996: 13,  // Anubis Mask (Sand magic)
 
   // Feet
+  1940: 5,   // Diamond Rocket Shoes (Rocket propulsion)
   7384: 5,   // Go-Go-Growformer! (Rocket explosion)
+  9252: 5,   // Confetti Rocket Shoes (Confetti rocket propulsion)
 };
 
 export class Player {
@@ -1089,42 +1136,62 @@ export class Player {
       }
     }
 
-    // 3. Face accessories (Burning Eyes: 39, Black Burning Eyes: 39, Focused Eyes: 10, Cyclopean Visor: 1)
+    // 3. Shirt accessories (Legendbot-009: 20, Mighty Legend Armor: 20, Captain Laserhawk's Shirt: 8)
+    const shirtItem = this.effectiveClothes.shirt || this.inventory.clothes.shirt;
+    if (shirtItem && WEAPON_PUNCH_TYPES[shirtItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[shirtItem]!;
+    }
+
+    // 4. Face accessories (Burning Eyes: 39, Black Burning Eyes: 39, Focused Eyes: 10, Cyclopean Visor: 1)
     const faceItem = this.effectiveClothes.face || this.inventory.clothes.face;
     if (faceItem && WEAPON_PUNCH_TYPES[faceItem] !== undefined) {
       return WEAPON_PUNCH_TYPES[faceItem]!;
     }
 
-    // 4. Head / Hair accessories (Giant Eye Head: 8, Energized Horns: 75, Diamond Horns: 40, Rainbow Wig: 14)
+    // 5. Head / Hair accessories (Giant Eye Head: 8, Energized Horns: 75, Diamond Horns: 40, Rainbow Wig: 14)
     const hairItem = this.effectiveClothes.hair || this.inventory.clothes.hair;
     if (hairItem && WEAPON_PUNCH_TYPES[hairItem] !== undefined) {
       return WEAPON_PUNCH_TYPES[hairItem]!;
     }
 
-    // 5. Back accessories (Phoenix Wings: 19, Rainbow Wings: 14, Da Vinci Wings: 4, Heroman Cape: 1)
+    // 6. Back accessories (Phoenix Wings: 19, Rainbow Wings: 14, Da Vinci Wings: 4, Heroman Cape: 1)
     const backItem = this.effectiveClothes.back || this.inventory.clothes.back;
     if (backItem && WEAPON_PUNCH_TYPES[backItem] !== undefined) {
       return WEAPON_PUNCH_TYPES[backItem]!;
     }
 
-    // 6. Active play mod punch type (food, potions, consumables)
-    if (this.characterStats.punchType) return this.characterStats.punchType;
+    // 7. Pants accessories (Robot Legs: 5)
+    const pantsItem = this.effectiveClothes.pants || this.inventory.clothes.pants;
+    if (pantsItem && WEAPON_PUNCH_TYPES[pantsItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[pantsItem]!;
+    }
 
-    // 7. Other clothing slots (necklace, mask, feet)
+    // 8. Feet accessories (Go-Go-Growformer!: 5, Diamond Rocket Shoes: 5)
+    const feetItem = this.effectiveClothes.feet || this.inventory.clothes.feet;
+    if (feetItem && WEAPON_PUNCH_TYPES[feetItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[feetItem]!;
+    }
+
+    // 9. Necklace & Leashes (Dragon of Legend: 21, Ring of Force: 24, Ice Calf Leash: 25)
     const neckItem = this.effectiveClothes.necklace || this.inventory.clothes.necklace;
     if (neckItem && WEAPON_PUNCH_TYPES[neckItem] !== undefined) {
       return WEAPON_PUNCH_TYPES[neckItem]!;
     }
 
+    // 10. Mask accessories (Dragon Mask: 6, Anubis Mask: 13)
     const maskItem = this.effectiveClothes.mask || this.inventory.clothes.mask;
     if (maskItem && WEAPON_PUNCH_TYPES[maskItem] !== undefined) {
       return WEAPON_PUNCH_TYPES[maskItem]!;
     }
 
-    const feetItem = this.effectiveClothes.feet || this.inventory.clothes.feet;
-    if (feetItem && WEAPON_PUNCH_TYPES[feetItem] !== undefined) {
-      return WEAPON_PUNCH_TYPES[feetItem]!;
+    // 11. Ancestral items
+    const ancesItem = this.effectiveClothes.ances || this.inventory.clothes.ances;
+    if (ancesItem && WEAPON_PUNCH_TYPES[ancesItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[ancesItem]!;
     }
+
+    // 12. Active play mod punch type (food, potions, consumables)
+    if (this.characterStats.punchType) return this.characterStats.punchType;
 
     return 0;
   }

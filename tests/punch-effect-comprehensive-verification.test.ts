@@ -6,12 +6,12 @@ import { ActionTypes, ITEM_ID } from "../src/game/world/constants";
 describe("Comprehensive Punch Effects & Weapon Category Fallbacks", () => {
   test("WEAPON_PUNCH_TYPES includes all authentic weapons across Growtopia categories", () => {
     // Katanas
-    expect(WEAPON_PUNCH_TYPES[2592]).toBe(43); // Legendary Katana
-    expect(WEAPON_PUNCH_TYPES[3838]).toBe(43); // Dueling Katanas
-    expect(WEAPON_PUNCH_TYPES[9058]).toBe(43); // Cursed Katana
-    expect(WEAPON_PUNCH_TYPES[11118]).toBe(43); // Sonic Buster Katana
-    expect(WEAPON_PUNCH_TYPES[13710]).toBe(43); // Dark Magic Katana
-    expect(WEAPON_PUNCH_TYPES[16428]).toBe(43); // Immortal Sonic Buster Katana
+    expect(WEAPON_PUNCH_TYPES[2592]).toBe(43); // Legendary Katana (Golden anime slice)
+    expect(WEAPON_PUNCH_TYPES[3838]).toBe(43); // Dueling Katanas (Twin blade slice)
+    expect(WEAPON_PUNCH_TYPES[9058]).toBe(29); // Cursed Katana (Blood-red slasher dark cut)
+    expect(WEAPON_PUNCH_TYPES[11118]).toBe(8);  // Sonic Buster Katana (Cyan sonic wave blast)
+    expect(WEAPON_PUNCH_TYPES[13710]).toBe(13); // Dark Magic Katana (Dark shadow reaper slash)
+    expect(WEAPON_PUNCH_TYPES[16428]).toBe(8);  // Immortal Sonic Buster Katana (Enhanced sonic blast)
 
     // Scythes
     expect(WEAPON_PUNCH_TYPES[1068]).toBe(13); // Hand Scythe
@@ -122,14 +122,19 @@ describe("Comprehensive Punch Effects & Weapon Category Fallbacks", () => {
     expect(mock.punchId).toBe(57);
   });
 
-  test("Player punchId priority when hand is bare: Face > Head > Back > Neck > Mask > Feet", () => {
+  test("Player punchId priority when hand is bare: Shirt > Face > Head > Back > Neck > Mask > Feet", () => {
     const mock = new Player({} as any, "test", 17091);
     mock.inventory.clothes.hand = 0; // Bare fist
 
-    // Face item: Burning Eyes (39)
-    mock.inventory.clothes.face = 2476;
+    // Shirt item: Legendbot-009 (20: Rocket Punch)
+    mock.inventory.clothes.shirt = 1780;
+    mock.inventory.clothes.face = 2476; // Burning Eyes (39)
     mock.inventory.clothes.hair = 8372; // Giant Eye Head (8)
     mock.inventory.clothes.back = 1674; // Phoenix Wings (19)
+    expect(mock.punchId).toBe(20);
+
+    // Clear shirt: Burning Eyes (39) takes over
+    mock.inventory.clothes.shirt = 0;
     expect(mock.punchId).toBe(39);
 
     // Clear face: Giant Eye Head (8) takes over

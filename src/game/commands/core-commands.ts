@@ -2071,39 +2071,81 @@ registerCommand({
 
 registerCommand({
   name: "hero",
-  aliases: ["superhero", "herosuit", "assassin"],
-  description: "Equip superhero suit and activate hero mode",
+  aliases: ["superhero", "herosuit", "assassin", "ezio"],
+  description: "Transform into a legendary hero (Ezio Auditore or Superhero)",
   role: PLAYER_ROLE.USER,
-  execute(player) {
-    const heroItems = [
-      11560, // Ezio Full-Body Suit
-      12646, // Altair Full-Body Suit
-      11558, // Sam Fisher Full-Body Suit
-      12648, // Eivor Full-Body Suit
-      12650, // Bayek Full-Body Suit
-      13892, // Basim Full-Body Suit
+  execute(player, args) {
+    const choice = (args[0] ?? "").toLowerCase();
+
+    if (choice === "super" || choice === "superhero") {
+      const superItems = [
+        2134, // Superhero Mask - Red
+        2170, // Superheroine Top - Red
+        2098, // Heroic Tights - Red
+        2122, // Heroic Boots - Red
+        350,  // Heroman Cape
+      ];
+      for (const id of superItems) {
+        if (!player.inventory.hasItem(id)) player.addItemInven(id, 1);
+      }
+      player.inventory.clothes.hair = 0;
+      player.inventory.clothes.mask = 2134;
+      player.inventory.clothes.shirt = 2170;
+      player.inventory.clothes.pants = 2098;
+      player.inventory.clothes.feet = 2122;
+      player.inventory.clothes.back = 350;
+      player.inventory.clothes.necklace = 0;
+
+      player.playMods.add("hero_suit");
+      player.sendClothesToWorld();
+      player.sendCharacterState();
+      player.sendInventory();
+      player.sendSfx("audio/change_clothes.wav");
+      player.sendTextBubble("`5Up, up, and away! Superhero powers engaged!``", true);
+      player.variants.sendOnConsoleMessage("`5Transformed into Superhero! Double jump and heroic speed activated!``");
+      player.variants.sendOnConsoleMessage("`oTip: Type /hero ezio to transform into Ezio Auditore!``");
+      return;
+    }
+
+    // Default: Ezio Auditore Complete Assassin Transformation
+    const ezioItems = [
+      7080,  // Ezio's Hood
+      7082,  // Ezio's Vest
+      7084,  // Ezio's Cape
+      7086,  // Ezio's Trousers
+      7088,  // Ezio's Armguards
+      7090,  // Ezio's Beard
+      7094,  // Ezio's Boots
+      11560, // Ezio Morph
+      12646, // Altair
+      11558, // Sam Fisher
       350,   // Heroman Cape
-      2134,  // Superhero Mask - Red
-      2142,  // Superhero Mask - Black
-      2098,  // Heroic Tights - Red
-      2104,  // Heroic Tights - Black
-      2122,  // Heroic Boots - Red
-      2128,  // Heroic Boots - Black
-      2170,  // Superheroine Top - Red
+      2134,  // Superhero Mask
+      2098,  // Superhero Tights
+      2170,  // Superhero Top
     ];
-    for (const id of heroItems) {
+    for (const id of ezioItems) {
       if (!player.inventory.hasItem(id)) player.addItemInven(id, 1);
     }
-    player.equipClothes(11560);
-    player.equipClothes(350);
+
+    // Directly equip the complete authentic Ezio Assassin set
+    player.inventory.clothes.hair = 7080;
+    player.inventory.clothes.shirt = 7082;
+    player.inventory.clothes.back = 7084;
+    player.inventory.clothes.pants = 7086;
+    player.inventory.clothes.hand = 7088;
+    player.inventory.clothes.face = 7090;
+    player.inventory.clothes.feet = 7094;
+    player.inventory.clothes.necklace = 11560;
 
     player.playMods.add("hero_suit");
     player.sendClothesToWorld();
     player.sendCharacterState();
+    player.sendInventory();
     player.sendSfx("audio/change_clothes.wav");
-    player.sendTextBubble("`5Up, up, and away! Hero suit equipped!``", true);
-    player.variants.sendOnConsoleMessage("`5Hero suits received! Equipped Ezio (#11560) and Cape (#350). Double jump, speed boost, and extended reach active!``");
-    player.variants.sendOnConsoleMessage("`oTip: Check inventory for Altair (#12646), Sam Fisher (#11558), Eivor (#12648), Bayek (#12650), Basim (#13892), and classic Superhero tights!``");
+    player.sendTextBubble("`5Nothing is true, everything is permitted! Ezio transformed!``", true);
+    player.variants.sendOnConsoleMessage("`5Transformed into Ezio Auditore! Equipped Ezio's Hood, Vest, Cape, Trousers, Armguards, Boots, and Morph!``");
+    player.variants.sendOnConsoleMessage("`oTip: Type /hero super to transform into classic Superhero!``");
   },
 });
 
@@ -2127,11 +2169,16 @@ registerCommand({
     for (const id of items) {
       if (!player.inventory.hasItem(id)) player.addItemInven(id, 1);
     }
-    // Auto-equip Go-Go-Growformer so player is instantly ready to roll out
-    player.equipClothes(7384);
+    // Auto-equip Go-Go-Growformer and transform into vehicle mode
+    if (player.inventory?.clothes) player.inventory.clothes.feet = 7384;
+    else player.equipClothes?.(7384);
+    if (!player.isTransformed) {
+      player.toggleTransform?.();
+    } else {
+      player.sendClothesToWorld?.();
+      player.sendCharacterState?.();
+    }
     player.sendInventory();
-    player.sendClothesToWorld();
-    player.sendCharacterState();
     player.sendSfx("audio/jet_engine01.wav");
     player.sendTextBubble("`3Transform gear loaded! Roll out!``", true);
     player.variants.sendOnConsoleMessage("`3[Transforms]: Received Go-Go-Growformer! (#7384), PowerKey (#7480), Mystic Transform Crystal (#10456), Space Rabbit (#10960), and Hero Suits!``");

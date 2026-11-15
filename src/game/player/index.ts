@@ -610,6 +610,7 @@ export class Player {
   public untransform(): void {
     if (!this.isTransformed) return;
     this.isTransformed = false;
+    this.state.characterState &= ~(CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS);
     this.playMods.remove("transformed");
     this.sendTextBubble("`4Powering down...``", true);
     this.variants.sendOnConsoleMessage("`4Transform mode deactivated.``");
@@ -632,6 +633,7 @@ export class Player {
 
     if (this.isTransformed) {
       if (this.inventory.clothes.feet === 7384) {
+        this.state.characterState |= CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS;
         this.playMods.add("transformed");
         this.sendTextBubble("`3Growformer, Roll Out!``", true);
         this.variants.sendOnConsoleMessage("`3Go-Go-Growformer: Activated! Transforming into vehicle mode!``");
@@ -642,12 +644,14 @@ export class Player {
         this.variants.sendOnConsoleMessage("`5Hero transformation activated! Unleash the legend within!``");
         this.sendSfx("audio/change_clothes.wav");
       } else {
+        this.state.characterState |= CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS;
         this.playMods.add("transformed");
         this.sendTextBubble("`2Transformed!``", true);
         this.variants.sendOnConsoleMessage("`2Transform mode activated!``");
         this.sendSfx("audio/jet_engine01.wav");
       }
     } else {
+      this.state.characterState &= ~(CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS);
       this.playMods.remove("transformed");
       this.sendTextBubble("`4Powering down...``", true);
       this.variants.sendOnConsoleMessage("`4Transform mode deactivated.``");

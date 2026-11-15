@@ -29,20 +29,20 @@ describe("Legendary Katana & Katana Series", () => {
     expect((stats.charState & CHARACTER_STATE.DOUBLE_JUMP) !== 0).toBe(true);
   });
 
-  test("Elemental and cursed katanas are registered with proper unique punchTypes and weapon stats", () => {
+  test("Elemental and cursed katanas rely on native hand item rendering without conflicting punch overrides", () => {
     const cursed = WEARABLE_MODS.get(9058);
-    expect(cursed?.punchType).toBe(81);
+    expect(cursed?.punchType).toBeUndefined();
     expect(cursed?.punchPower).toBe(300);
 
     const sonic = WEARABLE_MODS.get(11118);
-    expect(sonic?.punchType).toBe(125);
+    expect(sonic?.punchType).toBeUndefined();
     expect(sonic?.speed).toBe(120);
 
     const dark = WEARABLE_MODS.get(13710);
-    expect(dark?.punchType).toBe(135);
+    expect(dark?.punchType).toBeUndefined();
 
     const immortal = WEARABLE_MODS.get(16428);
-    expect(immortal?.punchType).toBe(145);
+    expect(immortal?.punchType).toBeUndefined();
     expect(immortal?.speed).toBe(140);
     expect((immortal?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
   });
@@ -318,7 +318,7 @@ describe("Fishing & Aquarium Verification", () => {
     expect(mockPlayer.fishing?.baitId).toBe(2914);
   });
 
-  test("/hero gives full-body hero suits and equips Ezio with hero_suit mod", () => {
+  test("/hero transforms player into Ezio Auditore and gives hero items", () => {
     const cmd = findCommand("hero");
     expect(cmd).toBeDefined();
 
@@ -328,18 +328,16 @@ describe("Fishing & Aquarium Verification", () => {
 
     const mockPlayer = {
       inventory: {
+        clothes,
         hasItem: (id: number) => inv.has(id),
       },
       addItemInven: (id: number, count = 1) => inv.set(id, (inv.get(id) ?? 0) + count),
-      equipClothes: (id: number) => {
-        if (id === 11560) clothes.necklace = id;
-        if (id === 350) clothes.back = id;
-      },
       playMods: {
         add: (id: string) => mods.add(id),
       },
       sendClothesToWorld: () => {},
       sendCharacterState: () => {},
+      sendInventory: () => {},
       sendSfx: () => {},
       sendTextBubble: () => {},
       variants: { sendOnConsoleMessage: () => {} },
@@ -347,13 +345,24 @@ describe("Fishing & Aquarium Verification", () => {
 
     cmd?.execute(mockPlayer, []);
 
-    expect(inv.has(11560)).toBe(true); // Ezio
-    expect(inv.has(12646)).toBe(true); // Altair
-    expect(inv.has(11558)).toBe(true); // Sam Fisher
-    expect(inv.has(350)).toBe(true);   // Cape
-    expect(clothes.necklace).toBe(11560);
-    expect(clothes.back).toBe(350);
+    // Full Ezio outfit equipped
+    expect(clothes.hair).toBe(7080); // Ezio's Hood
+    expect(clothes.shirt).toBe(7082); // Ezio's Vest
+    expect(clothes.back).toBe(7084); // Ezio's Cape
+    expect(clothes.pants).toBe(7086); // Ezio's Trousers
+    expect(clothes.hand).toBe(7088); // Ezio's Armguards
+    expect(clothes.face).toBe(7090); // Ezio's Beard
+    expect(clothes.feet).toBe(7094); // Ezio's Boots
+    expect(clothes.necklace).toBe(11560); // Ezio Morph
     expect(mods.has("hero_suit")).toBe(true);
+
+    // /hero super transforms into Superhero
+    cmd?.execute(mockPlayer, ["super"]);
+    expect(clothes.mask).toBe(2134);
+    expect(clothes.shirt).toBe(2170);
+    expect(clothes.pants).toBe(2098);
+    expect(clothes.feet).toBe(2122);
+    expect(clothes.back).toBe(350);
   });
 
   test("/transforms gives Go-Go-Growformer!, PowerKey, Mystic Crystal, and Space Rabbit", () => {
@@ -365,7 +374,12 @@ describe("Fishing & Aquarium Verification", () => {
 
     const mockPlayer = {
       inventory: {
+        clothes,
         hasItem: (id: number) => inv.has(id),
+      },
+      isTransformed: false,
+      toggleTransform() {
+        this.isTransformed = true;
       },
       addItemInven: (id: number, count = 1) => inv.set(id, (inv.get(id) ?? 0) + count),
       equipClothes: (id: number) => {

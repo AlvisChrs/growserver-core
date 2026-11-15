@@ -151,29 +151,32 @@ describe("Lava & Deadly Hazard Lethality", () => {
 });
 
 describe("Punch Weapons & Carnival Rings Registration", () => {
-  test("Rayman's Fist (5980) grants punchType 120 and extended range", () => {
-    const rayman = WEARABLE_MODS.get(5980);
+  test("Rayman's Fist (5480) grants canonical punchType 80 and extended range", () => {
+    const rayman = WEARABLE_MODS.get(5480);
     expect(rayman).toBeDefined();
-    expect(rayman?.punchType).toBe(120);
+    expect(rayman?.punchType).toBe(80);
     expect(rayman?.punchRange).toBe(2);
   });
 
-  test("Death Ray (1958) grants punchType 12", () => {
+  test("Death Ray (1958) grants canonical laser punchType 8", () => {
     const deathRay = WEARABLE_MODS.get(1958);
     expect(deathRay).toBeDefined();
-    expect(deathRay?.punchType).toBe(12);
+    expect(deathRay?.punchType).toBe(8);
   });
 
-  test("Pickaxes (98, 1440, 2572) grant their classic mining punch effects", () => {
-    expect(WEARABLE_MODS.get(98)?.punchType).toBe(1);
-    expect(WEARABLE_MODS.get(1440)?.punchType).toBe(2);
-    expect(WEARABLE_MODS.get(2572)?.punchType).toBe(5);
+  test("Pickaxes (98, 1438) grant mining damage and knockback without projectile overrides", () => {
+    expect(WEARABLE_MODS.get(98)?.punchDamage).toBe(1);
+    expect(WEARABLE_MODS.get(98)?.punchType).toBeUndefined();
+    expect(WEARABLE_MODS.get(1438)?.punchDamage).toBe(2);
+    expect(WEARABLE_MODS.get(1438)?.punchType).toBeUndefined();
   });
 
-  test("Carnival Rings (1874, 1876, 1932, etc.) grant authentic ring punch effects", () => {
-    expect(WEARABLE_MODS.get(1874)?.punchType).toBe(40);
-    expect(WEARABLE_MODS.get(1876)?.punchType).toBe(41);
-    expect(WEARABLE_MODS.get(11094)?.punchType).toBe(52);
+  test("Ring of Force (1874) grants kinetic punchType 24, while passive rings grant clean stats", () => {
+    expect(WEARABLE_MODS.get(1874)?.punchType).toBe(24);
+    expect(WEARABLE_MODS.get(1876)?.speed).toBe(60);
+    expect(WEARABLE_MODS.get(1876)?.punchType).toBeUndefined();
+    expect(WEARABLE_MODS.get(11094)?.punchRange).toBe(2);
+    expect(WEARABLE_MODS.get(11094)?.punchType).toBeUndefined();
   });
 });
 

@@ -42,6 +42,18 @@ export const MORPH_ITEMS: ReadonlySet<number> = new Set([
  * Computes the visually effective clothes sent to clients via `OnSetClothing`.
  * Preserves all worn items so avatars never become invisible and clothes unequip cleanly.
  */
-export function computeEffectiveClothes(clothes: Readonly<PlayerClothes>, _isTransformed = false): PlayerClothes {
-  return { ...clothes };
+export function computeEffectiveClothes(clothes: Readonly<PlayerClothes>, isTransformed = false): PlayerClothes {
+  const effective: PlayerClothes = { ...clothes };
+
+  if (isTransformed && clothes.feet === 7384) {
+    // In vehicle mode, hide human torso, pants, hair, and face so the car base renders cleanly
+    effective.shirt = 0;
+    effective.pants = 0;
+    effective.hair = 0;
+    effective.face = 0;
+    effective.mask = 0;
+    effective.hand = 0;
+  }
+
+  return effective;
 }

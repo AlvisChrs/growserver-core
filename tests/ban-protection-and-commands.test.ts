@@ -164,9 +164,9 @@ describe("Lingering Punch Effect & Untransform Bug Prevention", () => {
     player.state.characterState |= CHARACTER_STATE.NO_BODY | CHARACTER_STATE.NO_HANDS;
     player.playMods.add("transformed");
 
-    // Punch effect is 12 (Laser punch) while transformed
-    expect(player.characterStats.punchType).toBe(12);
-    expect(player.punchId).toBe(12);
+    // Punch effect is 20 (Rocket punch) while transformed
+    expect(player.characterStats.punchType).toBe(20);
+    expect(player.punchId).toBe(20);
     expect(player.state.characterState & CHARACTER_STATE.NO_BODY).toBeTruthy();
 
     // Step 2: Unequip Growformer

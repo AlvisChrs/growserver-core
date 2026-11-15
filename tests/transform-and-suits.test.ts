@@ -68,7 +68,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect(effective).toEqual(raw);
   });
 
-  test("Go-Go-Growformer! vehicle mode preserves character clothes so avatar is never invisible", () => {
+  test("Go-Go-Growformer! vehicle mode renders car vehicle cleanly", () => {
     const raw: PlayerClothes = {
       hair: 100,
       shirt: 200,
@@ -84,11 +84,11 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
 
     const effective = computeEffectiveClothes(raw, true);
     expect(effective.feet).toBe(GROWFORMER);
-    expect(effective.hair).toBe(100);
-    expect(effective.shirt).toBe(200);
-    expect(effective.pants).toBe(300);
-    expect(effective.face).toBe(500);
-    expect(effective.hand).toBe(98);
+    expect(effective.shirt).toBe(0);
+    expect(effective.pants).toBe(0);
+    expect(effective.hair).toBe(0);
+    expect(effective.face).toBe(0);
+    expect(effective.hand).toBe(0);
     expect(effective.back).toBe(156);
   });
 
@@ -114,12 +114,16 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     const transformMod = PLAY_MODS.get("transformed");
     expect(transformMod).toBeDefined();
     expect(transformMod?.speed).toBe(250);
-    expect(transformMod?.punchType).toBe(12); // Rocket punch
+    expect(transformMod?.punchType).toBe(20); // Official Legendbot exploding rockets punch
     expect((transformMod?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
+    expect((transformMod?.charState ?? 0) & CHARACTER_STATE.NO_BODY).not.toBe(0);
+    expect((transformMod?.charState ?? 0) & CHARACTER_STATE.NO_HANDS).not.toBe(0);
 
     const transformedStats = computeStats([{ id: "transformed", expiresAt: 0 }]);
     expect(transformedStats.speed).toBe(1200 + 250);
-    expect(transformedStats.punchType).toBe(12);
+    expect(transformedStats.punchType).toBe(20);
     expect((transformedStats.charState & CHARACTER_STATE.DOUBLE_JUMP) !== 0).toBe(true);
+    expect((transformedStats.charState & CHARACTER_STATE.NO_BODY) !== 0).toBe(true);
+    expect((transformedStats.charState & CHARACTER_STATE.NO_HANDS) !== 0).toBe(true);
   });
 });

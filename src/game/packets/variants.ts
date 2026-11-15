@@ -365,7 +365,7 @@ export class VariantHandler {
    * Sends OnSetClothing for an avatar.
    * @param skinColor Raw 32-bit skin color exactly as the client expects it (e.g. 0x8295c3ff).
    */
-  public sendClothes(targetNetID: number, clothes: PlayerClothes, skinColor: number) {
+  public sendClothes(targetNetID: number, clothes: PlayerClothes, skinColor: number, capeColor = 0, collarColor = 0) {
     const variant = Variant.from(
       { netID: targetNetID },
       "OnSetClothing",
@@ -373,7 +373,7 @@ export class VariantHandler {
       [clothes.feet, clothes.face, clothes.hand],
       [clothes.back, clothes.mask, clothes.necklace],
       skinColor >>> 0,
-      [clothes.ances, 0.0, 0.0],
+      [clothes.ances, capeColor, collarColor],
     );
 
     const data = variant.parse();

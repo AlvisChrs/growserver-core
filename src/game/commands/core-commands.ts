@@ -2524,21 +2524,32 @@ registerCommand({
   cooldown: 1,
   execute(player, args) {
     const sub = args[0]?.toLowerCase();
-    const hasCape = player.effectiveClothes.back === 10424 || player.inventory.hasItem(10424);
-    const hasWings = player.effectiveClothes.back === 11478 || player.inventory.hasItem(11478);
+    const hasCape = player.effectiveClothes.back === 10424 || player.inventory.clothes.back === 10424 || player.inventory.hasItem(10424);
+    const hasWings = player.effectiveClothes.back === 11478 || player.inventory.clothes.back === 11478 || player.inventory.hasItem(11478);
+    const wearingCape = player.effectiveClothes.back === 10424 || player.inventory.clothes.back === 10424;
+    const wearingWings = player.effectiveClothes.back === 11478 || player.inventory.clothes.back === 11478;
 
-    if (sub === "wings" || (hasWings && !hasCape && sub !== "cape")) {
+    if (sub === "wings" || (wearingWings && sub !== "cape")) {
       player.variants.sendOnDialogRequest(riftWingsDialog(player));
       return;
     }
 
-    if (sub === "cape" || (hasCape && !hasWings && sub !== "wings")) {
+    if (sub === "cape" || (wearingCape && sub !== "wings")) {
+      player.variants.sendOnDialogRequest(riftCapeDialog(player));
+      return;
+    }
+
+    if (hasWings && !hasCape) {
+      player.variants.sendOnDialogRequest(riftWingsDialog(player));
+      return;
+    }
+
+    if (hasCape && !hasWings) {
       player.variants.sendOnDialogRequest(riftCapeDialog(player));
       return;
     }
 
     if (hasCape && hasWings) {
-      // Both owned: open cape by default or dialog
       player.variants.sendOnDialogRequest(riftCapeDialog(player));
       player.variants.sendOnConsoleMessage("`oTip: Type \`/rift wings\`\` to customize your Rift Wings!``");
       return;

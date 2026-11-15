@@ -16,6 +16,7 @@ import { worldManager } from "../world/world-manager";
 import { handleFishingCast, handleFishingMovement, handleFishingPunch } from "../fishing/fishing-manager";
 import { tickGeiger } from "../geiger/geiger-manager";
 import { handleSurgeryWrench } from "../surgery/surgery-manager";
+import { riftCapeDialog, riftWingsDialog } from "../item/configurable-items";
 import { DEAD_GEIGER_COUNTER, depositDeadGeiger } from "../world/tiles/geiger-charger-tile";
 import { loadLobsterTrap } from "../world/tiles/lobster-trap-tile";
 import {
@@ -53,33 +54,6 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
       if (now - (player.lastRainbowAt ?? 0) >= 300) {
         player.lastRainbowAt = now;
         world.sendParticleEffect(14, data.posX + 10, data.posY + 16);
-      }
-    }
-  }
-
-  // Special mobility back-item & rift particle trails
-  const backItem = player.effectiveClothes.back;
-  if (backItem) {
-    const now = Date.now();
-    if (now - (player.lastBackParticleAt ?? 0) >= 300) {
-      if (backItem === 10424 && (player.riftCapeConfig?.particleTrail ?? true)) {
-        player.lastBackParticleAt = now;
-        world.sendParticleEffect(12, data.posX + 10, data.posY + 16);
-      } else if (backItem === 11478 && (player.riftWingsConfig?.particleTrail ?? true)) {
-        player.lastBackParticleAt = now;
-        world.sendParticleEffect(12, data.posX + 10, data.posY + 16);
-      } else if (backItem === 1674) {
-        player.lastBackParticleAt = now;
-        world.sendParticleEffect(45, data.posX + 10, data.posY + 16);
-      } else if (backItem === 1672) {
-        player.lastBackParticleAt = now;
-        world.sendParticleEffect(14, data.posX + 10, data.posY + 16);
-      } else if (backItem === 2256) {
-        player.lastBackParticleAt = now;
-        world.sendParticleEffect(46, data.posX + 10, data.posY + 16);
-      } else if (backItem === 1550) {
-        player.lastBackParticleAt = now;
-        world.sendParticleEffect(36, data.posX + 10, data.posY + 16);
       }
     }
   }
@@ -312,6 +286,14 @@ async function ItemActivateRequest(player: Player, tank: GameUpdatePacket): Prom
   }
 
   if (item.type === ActionTypes.CLOTHES || item.type === ActionTypes.ANCES) {
+    if (itemId === 10424 && (player.effectiveClothes.back === 10424 || player.inventory.clothes.back === 10424)) {
+      player.variants.sendOnDialogRequest(riftCapeDialog(player));
+      return;
+    }
+    if (itemId === 11478 && (player.effectiveClothes.back === 11478 || player.inventory.clothes.back === 11478)) {
+      player.variants.sendOnDialogRequest(riftWingsDialog(player));
+      return;
+    }
     player.equipClothes(itemId);
     return;
   }

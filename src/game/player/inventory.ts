@@ -1,5 +1,6 @@
 import { Collection } from "../../utils/collection";
 import { getItem } from "../item/item-utils";
+import type { RiftCapeConfig, RiftWingsConfig } from "../item/configurable-items";
 
 /**
  * Types of clothing slots available in Growtopia (items.dat `bodyPartType`).
@@ -59,6 +60,8 @@ export interface SerializedInventory {
   max: number;
   items: Array<[id: number, amount: number]>;
   clothes: PlayerClothes;
+  riftCapeConfig?: RiftCapeConfig;
+  riftWingsConfig?: RiftWingsConfig;
 }
 
 export function createEmptyClothes(): PlayerClothes {
@@ -170,6 +173,8 @@ export class PlayerInventory {
       max: this.max,
       items: [...this.items.entries()],
       clothes: { ...this.clothes },
+      riftCapeConfig: this.player?.riftCapeConfig,
+      riftWingsConfig: this.player?.riftWingsConfig,
     };
   }
 
@@ -194,6 +199,8 @@ export class PlayerInventory {
         }
       }
       this.clothes = { ...createEmptyClothes(), ...(parsed.clothes ?? {}) };
+      if (parsed.riftCapeConfig && this.player) this.player.riftCapeConfig = parsed.riftCapeConfig;
+      if (parsed.riftWingsConfig && this.player) this.player.riftWingsConfig = parsed.riftWingsConfig;
       return true;
     } catch {
       return false;

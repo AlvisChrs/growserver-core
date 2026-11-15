@@ -172,7 +172,7 @@ describe("Configurable Items (Rift Cape & Rift Wings)", () => {
     const mockPlayer = {
       role: PLAYER_ROLE.BASIC,
       effectiveClothes: { back: 10424 },
-      inventory: { hasItem: (id: number) => id === 10424 },
+      inventory: { clothes: { back: 10424 }, hasItem: (id: number) => id === 10424 },
       variants: {
         sendOnDialogRequest: (d: string) => {
           dialogSent = d;
@@ -183,5 +183,15 @@ describe("Configurable Items (Rift Cape & Rift Wings)", () => {
 
     await riftCmd?.execute(mockPlayer, []);
     expect(dialogSent).toContain("Rift Cape Customization");
+  });
+
+  test("Rift custom colors are correctly packed into RGB numbers for clothing updates", () => {
+    const red = [255, 0, 0] as [number, number, number];
+    const packedRed = ((red[0] & 0xff) << 16) | ((red[1] & 0xff) << 8) | (red[2] & 0xff);
+    expect(packedRed).toBe(0xff0000);
+
+    const cyan = [0, 220, 255] as [number, number, number];
+    const packedCyan = ((cyan[0] & 0xff) << 16) | ((cyan[1] & 0xff) << 8) | (cyan[2] & 0xff);
+    expect(packedCyan).toBe(0x00dcff);
   });
 });

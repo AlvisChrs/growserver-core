@@ -20,7 +20,7 @@ import type { FishingSession } from "../fishing/fishing-manager";
 import type { GeigerSession } from "../geiger/geiger-manager";
 import type { ActiveSurgery } from "../surgery/surgery-manager";
 import { FULL_BODY_SUITS, MORPH_ITEMS, computeEffectiveClothes } from "./transform";
-import type { RiftCapeConfig, RiftWingsConfig } from "../item/configurable-items";
+import { DEFAULT_RIFT_CAPE_CONFIG, DEFAULT_RIFT_WINGS_CONFIG, type RiftCapeConfig, type RiftWingsConfig } from "../item/configurable-items";
 
 export * from "./inventory";
 export * from "./transform";
@@ -714,17 +714,39 @@ export class Player {
     this.scheduleInventorySave();
   }
 
+  public get effectiveCapeColor(): number {
+    if (this.effectiveClothes.back === 10424 || this.inventory.clothes.back === 10424) {
+      const rgb = this.riftCapeConfig?.capeRgb ?? DEFAULT_RIFT_CAPE_CONFIG.capeRgb;
+      return ((rgb[0] & 0xff) << 16) | ((rgb[1] & 0xff) << 8) | (rgb[2] & 0xff);
+    }
+    if (this.effectiveClothes.back === 11478 || this.inventory.clothes.back === 11478) {
+      const rgb = this.riftWingsConfig?.wingsRgb ?? DEFAULT_RIFT_WINGS_CONFIG.wingsRgb;
+      return ((rgb[0] & 0xff) << 16) | ((rgb[1] & 0xff) << 8) | (rgb[2] & 0xff);
+    }
+    return 0;
+  }
+
+  public get effectiveCollarColor(): number {
+    if (this.effectiveClothes.back === 10424 || this.inventory.clothes.back === 10424) {
+      const rgb = this.riftCapeConfig?.collarRgb ?? DEFAULT_RIFT_CAPE_CONFIG.collarRgb;
+      return ((rgb[0] & 0xff) << 16) | ((rgb[1] & 0xff) << 8) | (rgb[2] & 0xff);
+    }
+    return 0;
+  }
+
   /** Sends the current effective clothes to everyone in the world (including this player). */
   public sendClothesToWorld(): void {
     const skin = this.effectiveSkinColor;
     const clothes = this.effectiveClothes;
+    const capeColor = this.effectiveCapeColor;
+    const collarColor = this.effectiveCollarColor;
     if (this.world) {
       for (const other of this.world.players) {
-        other.variants.sendClothes(this.netID, clothes, skin);
+        other.variants.sendClothes(this.netID, clothes, skin, capeColor, collarColor);
         other.variants.sendOnChangeSkin(this.netID, skin);
       }
     } else {
-      this.variants.sendClothes(this.netID, clothes, skin);
+      this.variants.sendClothes(this.netID, clothes, skin, capeColor, collarColor);
     }
   }
 

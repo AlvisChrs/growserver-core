@@ -84,10 +84,10 @@ export function selfProfileDialog(player: Player): string {
     dialog.addButton("transform", player.isTransformed ? "`4Untransform!``" : "`2Transform!``");
   }
 
-  if (player.effectiveClothes.back === 10424 || player.inventory.hasItem(10424)) {
+  if (player.effectiveClothes.back === 10424 || player.inventory.clothes.back === 10424 || player.inventory.hasItem(10424)) {
     dialog.addButton("customize_rift_cape", "`5Customize Rift Cape``");
   }
-  if (player.effectiveClothes.back === 11478 || player.inventory.hasItem(11478)) {
+  if (player.effectiveClothes.back === 11478 || player.inventory.clothes.back === 11478 || player.inventory.hasItem(11478)) {
     dialog.addButton("customize_rift_wings", "`5Customize Rift Wings``");
   }
 
@@ -130,7 +130,7 @@ function ownedWorldNames(player: Player): string[] {
 
 registerDialog("popup", (player, action) => {
   const button = action.get("buttonClicked");
-  const targetNetId = action.getInt("netID", 0, -1);
+  const targetNetId = action.getInt("netID", 0, player.netID);
   const target = player.world?.players.find((other) => other.netID === targetNetId);
 
   // Quick shortcuts are only present in the player's own wrench popup.

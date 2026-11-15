@@ -177,6 +177,7 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   1980: 29,  // Claw Glove
   2636: 43,  // Rapier
   2908: 29,  // Carrot Sword
+  2952: 29,  // Digger's Spade (Dig, Dug dirt digger)
   3070: 29,  // Fire Ax
   3108: 29,  // Chainsaw Hand
   3160: 43,  // Sword And Shield
@@ -185,6 +186,8 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   3588: 29,  // Climbing Picks
   4506: 29,  // Machete
   8942: 43,  // Dual Crescent Blade
+  9396: 42,  // Balrog's Tail (Demonic flame blade slash)
+  10334: 13, // Black Balrog's Tail (Black demonic blade shadow slash)
 
   // Bows & Crossbows (4 = Arrow, 2 = Hearts, 44 = Electric)
   278: 2,    // Heart Bow
@@ -316,6 +319,7 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   2168: 1,   // Superhero Cape (Heroic punch)
   7150: 40,  // Golden Angel Wings (Golden feathers)
   8286: 4,   // Da Vinci Wings (Golden spark)
+  9394: 19,  // Balrog Wings (Fire punch)
   16262: 4,  // Immortal Da Vinci Wings (Golden spark)
 
   // Necklace & Pets

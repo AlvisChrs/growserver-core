@@ -146,7 +146,10 @@ async function TileChangeRequest(player: Player, tank: GameUpdatePacket, world: 
     if (handleFishingPunch(player, world)) return;
     if (await handleCuttingBoardSlice(player, world, block)) return;
     await tileFrom(world, block).onPunch(player);
-    if (player.inventory.clothes.hand === ITEM_ID.RAYMANS_FIST) await raymanPunch(player, world, data);
+    const currentHand = player.effectiveClothes?.hand ?? player.inventory?.clothes?.hand ?? 0;
+    if (currentHand === ITEM_ID.RAYMANS_FIST || currentHand === 5980 || currentHand === 12018) {
+      await raymanPunch(player, world, data);
+    }
   } else if (data.itemID === ITEM_ID.WRENCH) {
     if (handleSurgeryWrench(player, world, data.tileX, data.tileY, block.fg)) return;
     if (handleFoodGrinderWrench(player, block)) return;

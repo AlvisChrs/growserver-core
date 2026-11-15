@@ -160,10 +160,20 @@ export class SeedTile extends Tile {
   }
 
   private dropHarvestGoodies(player: Player, seedMeta: ItemDefinition, tree: Tree): void {
-    this.world.drop(player, this.randomDropX(), this.randomDropY(), tree.fruit, tree.fruitCount, { tree: true, origin: "harvest" });
+    let fruitCount = tree.fruitCount;
+    // Harvester (1830), Harvester Of Sorrows (1966), Tractor (898)
+    const feetItem = player.effectiveClothes?.feet ?? player.inventory?.clothes?.feet ?? 0;
+    const isHarvester = feetItem === 1830 || feetItem === 1966 || feetItem === 898;
+    if (isHarvester && Math.random() < 0.25) {
+      fruitCount += 1;
+      player.sendTextBubble("`2Harvester bonus yield!``", true);
+    }
+
+    this.world.drop(player, this.randomDropX(), this.randomDropY(), tree.fruit, fruitCount, { tree: true, origin: "harvest" });
     this.spawnGems(player, seedMeta.rarity ?? 0, "harvest");
 
-    if (Math.random() <= SEED_DROP_CHANCE) {
+    const seedBonus = isHarvester ? 0.2 : 0;
+    if (Math.random() <= SEED_DROP_CHANCE + seedBonus) {
       this.world.drop(player, this.randomDropX(), this.randomDropY(), this.data.fg, 1, { tree: true, origin: "harvest" });
       player.sendTextBubble(`A \`w${seedMeta.name}\`\` falls out!`);
     }

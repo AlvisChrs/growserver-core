@@ -156,7 +156,24 @@ export class Tile {
       }
     }
 
-    this.applyDamage(player, PUNCH_DAMAGE);
+    const handItem = player.effectiveClothes?.hand ?? player.inventory?.clothes?.hand ?? 0;
+    const targetItemId = this.data.fg !== 0 ? this.data.fg : this.data.bg;
+
+    // Special One-Hit Mechanics:
+    // 1. Digger's Spade (2952) breaks Dirt (2) and Cave Background (14) in one hit
+    const isSpade = handItem === 2952 || Boolean(player.playMods?.has("dig_dug"));
+    const isOneHitDirt = isSpade && (targetItemId === 2 || targetItemId === 14);
+
+    // 2. Poseidon's Digger's Trident (7434) breaks Sand (428) in one hit
+    const isPoseidonDigger = handItem === 7434;
+    const isOneHitSand = isPoseidonDigger && targetItemId === 428;
+
+    let damageMultiplier = 1 + (player.characterStats?.punchDamage ?? 0);
+    if (isOneHitDirt || isOneHitSand) {
+      damageMultiplier = Math.max(damageMultiplier, itemMeta.breakHits ?? 1);
+    }
+
+    this.applyDamage(player, PUNCH_DAMAGE * damageMultiplier);
 
     if ((this.data.damage ?? 0) >= (itemMeta.breakHits ?? 1)) {
       await this.onDestroy(player);

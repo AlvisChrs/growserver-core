@@ -59,6 +59,11 @@ describe("Comprehensive Punch Effects & Weapon Category Fallbacks", () => {
     expect(WEAPON_PUNCH_TYPES[4840]).toBe(78); // Balloon Launcher
     expect(WEAPON_PUNCH_TYPES[11140]).toBe(20); // Legendary Destroyer (Fists of Fury Rocket Mech Punch)
     expect(WEAPON_PUNCH_TYPES[11142]).toBe(21); // Legendary Owl (Legendary Night Pulse)
+    expect(WEAPON_PUNCH_TYPES[9396]).toBe(42);  // Balrog's Tail (Demonic Flame Slash)
+    expect(WEAPON_PUNCH_TYPES[10334]).toBe(13); // Black Balrog's Tail (Black Demonic Slash)
+    expect(WEAPON_PUNCH_TYPES[9394]).toBe(19);  // Balrog Wings (Fire Punch)
+    expect(WEAPON_PUNCH_TYPES[2952]).toBe(29);  // Digger's Spade (Dig, Dug Slasher)
+    expect(WEAPON_PUNCH_TYPES[7434]).toBe(49);  // Poseidon's Digger's Trident (Trident Thrust)
 
     // Bows
     expect(WEAPON_PUNCH_TYPES[278]).toBe(2);   // Heart Bow
@@ -122,6 +127,18 @@ describe("Comprehensive Punch Effects & Weapon Category Fallbacks", () => {
     // 10. Holding Fire Hose gives punch 57
     mock.inventory.clothes.hand = 3066;
     expect(mock.punchId).toBe(57);
+
+    // 11. Holding Balrog's Tail gives punch 42
+    mock.inventory.clothes.hand = 9396;
+    expect(mock.punchId).toBe(42);
+
+    // 12. Holding Black Balrog's Tail gives punch 13
+    mock.inventory.clothes.hand = 10334;
+    expect(mock.punchId).toBe(13);
+
+    // 13. Holding Digger's Spade gives punch 29
+    mock.inventory.clothes.hand = 2952;
+    expect(mock.punchId).toBe(29);
   });
 
   test("Player punchId priority when hand is bare: Shirt > Face > Head > Back > Neck > Mask > Feet", () => {

@@ -1667,14 +1667,14 @@ registerCommand({
 registerCommand({
   name: "particle",
   aliases: ["pe", "part"],
-  description: "Spawn particle effect at your position (e.g. /particle 14 for Rainbow, /particle 46 for Stars)",
+  description: "Spawn particle effect at your position (e.g. /particle 46 for Stars, /particle 44 for Sparkles, /particle 2 for Hearts)",
   usage: "/particle <id>",
-  role: PLAYER_ROLE.DEVELOPER,
+  role: PLAYER_ROLE.BASIC,
   cooldown: 1,
   execute(player, args) {
     const id = Number.parseInt(args[0] ?? "", 10);
     if (Number.isNaN(id) || id < 0 || id > 500) {
-      return player.variants.sendOnConsoleMessage("`4Usage: /particle <0-500> (14: Rainbow, 46: Stars, 2: Hearts)``");
+      return player.variants.sendOnConsoleMessage("`4Usage: /particle <0-500> (46: Stars, 44: Sparkles, 2: Hearts)``");
     }
     const world = player.world;
     if (!world) return;
@@ -1682,6 +1682,40 @@ registerCommand({
     const y = player.state.y + 16;
     world.sendParticleEffect(id, x, y);
     player.variants.sendOnConsoleMessage(`\`2Spawned particle effect ID \`o${id}\`2 at (${Math.round(x)}, ${Math.round(y)})!\`\``);
+  },
+});
+
+registerCommand({
+  name: "royaltrail",
+  aliases: ["rtrail", "locktrail"],
+  description: "Set or toggle particle effect for Royal Lock walking trail in current world (e.g. /royaltrail 46, /royaltrail off)",
+  usage: "/royaltrail <particle_id|off>",
+  role: PLAYER_ROLE.BASIC,
+  cooldown: 1,
+  execute(player, args) {
+    const world = player.world;
+    if (!world) return;
+    const arg = (args[0] ?? "").toLowerCase().trim();
+    if (!arg) {
+      const current = world.royalTrailParticle !== null ? `ID \`o${world.royalTrailParticle}\`\`` : "`4Disabled (Client Native / Clean)``";
+      return player.variants.sendOnConsoleMessage(`\`2Royal Lock Trail Particle is currently: ${current}. Usage: \`/royaltrail <0-500|off>\`\` (e.g. 46: Stars, 44: Sparkles, 2: Hearts).`);
+    }
+
+    if (arg === "off" || arg === "none" || arg === "disable" || arg === "clear") {
+      world.royalTrailParticle = null;
+      player.variants.sendOnConsoleMessage("`2Royal Lock trail server particle disabled (clean walking / client native).``");
+      player.sendTextBubble("`2Royal trail set to Clean/Native!``", true);
+      return;
+    }
+
+    const id = Number.parseInt(arg, 10);
+    if (Number.isNaN(id) || id < 0 || id > 500) {
+      return player.variants.sendOnConsoleMessage("`4Invalid particle ID. Usage: /royaltrail <0-500|off>``");
+    }
+
+    world.royalTrailParticle = id;
+    player.variants.sendOnConsoleMessage(`\`2Royal Lock walking trail particle set to ID \`o${id}\`\` (e.g. 46: Stars, 44: Sparkles)!`);
+    player.sendTextBubble(`\`2Royal trail set to particle ${id}!\`\``, true);
   },
 });
 

@@ -55,9 +55,11 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
       player.lastRainbowY = data.posY;
       const rx = data.posX + 10;
       const ry = data.posY + 26;
-      // Effect 14 is the authentic Growtopia Rainbow particle effect
-      world.sendParticleEffect(14, rx, ry);
-      world.broadcastVariant(Variant.from("OnParticleEffect", 14, [rx, ry]));
+      // If a custom particle effect is chosen via /royaltrail, emit it
+      if (world.royalTrailParticle !== null) {
+        world.sendParticleEffect(world.royalTrailParticle, rx, ry);
+        world.broadcastVariant(Variant.from("OnParticleEffect", world.royalTrailParticle, [rx, ry]));
+      }
     }
   }
 
@@ -293,19 +295,6 @@ async function ItemActivateRequest(player: Player, tank: GameUpdatePacket): Prom
   }
 
   if (item.type === ActionTypes.CLOTHES || item.type === ActionTypes.ANCES) {
-    if (itemId === 10424 && (player.effectiveClothes.back === 10424 || player.inventory.clothes.back === 10424)) {
-      player.variants.sendOnDialogRequest(riftCapeDialog(player));
-      return;
-    }
-    if (itemId === 11478 && (player.effectiveClothes.back === 11478 || player.inventory.clothes.back === 11478)) {
-      player.variants.sendOnDialogRequest(riftWingsDialog(player));
-      return;
-    }
-    if (itemId === 7384 && player.inventory.clothes.feet === 7384) {
-      // Tapping already-equipped Go-Go-Growformer! toggles Car Mode <-> Robot Mode
-      player.toggleTransform();
-      return;
-    }
     player.equipClothes(itemId);
     return;
   }

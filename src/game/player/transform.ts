@@ -176,38 +176,10 @@ export const MORPH_ITEMS: ReadonlySet<number> = new Set([
 
 /**
  * Computes the visually effective clothes sent to clients via `OnSetClothing`.
- * Overlays full-body hero suits, renders sleek car mode for Go-Go-Growformer!,
- * and morphs into robot automaton mode when transformed!
+ * Preserves the player's true equipped wardrobe across all slots (hair, shirt,
+ * pants, feet, face, hand, back, mask, necklace, ances) without artificial
+ * overriding or suppressing clothes.
  */
-export function computeEffectiveClothes(clothes: Readonly<PlayerClothes>, isTransformed = false): PlayerClothes {
-  const effective: PlayerClothes = { ...clothes };
-
-  // Overlay full-body hero suit when a hero item is worn in the necklace slot.
-  // In Growtopia, the UbiWeek hero neck item (Ezio, Altair, Bayek, etc.) renders
-  // the iconic tall full-body model directly. We suppress chibi civilian garments
-  // so the tall hero avatar renders cleanly without conflicting clothes drawn over it.
-  if (FULL_BODY_SUITS.has(clothes.necklace)) {
-    effective.hair = 0;
-    effective.shirt = 0;
-    effective.pants = 0;
-    effective.feet = 0;
-    effective.face = 0;
-    effective.mask = 0;
-  }
-
-  // Go-Go-Growformer! (Feet #7384)
-  if (clothes.feet === 7384) {
-    if (isTransformed) {
-      // Robot Automaton Mode: Towering battle mech
-      effective.feet = 7384;
-      effective.shirt = 1780;  // Legendbot-009 chassis
-      effective.pants = 6384;  // Robot Legs
-      effective.hair = 16132;  // Robotic Helmet
-      effective.back = 7582;   // Robotic MK.IV Wings
-      effective.face = 0;
-      effective.mask = 0;
-    }
-  }
-
-  return effective;
+export function computeEffectiveClothes(clothes: Readonly<PlayerClothes>, _isTransformed = false): PlayerClothes {
+  return { ...clothes };
 }

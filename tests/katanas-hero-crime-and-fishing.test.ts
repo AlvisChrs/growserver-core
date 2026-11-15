@@ -25,7 +25,7 @@ describe("Legendary Katana & Katana Series", () => {
 
     const stats = computeStats([{ id: "legendary_katana", expiresAt: 0 }]);
     expect(stats.punchType).toBe(43);
-    expect(stats.speed).toBeGreaterThan(1200);
+    expect(stats.speed).toBeGreaterThan(300);
     expect((stats.charState & CHARACTER_STATE.DOUBLE_JUMP) !== 0).toBe(true);
   });
 

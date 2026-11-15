@@ -28,10 +28,9 @@ describe("Burning Eyes, Multi-Slot Punch Animations & Immortal Collection", () =
     expect(WEAPON_PUNCH_TYPES[8286]).toBe(4); // Da Vinci Wings
     expect(WEAPON_PUNCH_TYPES[16262]).toBe(4); // Immortal Da Vinci Wings
 
-    // Hand
-    expect(WEAPON_PUNCH_TYPES[2592]).toBe(43); // Legendary Katana
-    expect(WEAPON_PUNCH_TYPES[16428]).toBe(43); // Immortal Sonic Buster Katana
+    // Hand: Rayman's Fist uses floating fists (80)
     expect(WEAPON_PUNCH_TYPES[5480]).toBe(80); // Rayman's Fist
+    expect(WEAPON_PUNCH_TYPES[12018]).toBe(80); // Rok's Fists
   });
 
   test("Burning Eyes and Giant Eye Head are registered in PLAY_MODS and WEARABLE_MODS", () => {
@@ -80,18 +79,17 @@ describe("Burning Eyes, Multi-Slot Punch Animations & Immortal Collection", () =
     expect(isHeroDisguised).toBe(false);
   });
 
-  test("Punch ID priority: Hand weapon > Robot Automaton > Face > Head > Back > Passive", () => {
-    const evaluatePunch = (c: { hand?: number; face?: number; hair?: number; back?: number; feet?: number }, isTransformed = false) => {
-      if (c.hand && WEAPON_PUNCH_TYPES[c.hand] !== undefined) return WEAPON_PUNCH_TYPES[c.hand];
-      if (isTransformed && c.feet === 7384) return 5;
+  test("Punch ID priority: Rayman > Face > Head > Back > Passive", () => {
+    const evaluatePunch = (c: { hand?: number; face?: number; hair?: number; back?: number; feet?: number }) => {
+      if (c.hand === 5480 || c.hand === 12018) return 80;
       if (c.face && WEAPON_PUNCH_TYPES[c.face] !== undefined) return WEAPON_PUNCH_TYPES[c.face];
       if (c.hair && WEAPON_PUNCH_TYPES[c.hair] !== undefined) return WEAPON_PUNCH_TYPES[c.hair];
       if (c.back && WEAPON_PUNCH_TYPES[c.back] !== undefined) return WEAPON_PUNCH_TYPES[c.back];
       return 0;
     };
 
-    // Katana overrides everything
-    expect(evaluatePunch({ hand: 2592, face: 2476, hair: 8372, back: 1674 })).toBe(43);
+    // Rayman floating fists override everything
+    expect(evaluatePunch({ hand: 5480, face: 2476, hair: 8372, back: 1674 })).toBe(80);
 
     // Empty hand, Burning Eyes overrides Head and Back
     expect(evaluatePunch({ hand: 0, face: 2476, hair: 8372, back: 1674 })).toBe(39);
@@ -101,9 +99,6 @@ describe("Burning Eyes, Multi-Slot Punch Animations & Immortal Collection", () =
 
     // Only Phoenix Wings equipped
     expect(evaluatePunch({ hand: 0, face: 0, hair: 0, back: 1674 })).toBe(19);
-
-    // Transformed Robot Automaton
-    expect(evaluatePunch({ hand: 0, feet: 7384 }, true)).toBe(5);
   });
 
   test("searchItemNames resolves 'immortal giant' alias to Giant Eye Head (#8372)", () => {

@@ -69,52 +69,15 @@ const PROTECTED_ITEMS: ReadonlySet<number> = new Set([ITEM_ID.FIST, ITEM_ID.WREN
 /**
  * Maps specific weapons/hand items to their true visual punch animations in Growtopia.
  */
+/**
+ * Maps specific wearable accessories to their true visual punch animations in Growtopia
+ * when the player's hand is bare or swinging.
+ * (Note: Weapons held in hand natively render their authentic attack visuals in the client when punchId is 0).
+ */
 export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
-  // Katana series (punchType 43 = iconic Katana blade slice)
-  2592: 43,  // Legendary Katana
-  9058: 43,  // Cursed Katana (slasher dark blade cut)
-  11118: 43, // Sonic Buster Katana
-  13710: 43, // Dark Magic Katana
-  16428: 43, // Immortal Sonic Buster Katana
-
-  // Scythes
-  1068: 13,  // Hand Scythe
-  1484: 13,  // Atomic Shadow Scythe
-  2386: 36,  // Heavenly Scythe
-  2572: 42,  // Flame Scythe
-  4166: 13,  // Death's Scythe
-  7098: 13,  // Apocalypse Scythe
-  9032: 13,  // Scythe of the Underworld
-  10498: 13, // Candy Cane Scythe
-  11006: 13, // Soul Scythe
-  11464: 13, // Ice Dragon Scythe
-  13400: 13, // Bamboo Scythe
-  13828: 13, // Soul Harvester's Scythe
-  15574: 13, // Scythed Hero Scythes
-
-  // Dragon Hands
-  900: 6,    // Dragon Hand (Fire dragon breath punch)
-  1378: 11,  // Ice Dragon Hand (Frost breath punch)
-
-  // Fists & Boxing Gloves
-  96: 1,     // Just One Boxing Glove
-  7940: 1,   // Flaming Boxing Gloves
+  // Rayman's Fists & Floating Fists
   5480: 80,  // Rayman's Fist (Disembodied floating fists)
   12018: 80, // Rok's Fists
-
-  // Guns & Mecha
-  1780: 20,  // Legendbot-009 (Robotic blast)
-  1958: 8,   // Death Ray (Optic laser)
-  12014: 8,  // Dal's Phasers
-  3716: 69,  // Hunting Ghosts / Neutron Pack (Neutron beam)
-  3066: 57,  // Fire Hose (Water stream)
-
-  // Bows & Staves
-  278: 2,    // Heart Bow (Cupid hearts)
-  1874: 24,  // Ring of Force (Force ring)
-  10406: 2,  // Staff of Deepest Winter (Ice)
-  3466: 29,  // Slasher
-  4506: 29,  // Machete / Slasher knife
 
   // Face: Eyes & Visors
   2476: 39,  // Burning Eyes (Fiery flame punch)
@@ -905,30 +868,37 @@ export class Player {
   public get punchId(): number {
     if (this.customPunchId !== null) return this.customPunchId;
 
-    // 1. Hand weapon takes top priority (actively swung weapon)
     const handItem = this.effectiveClothes.hand || this.inventory.clothes.hand;
-    if (handItem && WEAPON_PUNCH_TYPES[handItem] !== undefined) {
-      return WEAPON_PUNCH_TYPES[handItem]!;
+
+    // 1. Rayman's Fist & Rok's Fists use floating fist punch type (80)
+    if (handItem === 5480 || handItem === 12018 || handItem === 5980) {
+      return 80;
     }
 
-    // 2. Robot Automaton mode (exploding rocket blasts)
-    if (this.isTransformed && (this.inventory.clothes.feet === 7384 || this.effectiveClothes.feet === 7384)) {
-      return 5;
+    // 2. Hand weapons (Katanas, Scythes, Swords, Staves, Bows, Spears, Guns):
+    // In Growtopia, hand weapons natively play their unique attack, projectile, swing,
+    // and slice animations in the client when punchId is 0. Returning 0 ensures
+    // the weapon's distinctive visuals are never overridden by a generic punch effect.
+    if (handItem > 0 && handItem !== 32) {
+      const itemDef = getItem(handItem);
+      if (itemDef?.type === ActionTypes.CLOTHES || itemDef?.bodyPartType === ClothTypes.HAND) {
+        return 0;
+      }
     }
 
-    // 3. Face accessories (Burning Eyes, Black Burning Eyes, Focused Eyes, Cyclopean Visor)
+    // 3. Face accessories (Burning Eyes: 39, Black Burning Eyes: 39, Focused Eyes: 10, Cyclopean Visor: 1)
     const faceItem = this.effectiveClothes.face || this.inventory.clothes.face;
     if (faceItem && WEAPON_PUNCH_TYPES[faceItem] !== undefined) {
       return WEAPON_PUNCH_TYPES[faceItem]!;
     }
 
-    // 4. Head / Hair accessories (Giant Eye Head, Energized Horns, Diamond Horns, Rainbow Wig)
+    // 4. Head / Hair accessories (Giant Eye Head: 8, Energized Horns: 75, Diamond Horns: 40, Rainbow Wig: 14)
     const hairItem = this.effectiveClothes.hair || this.inventory.clothes.hair;
     if (hairItem && WEAPON_PUNCH_TYPES[hairItem] !== undefined) {
       return WEAPON_PUNCH_TYPES[hairItem]!;
     }
 
-    // 5. Back accessories (Phoenix Wings, Rainbow Wings, Da Vinci Wings, Heroman Cape)
+    // 5. Back accessories (Phoenix Wings: 19, Rainbow Wings: 14, Da Vinci Wings: 4, Heroman Cape: 1)
     const backItem = this.effectiveClothes.back || this.inventory.clothes.back;
     if (backItem && WEAPON_PUNCH_TYPES[backItem] !== undefined) {
       return WEAPON_PUNCH_TYPES[backItem]!;

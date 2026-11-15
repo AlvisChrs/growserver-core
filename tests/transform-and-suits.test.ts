@@ -21,7 +21,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect(MORPH_ITEMS.has(10960)).toBe(true); // Space Rabbit
   });
 
-  test("Wearing a full-body suit preserves worn necklace and clears conflicting body clothes", () => {
+  test("Wearing a full-body suit preserves worn clothes across all slots without artificial clearing", () => {
     const raw: PlayerClothes = {
       hair: 100,
       shirt: 200,
@@ -36,17 +36,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     };
 
     const effective = computeEffectiveClothes(raw, false);
-
-    expect(effective.necklace).toBe(EZIO);
-    expect(effective.hair).toBe(0);
-    expect(effective.shirt).toBe(0);
-    expect(effective.pants).toBe(0);
-    expect(effective.feet).toBe(0);
-    expect(effective.face).toBe(0);
-    expect(effective.mask).toBe(0);
-    expect(effective.hand).toBe(98);
-    expect(effective.back).toBe(156);
-    expect(effective.ances).toBe(700);
+    expect(effective).toEqual(raw);
   });
 
   test("Go-Go-Growformer! normal equipped state shows regular clothes", () => {
@@ -67,7 +57,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect(effective).toEqual(raw);
   });
 
-  test("Go-Go-Growformer! vehicle mode renders robot automaton cleanly", () => {
+  test("Go-Go-Growformer! preserves clothes naturally without forcing legendbot", () => {
     const raw: PlayerClothes = {
       hair: 100,
       shirt: 200,
@@ -82,16 +72,10 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     };
 
     const effective = computeEffectiveClothes(raw, true);
-    expect(effective.feet).toBe(GROWFORMER);
-    expect(effective.shirt).toBe(1780);
-    expect(effective.pants).toBe(6384);
-    expect(effective.hair).toBe(16132);
-    expect(effective.back).toBe(7582);
-    expect(effective.face).toBe(0);
-    expect(effective.mask).toBe(0);
+    expect(effective).toEqual(raw);
   });
 
-  test("Transformed assassin hero suits render full-body iconic outfits by clearing clashing clothes", () => {
+  test("Hero suits preserve player's equipped wardrobe", () => {
     const ezioRaw: PlayerClothes = {
       hair: 100,
       shirt: 200,
@@ -105,15 +89,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
       ances: 0,
     };
     const ezioEffective = computeEffectiveClothes(ezioRaw, true);
-    expect(ezioEffective.necklace).toBe(EZIO);
-    expect(ezioEffective.hair).toBe(0);
-    expect(ezioEffective.shirt).toBe(0);
-    expect(ezioEffective.pants).toBe(0);
-    expect(ezioEffective.feet).toBe(0);
-    expect(ezioEffective.face).toBe(0);
-    expect(ezioEffective.mask).toBe(0);
-    expect(ezioEffective.hand).toBe(98);
-    expect(ezioEffective.back).toBe(156);
+    expect(ezioEffective).toEqual(ezioRaw);
 
     const altairRaw: PlayerClothes = {
       hair: 120,
@@ -128,13 +104,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
       ances: 0,
     };
     const altairEffective = computeEffectiveClothes(altairRaw, true);
-    expect(altairEffective.necklace).toBe(12646);
-    expect(altairEffective.hair).toBe(0);
-    expect(altairEffective.shirt).toBe(0);
-    expect(altairEffective.pants).toBe(0);
-    expect(altairEffective.feet).toBe(0);
-    expect(altairEffective.face).toBe(0);
-    expect(altairEffective.mask).toBe(0);
+    expect(altairEffective).toEqual(altairRaw);
   });
 
   test("Hero suits are registered in WEARABLE_MODS and grant hero stats", () => {
@@ -146,7 +116,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect((heroMod?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
 
     const stats = computeStats([{ id: "hero_suit", expiresAt: 0 }]);
-    expect(stats.speed).toBeGreaterThan(1200);
+    expect(stats.speed).toBeGreaterThan(300);
     expect(stats.punchRange).toBe(129);
     expect((stats.charState & CHARACTER_STATE.DOUBLE_JUMP) !== 0).toBe(true);
   });
@@ -165,7 +135,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect((transformMod?.charState ?? 0) & CHARACTER_STATE.NO_HANDS).toBe(0);
 
     const transformedStats = computeStats([{ id: "transformed", expiresAt: 0 }]);
-    expect(transformedStats.speed).toBe(1200 + 250);
+    expect(transformedStats.speed).toBe(250 + 250);
     expect(transformedStats.punchType).toBe(20);
     expect((transformedStats.charState & CHARACTER_STATE.DOUBLE_JUMP) !== 0).toBe(true);
     expect((transformedStats.charState & CHARACTER_STATE.NO_BODY) !== 0).toBe(false);

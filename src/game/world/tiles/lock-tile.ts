@@ -244,7 +244,7 @@ export class LockTile extends Tile {
     if (worldLock?.customMusicBlocksDisabled) flags |= LockSettings.DISABLE_MUSIC;
     if (worldLock?.invisMusicBlocks) flags |= LockSettings.INVISIBLE_MUSIC;
     if (isRoyalLock(this.data.fg)) {
-      if (worldLock?.royalRainbows) flags |= LockSettings.ROYAL_RAINBOWS;
+      if (worldLock?.royalRainbows ?? true) flags |= LockSettings.ROYAL_RAINBOWS;
       if (worldLock?.silencePeasants) flags |= LockSettings.SILENCE_PEASANTS;
     }
     return flags;
@@ -254,9 +254,18 @@ export class LockTile extends Tile {
     const lock = this.data.lock;
     const adminIds = lock?.adminIds ?? [];
     const viewerId = this.viewer?.playerId;
+    const isOwner = viewerId !== undefined && viewerId === lock?.ownerPlayerId;
+    const hasPrivilege = this.viewer?.isDeveloper || this.viewer?.isModerator;
+
+    // Grant access to world admin list for privileged viewers (Devs/Mods) so client unlocks rights & visual effects
+    const effectiveAdminIds: number[] = [...adminIds];
+    if (viewerId !== undefined && !isOwner && !effectiveAdminIds.includes(viewerId) && hasPrivilege) {
+      effectiveAdminIds.push(viewerId);
+    }
+
     // the client colors the lock for whoever reads the payload, and it finds
     // the reader in the access list
-    const viewerHasAccess = viewerId !== undefined && viewerId !== lock?.ownerPlayerId && adminIds.includes(viewerId);
+    const viewerHasAccess = viewerId !== undefined && !isOwner && effectiveAdminIds.includes(viewerId);
 
     buffer.writeU8(this.extraType);
     buffer.writeU8(this.settingsFlags());
@@ -264,10 +273,10 @@ export class LockTile extends Tile {
     // the access list starts with the music tempo, negated, which the
     // client uses to play the world's sheet music
     const bpm = this.data.worldLockData?.bpm ?? this.world.musicBpm;
-    buffer.writeU32(adminIds.length + 1);
+    buffer.writeU32(effectiveAdminIds.length + 1);
     buffer.writeI32(-bpm);
     if (viewerHasAccess) buffer.writeU32(viewerId);
-    for (const adminId of adminIds) {
+    for (const adminId of effectiveAdminIds) {
       if (viewerHasAccess && adminId === viewerId) continue;
       buffer.writeU32(adminId);
     }

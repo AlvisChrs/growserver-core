@@ -21,7 +21,7 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect(MORPH_ITEMS.has(10960)).toBe(true); // Space Rabbit
   });
 
-  test("Wearing a full-body suit preserves clothes cleanly without turning invisible", () => {
+  test("Wearing a full-body suit preserves worn necklace and clears conflicting body clothes", () => {
     const raw: PlayerClothes = {
       hair: 100,
       shirt: 200,
@@ -37,14 +37,13 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
 
     const effective = computeEffectiveClothes(raw, false);
 
-    // All slots preserved so the player is never rendered invisible
     expect(effective.necklace).toBe(EZIO);
-    expect(effective.hair).toBe(100);
-    expect(effective.shirt).toBe(200);
-    expect(effective.pants).toBe(300);
-    expect(effective.feet).toBe(400);
-    expect(effective.face).toBe(500);
-    expect(effective.mask).toBe(600);
+    expect(effective.hair).toBe(0);
+    expect(effective.shirt).toBe(0);
+    expect(effective.pants).toBe(0);
+    expect(effective.feet).toBe(0);
+    expect(effective.face).toBe(0);
+    expect(effective.mask).toBe(0);
     expect(effective.hand).toBe(98);
     expect(effective.back).toBe(156);
     expect(effective.ances).toBe(700);
@@ -92,34 +91,36 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
     expect(effective.mask).toBe(0);
   });
 
-  test("Transformed assassin hero suits render full-body iconic outfits", () => {
+  test("Transformed assassin hero suits render full-body iconic outfits by clearing clashing clothes", () => {
     const ezioRaw: PlayerClothes = {
-      hair: 0,
-      shirt: 0,
-      pants: 0,
-      feet: 0,
-      face: 0,
-      hand: 0,
-      back: 0,
-      mask: 0,
+      hair: 100,
+      shirt: 200,
+      pants: 300,
+      feet: 400,
+      face: 500,
+      hand: 98,
+      back: 156,
+      mask: 600,
       necklace: EZIO,
       ances: 0,
     };
     const ezioEffective = computeEffectiveClothes(ezioRaw, true);
-    expect(ezioEffective.hair).toBe(7080);
-    expect(ezioEffective.shirt).toBe(7082);
-    expect(ezioEffective.back).toBe(7084);
-    expect(ezioEffective.pants).toBe(7086);
-    expect(ezioEffective.hand).toBe(7088);
-    expect(ezioEffective.face).toBe(7090);
-    expect(ezioEffective.feet).toBe(7094);
+    expect(ezioEffective.necklace).toBe(EZIO);
+    expect(ezioEffective.hair).toBe(0);
+    expect(ezioEffective.shirt).toBe(0);
+    expect(ezioEffective.pants).toBe(0);
+    expect(ezioEffective.feet).toBe(0);
+    expect(ezioEffective.face).toBe(0);
+    expect(ezioEffective.mask).toBe(0);
+    expect(ezioEffective.hand).toBe(98);
+    expect(ezioEffective.back).toBe(156);
 
     const altairRaw: PlayerClothes = {
-      hair: 0,
-      shirt: 0,
-      pants: 0,
-      feet: 0,
-      face: 0,
+      hair: 120,
+      shirt: 220,
+      pants: 320,
+      feet: 420,
+      face: 520,
       hand: 0,
       back: 0,
       mask: 0,
@@ -127,12 +128,13 @@ describe("Full-Body Hero Suits & Transformation Mechanics", () => {
       ances: 0,
     };
     const altairEffective = computeEffectiveClothes(altairRaw, true);
-    expect(altairEffective.hair).toBe(12740);
-    expect(altairEffective.shirt).toBe(12742);
-    expect(altairEffective.back).toBe(11016);
-    expect(altairEffective.pants).toBe(12744);
-    expect(altairEffective.hand).toBe(11020);
-    expect(altairEffective.feet).toBe(12746);
+    expect(altairEffective.necklace).toBe(12646);
+    expect(altairEffective.hair).toBe(0);
+    expect(altairEffective.shirt).toBe(0);
+    expect(altairEffective.pants).toBe(0);
+    expect(altairEffective.feet).toBe(0);
+    expect(altairEffective.face).toBe(0);
+    expect(altairEffective.mask).toBe(0);
   });
 
   test("Hero suits are registered in WEARABLE_MODS and grant hero stats", () => {

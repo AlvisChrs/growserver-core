@@ -45,19 +45,6 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
 
   world.broadcast(tank.parse()!, player.id);
 
-  // Royal Lock rainbow trail for owner, admins, and developers when enabled
-  const worldLock = world.worldLockTile?.worldLockData;
-  const royalRainbowsActive = world.isRoyalLocked && (worldLock?.royalRainbows ?? true);
-  if (royalRainbowsActive) {
-    if (world.getOwnerPlayerId() === player.playerId || world.isWorldAdmin(player.playerId) || player.isDeveloper) {
-      const now = Date.now();
-      if (now - (player.lastRainbowAt ?? 0) >= 300) {
-        player.lastRainbowAt = now;
-        world.sendParticleEffect(14, data.posX + 10, data.posY + 16);
-      }
-    }
-  }
-
   // tile the player is standing on, only reported when not punching
   if (data.tileX > 0 || data.tileY > 0) return;
   const block =
@@ -292,6 +279,11 @@ async function ItemActivateRequest(player: Player, tank: GameUpdatePacket): Prom
     }
     if (itemId === 11478 && (player.effectiveClothes.back === 11478 || player.inventory.clothes.back === 11478)) {
       player.variants.sendOnDialogRequest(riftWingsDialog(player));
+      return;
+    }
+    if (itemId === 7384 && player.inventory.clothes.feet === 7384) {
+      // Tapping already-equipped Go-Go-Growformer! toggles Car Mode <-> Robot Mode
+      player.toggleTransform();
       return;
     }
     player.equipClothes(itemId);

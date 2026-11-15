@@ -1,3 +1,7 @@
+# Scratch files
+scratch_*.ts
+scratch_inspect_items.ts
+
 # dependencies (bun install)
 node_modules
 

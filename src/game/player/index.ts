@@ -669,9 +669,15 @@ export class Player {
       }
     } else {
       this.playMods.remove("transformed");
-      this.sendTextBubble("`4Powering down...``", true);
-      this.variants.sendOnConsoleMessage("`4Transform mode deactivated.``");
-      this.sendSfx("audio/power_down.wav");
+      if (this.inventory.clothes.feet === 7384) {
+        this.sendTextBubble("`3Growformer: Car Mode!``", true);
+        this.variants.sendOnConsoleMessage("`3Go-Go-Growformer: Switched back to sports car vehicle mode!``");
+        this.sendSfx("audio/jet_engine01.wav");
+      } else {
+        this.sendTextBubble("`4Powering down...``", true);
+        this.variants.sendOnConsoleMessage("`4Transform mode deactivated.``");
+        this.sendSfx("audio/power_down.wav");
+      }
     }
 
     this.sendClothesToWorld();

@@ -81,7 +81,10 @@ export function selfProfileDialog(player: Player): string {
     .addButton("role_goals", "`2Goals``");
 
   if (player.canTransform()) {
-    dialog.addButton("transform", player.isTransformed ? "`4Untransform!``" : "`2Transform!``");
+    const transformLabel = player.inventory.clothes.feet === 7384
+      ? (player.isTransformed ? "`4Switch to Car Mode 🚗``" : "`2Transform to Robot Mode 🤖``")
+      : (player.isTransformed ? "`4Untransform!``" : "`2Transform!``");
+    dialog.addButton("transform", transformLabel);
   }
 
   if (player.effectiveClothes.back === 10424 || player.inventory.clothes.back === 10424 || player.inventory.hasItem(10424)) {

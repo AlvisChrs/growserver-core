@@ -1373,19 +1373,32 @@ registerCommand({
     if (isCurrentlyInvisible) {
       player.state.characterState &= ~(CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS);
       if (world) {
-        world.sendParticleEffect?.(3, px, py);
+        // Exiting invis: transition with a dark black portal / shadow rift (no ghosts)
         world.sendParticleEffect?.(12, px, py);
         world.playPositioned?.("audio/teleport.wav", player.netID);
       }
       player.sendClothesToWorld();
-      player.variants.sendOnConsoleMessage("`4Invisibility disabled. You step back into reality.``");
+      player.variants.sendOnConsoleMessage("`4Invisibility disabled. You step back through the dark shadow portal into reality.``");
     } else {
       player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
       if (world) {
-        world.sendParticleEffect?.(3, px, py);
+        // Entering invis: swarm of flying ghosts/spirits surrounding the avatar
+        const offsets = [
+          [0, 0],
+          [-16, -12],
+          [16, -12],
+          [0, -22],
+          [-12, 10],
+          [12, 10],
+          [-22, 0],
+          [22, 0],
+        ];
+        for (const [ox, oy] of offsets) {
+          world.sendParticleEffect?.(3, px + ox, py + oy);
+        }
         world.playPositioned?.("audio/spooky.wav", player.netID);
       }
-      player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadows veil your presence.``");
+      player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadow spirits swarm as you vanish into the unseen.``");
     }
     player.sendCharacterState();
   },
@@ -2311,42 +2324,39 @@ registerCommand({
       return;
     }
 
-    // Specific Assassin's Creed hero or default Ezio Auditore
-    const heroName = choice === "altair" ? "Altair" : choice === "bayek" ? "Bayek" : choice === "sam" ? "Sam Fisher" : "Ezio Auditore";
+    // Hero registry: full-body hero skins equipped in the necklace slot (ClothTypes.NECKLACE)
+    const heroMap: Record<string, { id: number; name: string }> = {
+      ezio: { id: 11560, name: "Ezio Auditore" },
+      altair: { id: 12646, name: "Altair Ibn-La'Ahad" },
+      bayek: { id: 12650, name: "Bayek of Siwa" },
+      connor: { id: 13894, name: "Connor Kenway" },
+      kassandra: { id: 13896, name: "Kassandra" },
+      basim: { id: 13892, name: "Basim" },
+      eivor: { id: 12648, name: "Eivor" },
+      bodvar: { id: 11554, name: "Bödvar" },
+      val: { id: 11556, name: "Val" },
+      sam: { id: 11558, name: "Sam Fisher" },
+      fisher: { id: 11558, name: "Sam Fisher" },
+      edward: { id: 15288, name: "Edward Kenway" },
+      yasuke: { id: 15290, name: "Yasuke" },
+    };
+
+    const targetHero = heroMap[choice] ?? heroMap.ezio;
+    const heroName = targetHero.name;
     player.isTransformed = true;
 
-    if (choice === "altair") {
-      player.inventory.clothes.hair = 12740;  // Altair's Hood
-      player.inventory.clothes.shirt = 12742; // Altair's Vest
-      player.inventory.clothes.pants = 12744; // Altair's Trousers
-      player.inventory.clothes.feet = 12746;  // Altair's Boots
-      player.inventory.clothes.back = 11016;  // Dark Assassin's Cape
-      player.inventory.clothes.hand = 11020;  // Dark Assassin's Armguards
-      player.inventory.clothes.face = 0;
-      player.inventory.clothes.mask = 0;
-      player.inventory.clothes.necklace = 12646; // Altair
-    } else if (choice === "bayek") {
-      player.inventory.clothes.hair = 0;
-      player.inventory.clothes.mask = 12748;  // Bayek's Hood
-      player.inventory.clothes.shirt = 12750; // Bayek's Vest
-      player.inventory.clothes.pants = 12752; // Bayek's Trousers
-      player.inventory.clothes.feet = 12754;  // Bayek's Boots
-      player.inventory.clothes.back = 11016;
-      player.inventory.clothes.hand = 11020;
-      player.inventory.clothes.face = 0;
-      player.inventory.clothes.necklace = 12650; // Bayek
-    } else {
-      // Default: Ezio Auditore (11560)
-      player.inventory.clothes.hair = 7080;  // Ezio's Hood
-      player.inventory.clothes.shirt = 7082; // Ezio's Vest
-      player.inventory.clothes.back = 7084;  // Ezio's Cape
-      player.inventory.clothes.pants = 7086; // Ezio's Trousers
-      player.inventory.clothes.hand = 7088;  // Ezio's Armguards
-      player.inventory.clothes.face = 7090;  // Ezio's Beard
-      player.inventory.clothes.feet = 7094;  // Ezio's Boots
-      player.inventory.clothes.mask = 0;
-      player.inventory.clothes.necklace = 11560; // Ezio
-    }
+    // Equip the official full-body suit in the necklace slot
+    player.inventory.clothes.necklace = targetHero.id;
+
+    // Suppress conflicting civilian slots so the full-body tall hero skin renders cleanly
+    player.inventory.clothes.hair = 0;
+    player.inventory.clothes.shirt = 0;
+    player.inventory.clothes.pants = 0;
+    player.inventory.clothes.feet = 0;
+    player.inventory.clothes.face = 0;
+    player.inventory.clothes.mask = 0;
+    player.inventory.clothes.back = 0;
+    player.inventory.clothes.hand = 0;
 
     player.playMods?.add?.("hero_suit");
     player.sendClothesToWorld?.();

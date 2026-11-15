@@ -1688,7 +1688,7 @@ registerCommand({
 registerCommand({
   name: "royaltrail",
   aliases: ["rtrail", "locktrail"],
-  description: "Set or toggle particle effect for Royal Lock walking trail in current world (e.g. /royaltrail 46, /royaltrail off)",
+  description: "Set or toggle particle effect for Royal Lock walking trail in current world (e.g. /royaltrail 0: Rainbow Stars, /royaltrail off)",
   usage: "/royaltrail <particle_id|off>",
   role: PLAYER_ROLE.BASIC,
   cooldown: 1,
@@ -1697,14 +1697,14 @@ registerCommand({
     if (!world) return;
     const arg = (args[0] ?? "").toLowerCase().trim();
     if (!arg) {
-      const current = world.royalTrailParticle !== null ? `ID \`o${world.royalTrailParticle}\`\`` : "`4Disabled (Client Native / Clean)``";
-      return player.variants.sendOnConsoleMessage(`\`2Royal Lock Trail Particle is currently: ${current}. Usage: \`/royaltrail <0-500|off>\`\` (e.g. 46: Stars, 44: Sparkles, 2: Hearts).`);
+      const current = (world.royalTrailParticle ?? 0) >= 0 ? `ID \`o${world.royalTrailParticle ?? 0}\`\` (Rainbow Stars)` : "`4Disabled``";
+      return player.variants.sendOnConsoleMessage(`\`2Royal Lock Trail Particle is currently: ${current}. Usage: \`/royaltrail <0-500|off>\`\` (e.g. 0: Rainbow Stars, 46: Sparkles, 2: Hearts).`);
     }
 
     if (arg === "off" || arg === "none" || arg === "disable" || arg === "clear") {
-      world.royalTrailParticle = null;
-      player.variants.sendOnConsoleMessage("`2Royal Lock trail server particle disabled (clean walking / client native).``");
-      player.sendTextBubble("`2Royal trail set to Clean/Native!``", true);
+      world.royalTrailParticle = -1;
+      player.variants.sendOnConsoleMessage("`2Royal Lock trail particle disabled.``");
+      player.sendTextBubble("`2Royal trail disabled!``", true);
       return;
     }
 
@@ -1714,7 +1714,7 @@ registerCommand({
     }
 
     world.royalTrailParticle = id;
-    player.variants.sendOnConsoleMessage(`\`2Royal Lock walking trail particle set to ID \`o${id}\`\` (e.g. 46: Stars, 44: Sparkles)!`);
+    player.variants.sendOnConsoleMessage(`\`2Royal Lock walking trail particle set to ID \`o${id}\`\`!`);
     player.sendTextBubble(`\`2Royal trail set to particle ${id}!\`\``, true);
   },
 });

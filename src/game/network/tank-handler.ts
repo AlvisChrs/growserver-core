@@ -55,10 +55,11 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
       player.lastRainbowY = data.posY;
       const rx = data.posX + 10;
       const ry = data.posY + 26;
-      // If a custom particle effect is chosen via /royaltrail, emit it
-      if (world.royalTrailParticle !== null) {
-        world.sendParticleEffect(world.royalTrailParticle, rx, ry);
-        world.broadcastVariant(Variant.from("OnParticleEffect", world.royalTrailParticle, [rx, ry]));
+      // Authentic rainbow trail particle (0 = rainbow stars, -1 = disabled)
+      const trailParticle = world.royalTrailParticle ?? 0;
+      if (trailParticle >= 0) {
+        world.sendParticleEffect(trailParticle, rx, ry);
+        world.broadcastVariant(Variant.from("OnParticleEffect", trailParticle, [rx, ry]));
       }
     }
   }

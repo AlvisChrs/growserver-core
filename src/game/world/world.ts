@@ -67,8 +67,8 @@ export class World {
     return this.data.height;
   }
 
-  /** Custom particle effect emitted for Royal Lock walking trail (null = disabled / client native). */
-  public royalTrailParticle: number | null = null;
+  /** Custom particle effect emitted for Royal Lock walking trail (0 = authentic rainbow stars, -1 = disabled). */
+  public royalTrailParticle: number | null = 0;
 
   /** Players currently inside this world, across every game server. */
   /** Cached Xenonite masks, `undefined` when they must be recomputed. */

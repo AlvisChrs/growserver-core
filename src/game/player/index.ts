@@ -67,57 +67,229 @@ export enum PlayerStateFlags {
 const PROTECTED_ITEMS: ReadonlySet<number> = new Set([ITEM_ID.FIST, ITEM_ID.WRENCH]);
 
 /**
- * Maps specific weapons/hand items to their true visual punch animations in Growtopia.
- */
-/**
- * Maps specific wearable accessories to their true visual punch animations in Growtopia
- * when the player's hand is bare or swinging.
- * (Note: Weapons held in hand natively render their authentic attack visuals in the client when punchId is 0).
+ * Comprehensive mapping of authentic Growtopia weapons and wearable accessories
+ * to their exact visual punch animation and particle effect IDs.
  */
 export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
-  // Rayman's Fists & Floating Fists
-  5480: 80,  // Rayman's Fist (Disembodied floating fists)
+  // Rayman's Fists & Floating Fists (80 = Disembodied floating fists)
+  5480: 80,  // Rayman's Fist
+  5980: 80,  // Floating Fists
   12018: 80, // Rok's Fists
 
+  // Katanas & Japanese Blades (43 = Iconic blade slice & anime slash)
+  2592: 43,  // Legendary Katana
+  3838: 43,  // Dueling Katanas
+  7830: 43,  // Heartsword
+  7832: 43,  // Golden Heartsword
+  9058: 43,  // Cursed Katana
+  9116: 43,  // Red Laser Scimitar
+  9118: 43,  // Green Laser Scimitar
+  9120: 43,  // Blue Laser Scimitar
+  9122: 43,  // Purple Laser Scimitar
+  10402: 43, // Christmas Tree Sword
+  11118: 43, // Sonic Buster Katana
+  11298: 43, // Sakura's Revenge
+  12342: 43, // Mageblade
+  13710: 43, // Dark Magic Katana
+  14018: 43, // Greatest Swordsman's Dual Wield
+  14380: 43, // Fierce Wingman Blades
+  14764: 43, // Blade of Revolt
+  16428: 43, // Immortal Sonic Buster Katana
+
+  // Scythes (13 = Reaper dark soul slash, 36 = Heavenly, 42 = Flame)
+  1068: 13,  // Hand Scythe
+  1484: 13,  // Atomic Shadow Scythe
+  2386: 36,  // Heavenly Scythe (Heavenly heart burst slash)
+  2572: 42,  // Flame Scythe (Brutal carnival flame slash)
+  4166: 13,  // Death's Scythe
+  6242: 13,  // Anomalizing Reliable Scythe
+  6244: 13,  // Anomalizing Pristine Scythe
+  6246: 13,  // Exquisite Scythe
+  6928: 13,  // Anomalizing Elegant Scythe
+  7098: 13,  // Apocalypse Scythe
+  9032: 13,  // Scythe of the Underworld
+  10498: 13, // Candy Cane Scythe
+  11006: 13, // Soul Scythe
+  11464: 13, // Ice Dragon Scythe
+  13400: 13, // Bamboo Scythe
+  13828: 13, // Soul Harvester's Scythe
+  15574: 13, // Scythed Hero Scythes
+
+  // Dragon Hands & Claws (6 = Fire breath, 11 = Ice breath, 16 = Fiesta, 21 = Legend, 32 = Crystal)
+  900: 6,    // Dragon Hand
+  1378: 11,  // Ice Dragon Hand
+  1576: 16,  // Fiesta Dragon
+  1782: 21,  // Dragon of Legend
+  1998: 6,   // Skeletal Dragon Claw
+  2212: 32,  // Black Crystal Dragon
+  2450: 40,  // Diamond Dragon
+  7752: 6,   // Gourmet Dragon Claw
+  7754: 6,   // Emergency Dragon Claw
+  7758: 6,   // Prehistoric Dragon Claw
+  7760: 6,   // Star Dragon Claw
+  9086: 6,   // Friendship Dragon Claw
+
+  // Guns, Blasters, Heavy Weapons & Lasers
+  472: 3,    // Tommygun
+  768: 5,    // Sawed-Off Shotgun
+  910: 7,    // Reanimator Remote
+  930: 8,    // Death Ray
+  1016: 9,   // Six Shooter
+  1250: 7,   // Bride Of Reanimator Remote
+  1676: 17,  // Squirt Gun
+  1710: 18,  // Keytar
+  1748: 19,  // Flamethrower
+  1780: 20,  // Legendbot-009
+  1958: 8,   // Death Ray (Alternate ID)
+  2752: 45,  // Pineapple Launcher
+  3066: 57,  // Fire Hose
+  3300: 64,  // Party Blaster
+  3716: 69,  // Neutron Gun / Pack
+  4474: 72,  // Skull Launcher
+  4840: 78,  // Balloon Launcher
+  6058: 9,   // Dual Six-Shooters
+  10626: 8,  // Rose Rifle
+  10724: 3,  // Lil Growpeep's Baaaa Blaster
+  11312: 8,  // Spider Sniper
+  12014: 8,  // Dal's Phasers
+
+  // Bows & Crossbows (4 = Arrow, 2 = Hearts, 44 = Electric)
+  278: 2,    // Heart Bow
+  366: 2,    // Heartbow
+  594: 4,    // Elvish Longbow
+  1464: 2,   // Golden Heartbow
+  2720: 44,  // Electric Bow
+  4136: 4,   // Heatbow
+  5424: 4,   // Winter Frost Bow
+  5456: 4,   // Silverstar Bow
+  10052: 4,  // Eldritch Crossbow
+  10130: 4,  // Sun Shooter Bow
+  10670: 4,  // Bow of the Rainbow
+  11380: 4,  // Black Bow of the Rainbow
+  11438: 4,  // Digital Bow
+  11440: 4,  // Mystic Bow
+  11442: 4,  // Royal Mystic Bow
+  12870: 4,  // Candy Cane Bow
+  14834: 4,  // Primal Bow
+  15948: 4,  // Hair Longbow
+
+  // Tridents, Spears & Lances (49 = Poseidon's Trident, 47 = Gungnir)
+  2756: 47,  // The Gungnir
+  2802: 49,  // Poseidon's Trident
+  4126: 49,  // Stone Spear
+  5276: 49,  // Celestial Lance
+  6110: 49,  // Pineapple Spear
+  7434: 49,  // Poseidon's Digger's Trident
+  7646: 47,  // Tyr's Spear
+  7736: 49,  // Dragon Knight's Spear
+  9758: 49,  // Neptune's Trident
+  10578: 49, // Mystic Battle Lance
+  10680: 49, // Finias' Red Javelin
+  10922: 49, // Pegasus Lance
+  11076: 49, // Ambu-Lance
+  11120: 49, // Primordial Jade Lance
+  12628: 49, // Shattered Spear
+  12886: 49, // Icicle Lance
+  13366: 49, // Carrot Lance
+  13638: 49, // Lembuswana Trident
+  14220: 49, // Rocket Lance
+  14222: 49, // Royal Rocket Lance
+  14258: 49, // Dual Spears of Diarmuid
+  14964: 49, // Dual Obsidian Spears
+  15234: 49, // Cu Chulainn's Mythical Lance
+
+  // Staves, Wands, Rods & Magic (50 = Wizard Staff, 65 = Serpent Staff, 22 = Lightning)
+  158: 50,   // Fairy Wand
+  1804: 22,  // Zeus' Lightning Bolt
+  1874: 24,  // Ring of Force
+  1946: 25,  // Ice Calf Leash
+  1956: 50,  // Chaos Cursed Wand
+  2066: 31,  // Cosmic Unicorn Bracelet
+  2218: 33,  // Mighty Snow Rod
+  2266: 35,  // Crystal Glaive
+  2754: 46,  // Demonic Arm
+  2866: 50,  // Wizard's Staff
+  2908: 29,  // Carrot Sword
+  2910: 50,  // Emerald Staff
+  3214: 60,  // Axe Of Winter
+  3418: 65,  // Serpent Staff
+  3466: 29,  // Slasher
+  4506: 29,  // Machete
+  4778: 76,  // Adventurer's Whip
+  6840: 50,  // Dreamcatcher Staff
+  7470: 50,  // Narwhal Tusk Staff
+  7826: 50,  // Heartstaff
+  7828: 50,  // Golden Heartstaff
+  9410: 50,  // Radiant Doom Staff
+  9738: 50,  // Staff of the Deep
+  10406: 50, // Staff of Deepest Winter
+  11004: 50, // Brass Staff
+  11248: 50, // Staff of S'mores
+  11630: 50, // Monkey Warrior's Staff
+  12246: 50, // Staff of Gale
+  12248: 50, // Royal Staff of Gale
+  12412: 50, // Wizard's Wand
+  13326: 50, // Shamrock Staff
+  14092: 50, // Snowglobe Staff
+  14298: 50, // Jade's Dai-Jo Staff
+  15178: 50, // Bubble Wand
+  15192: 50, // Good Witch's Wand
+  15858: 50, // Staff of the North Star
+
+  // Fists & Boxing Gloves
+  96: 1,     // Boxing Gloves
+  7940: 1,   // Flaming Boxing Gloves
+
   // Face: Eyes & Visors
-  2476: 39,  // Burning Eyes (Fiery flame punch)
-  10336: 39, // Black Burning Eyes (Dark flame punch)
+  138: 1,    // Cyclopean Visor (Optic blast)
+  452: 1,    // Cyclopean Visor / Visor alias
   1204: 10,  // Focused Eyes (Optic zap laser)
-  452: 1,    // Cyclopean Visor (Optic blast)
-  1872: 10,  // Cybernetic Eye
+  1872: 10,  // Cybernetic Eye (Laser beam)
+  2476: 39,  // Burning Eyes (Fiery flame punch)
+  2976: 10,  // Cybernetic Eye
+  10336: 39, // Black Burning Eyes (Dark flame punch)
 
   // Hair / Head: Eyes, Horns, Crowns & Wigs
-  8372: 8,   // Giant Eye Head (Baleful optic gaze)
+  306: 14,   // Rainbow Wig (Rainbow burst)
+  2780: 8,   // Medusa's Head (Petrifying gaze)
+  3836: 19,  // Burning Crown (Fire strike)
+  4182: 13,  // Malevolent Hair (Shadow punch)
+  4456: 40,  // Diamond Horns (Diamond sparkle blast)
   4746: 75,  // Energized Horn (Horn lightning)
   4748: 75,  // Energized Horns (Horn lightning)
   4750: 75,  // Double Energized Horns (Horn lightning)
-  4456: 40,  // Diamond Horns (Diamond sparkle blast)
-  306: 14,   // Rainbow Wig (Rainbow burst)
+  8372: 8,   // Giant Eye Head (Baleful optic gaze)
   9034: 19,  // Horns of the Underworld (Demon flame)
-  2780: 8,   // Medusa's Head (Petrifying gaze)
-  3836: 19,  // Burning Crown (Fire strike)
 
   // Back: Wings & Capes
-  1674: 19,  // Phoenix Wings (Fire punch)
+  160: 19,   // Demon Wings (Dark flame)
+  350: 1,    // Heroman Cape (Heroic punch)
+  1460: 40,  // Golden Angel Wings (Golden feathers)
   1672: 14,  // Rainbow Wings (Rainbow punch)
+  1674: 19,  // Phoenix Wings (Fire punch)
+  1784: 19,  // Dragon Wings (Fire punch)
+  2168: 1,   // Superhero Cape (Heroic punch)
+  7150: 40,  // Golden Angel Wings (Golden feathers)
   8286: 4,   // Da Vinci Wings (Golden spark)
   16262: 4,  // Immortal Da Vinci Wings (Golden spark)
-  350: 1,    // Heroman Cape (Heroic punch)
-  2168: 1,   // Superhero Cape (Heroic punch)
-  1784: 19,  // Dragon Wings (Fire punch)
-  160: 19,   // Demon Wings (Dark flame)
-  7150: 40,  // Golden Angel Wings (Golden feathers)
 
   // Necklace & Pets
-  1782: 21,  // Dragon of Legend / Legendary!
   1454: 14,  // Pet Leprechaun (Rainbows!)
+  1512: 14,  // Pet Leprechaun (Rainbows!)
   1538: 14,  // Unicorn Garland (Rainbows!)
+  1648: 14,  // Unicorn Garland (Rainbows!)
+  1782: 21,  // Dragon of Legend (Legendary pulse)
+  1874: 24,  // Ring of Force (Force burst)
+  1946: 25,  // Ice Calf Leash (Frost beam)
   1968: 13,  // Death's Scarf (Dark pulse)
+  2066: 31,  // Cosmic Unicorn Bracelet (Cosmic pulse)
 
-  // Mask
-  2988: 13,  // Anubis Mask (Sand magic)
+  // Masks
   912: 6,    // Dragon Mask (Dragon fire)
-  4182: 13,  // Malevolent Hair (Shadow punch)
+  1228: 6,   // Green Dragon Mask (Dragon fire)
+  2988: 13,  // Anubis Mask (Sand magic)
+  7748: 6,   // Super-Dragon Mask (Dragon fire)
+  8996: 13,  // Anubis Mask (Sand magic)
 
   // Feet
   7384: 5,   // Go-Go-Growformer! (Rocket explosion)
@@ -870,19 +1042,50 @@ export class Player {
 
     const handItem = this.effectiveClothes.hand || this.inventory.clothes.hand;
 
-    // 1. Rayman's Fist & Rok's Fists use floating fist punch type (80)
-    if (handItem === 5480 || handItem === 12018 || handItem === 5980) {
-      return 80;
+    // 1. Direct hand weapon / item lookup in WEAPON_PUNCH_TYPES
+    if (handItem && WEAPON_PUNCH_TYPES[handItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[handItem]!;
     }
 
-    // 2. Hand weapons (Katanas, Scythes, Swords, Staves, Bows, Spears, Guns):
-    // In Growtopia, hand weapons natively play their unique attack, projectile, swing,
-    // and slice animations in the client when punchId is 0. Returning 0 ensures
-    // the weapon's distinctive visuals are never overridden by a generic punch effect.
-    if (handItem > 0 && handItem !== 32) {
+    // 2. Dynamic weapon category detection for held hand weapons
+    if (handItem > 0 && handItem !== ITEM_ID.FIST) {
       const itemDef = getItem(handItem);
-      if (itemDef?.type === ActionTypes.CLOTHES || itemDef?.bodyPartType === ClothTypes.HAND) {
-        return 0;
+      if (itemDef?.name) {
+        const lower = itemDef.name.toLowerCase();
+        if (lower.includes("katana") || lower.includes("sword") || lower.includes("blade") || lower.includes("saber")) {
+          return 43; // Authentic Japanese Katana / blade slice
+        }
+        if (lower.includes("scythe")) {
+          return 13; // Authentic scythe reaper slash
+        }
+        if (lower.includes("bow") || lower.includes("crossbow")) {
+          return 4; // Authentic bow arrow
+        }
+        if (
+          lower.includes("gun") ||
+          lower.includes("blaster") ||
+          lower.includes("rifle") ||
+          lower.includes("shotgun") ||
+          lower.includes("pistol") ||
+          lower.includes("revolver")
+        ) {
+          return 5; // Gun / blaster projectile
+        }
+        if (lower.includes("staff") || lower.includes("wand") || lower.includes("rod")) {
+          return 50; // Wizard staff projectile
+        }
+        if (
+          lower.includes("trident") ||
+          lower.includes("spear") ||
+          lower.includes("lance") ||
+          lower.includes("javelin") ||
+          lower.includes("halberd")
+        ) {
+          return 49; // Trident / spear thrust
+        }
+        if (lower.includes("dragon")) {
+          return 6; // Dragon fire
+        }
       }
     }
 

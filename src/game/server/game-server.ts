@@ -273,17 +273,34 @@ export class GameServer extends EventEmitter {
             player.addStateStatus(PlayerStateFlags.ENTERING_GAME);
 
             // Fetch database player record to get unique database playerId
-            const dbPlayer = await PlayerDB.getByName(player.tankIDName);
-            if (dbPlayer) {
-              player.playerId = dbPlayer.id;
+            let dbPlayer = await PlayerDB.getByName(player.tankIDName);
+            if (!dbPlayer) {
+              dbPlayer = await PlayerDB.create({
+                name: player.tankIDName,
+                display_name: player.displayName,
+                role_id: PLAYER_ROLE.BASIC,
+              });
             }
+            player.playerId = dbPlayer.id;
+            player.loadFromRecord(dbPlayer);
 
             // Find optimal target game server dynamically instead of hardcoding
             const optimalServer = serverManager.getOptimalServer("least_connections");
             const targetPort = optimalServer ? optimalServer.port : this.port;
             const targetServerLabel = optimalServer ? optimalServer.serverLabel : this.serverLabel;
 
-            // Prepare sub-server transfer token session with unique database playerId
+            // Direct in-place login when connecting directly to the target server:
+            if (targetPort === this.port) {
+              player.removeStateStatus(PlayerStateFlags.LOGIN_REQUEST);
+              player.addStateStatus(PlayerStateFlags.IN_GAME);
+              player.variants.sendSetHasGrowID(true, player.tankIDName, sessionToken);
+              player.variants.sendOnOverrideGdprFromServer(Math.max(18, player.auth.metadata.playerAge || 18));
+              player.variants.sendSuperMain(text.getInt("protocol", 0, 216));
+              logger.info({ name: player.tankIDName, port: this.port }, "player logged in directly via ltoken");
+              return;
+            }
+
+            // Cross-server transfer when multi-port cluster directs player to another instance:
             const transferSession = player.auth.prepareTransfer({
               playerId: player.playerId,
               sourceServer: this.serverLabel,

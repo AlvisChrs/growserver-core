@@ -13,36 +13,36 @@ import type { Player } from "../src/game/player";
 import type { World } from "../src/game/world/world";
 
 describe("Legendary Katana & Katana Series", () => {
-  test("Legendary Katana (#2592) is registered in WEARABLE_MODS with slash punchType 29 and stats", () => {
+  test("Legendary Katana (#2592) is registered in WEARABLE_MODS with unique Legendary slash punchType 43 and stats", () => {
     const lkat = WEARABLE_MODS.get(2592);
     expect(lkat).toBeDefined();
     expect(lkat?.id).toBe("legendary_katana");
-    expect(lkat?.punchType).toBe(29);
+    expect(lkat?.punchType).toBe(43);
     expect(lkat?.speed).toBe(100);
     expect(lkat?.punchPower).toBe(350);
     expect(lkat?.punchDamage).toBe(3);
     expect((lkat?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
 
     const stats = computeStats([{ id: "legendary_katana", expiresAt: 0 }]);
-    expect(stats.punchType).toBe(29);
+    expect(stats.punchType).toBe(43);
     expect(stats.speed).toBeGreaterThan(1200);
     expect((stats.charState & CHARACTER_STATE.DOUBLE_JUMP) !== 0).toBe(true);
   });
 
-  test("Elemental and cursed katanas are registered with proper punchType 29 and weapon stats", () => {
+  test("Elemental and cursed katanas are registered with proper unique punchTypes and weapon stats", () => {
     const cursed = WEARABLE_MODS.get(9058);
-    expect(cursed?.punchType).toBe(29);
+    expect(cursed?.punchType).toBe(81);
     expect(cursed?.punchPower).toBe(300);
 
     const sonic = WEARABLE_MODS.get(11118);
-    expect(sonic?.punchType).toBe(29);
+    expect(sonic?.punchType).toBe(125);
     expect(sonic?.speed).toBe(120);
 
     const dark = WEARABLE_MODS.get(13710);
-    expect(dark?.punchType).toBe(29);
+    expect(dark?.punchType).toBe(135);
 
     const immortal = WEARABLE_MODS.get(16428);
-    expect(immortal?.punchType).toBe(29);
+    expect(immortal?.punchType).toBe(145);
     expect(immortal?.speed).toBe(140);
     expect((immortal?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
   });
@@ -316,5 +316,75 @@ describe("Fishing & Aquarium Verification", () => {
     expect(clothes.hand).toBe(2912); // Rod was auto-equipped!
     expect(mockPlayer.fishing).toBeDefined();
     expect(mockPlayer.fishing?.baitId).toBe(2914);
+  });
+
+  test("/hero gives full-body hero suits and equips Ezio with hero_suit mod", () => {
+    const cmd = findCommand("hero");
+    expect(cmd).toBeDefined();
+
+    const inv = new Map<number, number>();
+    const clothes: Record<string, number> = {};
+    const mods = new Set<string>();
+
+    const mockPlayer = {
+      inventory: {
+        hasItem: (id: number) => inv.has(id),
+      },
+      addItemInven: (id: number, count = 1) => inv.set(id, (inv.get(id) ?? 0) + count),
+      equipClothes: (id: number) => {
+        if (id === 11560) clothes.necklace = id;
+        if (id === 350) clothes.back = id;
+      },
+      playMods: {
+        add: (id: string) => mods.add(id),
+      },
+      sendClothesToWorld: () => {},
+      sendCharacterState: () => {},
+      sendSfx: () => {},
+      sendTextBubble: () => {},
+      variants: { sendOnConsoleMessage: () => {} },
+    } as unknown as Player;
+
+    cmd?.execute(mockPlayer, []);
+
+    expect(inv.has(11560)).toBe(true); // Ezio
+    expect(inv.has(12646)).toBe(true); // Altair
+    expect(inv.has(11558)).toBe(true); // Sam Fisher
+    expect(inv.has(350)).toBe(true);   // Cape
+    expect(clothes.necklace).toBe(11560);
+    expect(clothes.back).toBe(350);
+    expect(mods.has("hero_suit")).toBe(true);
+  });
+
+  test("/transforms gives Go-Go-Growformer!, PowerKey, Mystic Crystal, and Space Rabbit", () => {
+    const cmd = findCommand("transforms");
+    expect(cmd).toBeDefined();
+
+    const inv = new Map<number, number>();
+    const clothes: Record<string, number> = {};
+
+    const mockPlayer = {
+      inventory: {
+        hasItem: (id: number) => inv.has(id),
+      },
+      addItemInven: (id: number, count = 1) => inv.set(id, (inv.get(id) ?? 0) + count),
+      equipClothes: (id: number) => {
+        clothes.feet = id;
+      },
+      sendInventory: () => {},
+      sendClothesToWorld: () => {},
+      sendCharacterState: () => {},
+      sendSfx: () => {},
+      sendTextBubble: () => {},
+      variants: { sendOnConsoleMessage: () => {} },
+    } as unknown as Player;
+
+    cmd?.execute(mockPlayer, []);
+
+    expect(inv.has(7384)).toBe(true);  // Growformer
+    expect(inv.has(7480)).toBe(true);  // PowerKey
+    expect(inv.has(10456)).toBe(true); // Mystic Transform Crystal
+    expect(inv.has(10960)).toBe(true); // Space Rabbit
+    expect(clothes.feet).toBe(7384);   // Auto-equipped!
   });
 });

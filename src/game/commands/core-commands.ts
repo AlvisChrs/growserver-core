@@ -1646,7 +1646,7 @@ registerCommand({
 
 registerCommand({
   name: "transform",
-  aliases: ["morph", "growformer", "hero"],
+  aliases: ["morph", "growformer"],
   description: "Toggle vehicle or robot transform mode with transformable items",
   cooldown: 1,
   execute(player) {
@@ -2071,37 +2071,77 @@ registerCommand({
 
 registerCommand({
   name: "hero",
-  aliases: ["superhero"],
+  aliases: ["superhero", "herosuit", "assassin"],
   description: "Equip superhero suit and activate hero mode",
   role: PLAYER_ROLE.USER,
   execute(player) {
     const heroItems = [
-      350, // Heroman Cape
-      2134, // Superhero Mask - Red
-      2098, // Heroic Tights - Red
-      2122, // Heroic Boots - Red
-      2170, // Superheroine Top - Red
       11560, // Ezio Full-Body Suit
+      12646, // Altair Full-Body Suit
+      11558, // Sam Fisher Full-Body Suit
+      12648, // Eivor Full-Body Suit
+      12650, // Bayek Full-Body Suit
+      13892, // Basim Full-Body Suit
+      350,   // Heroman Cape
+      2134,  // Superhero Mask - Red
+      2142,  // Superhero Mask - Black
+      2098,  // Heroic Tights - Red
+      2104,  // Heroic Tights - Black
+      2122,  // Heroic Boots - Red
+      2128,  // Heroic Boots - Black
+      2170,  // Superheroine Top - Red
     ];
     for (const id of heroItems) {
       if (!player.inventory.hasItem(id)) player.addItemInven(id, 1);
     }
+    player.equipClothes(11560);
     player.equipClothes(350);
-    player.equipClothes(2134);
-    player.equipClothes(2098);
-    player.equipClothes(2122);
-    player.equipClothes(2170);
 
     player.playMods.add("hero_suit");
+    player.sendClothesToWorld();
+    player.sendCharacterState();
     player.sendSfx("audio/change_clothes.wav");
-    player.sendTextBubble("`5Up, up, and away! Superhero powers engaged!``", true);
-    player.variants.sendOnConsoleMessage("`5Superhero powers activated! Double jump, increased speed, and heroic punch range unlocked!``");
+    player.sendTextBubble("`5Up, up, and away! Hero suit equipped!``", true);
+    player.variants.sendOnConsoleMessage("`5Hero suits received! Equipped Ezio (#11560) and Cape (#350). Double jump, speed boost, and extended reach active!``");
+    player.variants.sendOnConsoleMessage("`oTip: Check inventory for Altair (#12646), Sam Fisher (#11558), Eivor (#12648), Bayek (#12650), Basim (#13892), and classic Superhero tights!``");
+  },
+});
+
+registerCommand({
+  name: "transforms",
+  aliases: ["transformitems", "morphs"],
+  description: "Receive transform items: Go-Go-Growformer, PowerKey, Mystic Transform Crystal, Space Rabbit, and Hero Suits",
+  role: PLAYER_ROLE.USER,
+  execute(player) {
+    const items = [
+      7384,  // Go-Go-Growformer! (Feet)
+      7480,  // Growformer PowerKey (Consumable)
+      10456, // Mystic Transform Crystal (Consumable)
+      10454, // Mystic Snow Fox
+      10960, // Space Rabbit (Consumable)
+      12014, // Dal's Phasers
+      12018, // Rok's Fists
+      11560, // Ezio Full-Body Suit
+      12646, // Altair Full-Body Suit
+    ];
+    for (const id of items) {
+      if (!player.inventory.hasItem(id)) player.addItemInven(id, 1);
+    }
+    // Auto-equip Go-Go-Growformer so player is instantly ready to roll out
+    player.equipClothes(7384);
+    player.sendInventory();
+    player.sendClothesToWorld();
+    player.sendCharacterState();
+    player.sendSfx("audio/jet_engine01.wav");
+    player.sendTextBubble("`3Transform gear loaded! Roll out!``", true);
+    player.variants.sendOnConsoleMessage("`3[Transforms]: Received Go-Go-Growformer! (#7384), PowerKey (#7480), Mystic Transform Crystal (#10456), Space Rabbit (#10960), and Hero Suits!``");
+    player.variants.sendOnConsoleMessage("`oTip: Use /transform or double-click Growformer PowerKey (#7480) / Mystic Transform Crystal (#10456) to morph into vehicle mode!``");
   },
 });
 
 registerCommand({
   name: "criminal",
-  aliases: ["villain", "crime", "mastermind", "superhero"],
+  aliases: ["villain", "crime", "mastermind"],
   description: "Receive Crime Wave, Crime In Progress, Criminal Mastermind, and full deck of Superpower Cards",
   role: PLAYER_ROLE.USER,
   execute(player) {

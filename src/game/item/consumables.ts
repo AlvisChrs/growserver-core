@@ -321,6 +321,18 @@ export async function useConsumable(player: Player, world: World, item: ItemDefi
       world.sendParticleEffect(36, player.state.x + 16, player.state.y + 16);
       return;
     }
+    case 10456: { // Mystic Transform Crystal
+      player.toggleTransform();
+      world.sendParticleEffect(36, player.state.x + 16, player.state.y + 16);
+      world.playPositioned("audio/magic_hit.wav", player.netID);
+      return;
+    }
+    case 10960: { // Space Rabbit
+      player.toggleTransform();
+      world.sendParticleEffect(36, player.state.x + 16, player.state.y + 16);
+      world.playPositioned("audio/boing.wav", player.netID);
+      return;
+    }
     case 2382: { // Crime Wave
       if (player.removeItemInven(2382, 1) <= 0) return;
       world.playPositioned("audio/alarm.wav", player.netID);

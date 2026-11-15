@@ -3,6 +3,7 @@ import { CHARACTER_STATE, PLAYER_ROLE } from "../src/constants";
 import { ALL_MOBILITY_BACK_ITEMS, PLAY_MODS, WEARABLE_MODS } from "../src/game/player/play-mods";
 import { riftCapeDialog, riftWingsDialog, DEFAULT_RIFT_CAPE_CONFIG } from "../src/game/item/configurable-items";
 import { executeCommand, findCommand } from "../src/game/commands/registry";
+import "../src/game/commands/core-commands";
 import type { Player } from "../src/game/player";
 
 describe("Mobility Back Items & Wing Perks", () => {

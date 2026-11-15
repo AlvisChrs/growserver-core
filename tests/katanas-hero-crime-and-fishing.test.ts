@@ -13,36 +13,36 @@ import type { Player } from "../src/game/player";
 import type { World } from "../src/game/world/world";
 
 describe("Legendary Katana & Katana Series", () => {
-  test("Legendary Katana (#2592) is registered in WEARABLE_MODS with unique Legendary slash punchType 8 and stats", () => {
+  test("Legendary Katana (#2592) is registered in WEARABLE_MODS with unique Legendary slash punchType 43 and stats", () => {
     const lkat = WEARABLE_MODS.get(2592);
     expect(lkat).toBeDefined();
     expect(lkat?.id).toBe("legendary_katana");
-    expect(lkat?.punchType).toBe(8);
+    expect(lkat?.punchType).toBe(43);
     expect(lkat?.speed).toBe(100);
     expect(lkat?.punchPower).toBe(350);
     expect(lkat?.punchDamage).toBe(3);
     expect((lkat?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
 
     const stats = computeStats([{ id: "legendary_katana", expiresAt: 0 }]);
-    expect(stats.punchType).toBe(8);
+    expect(stats.punchType).toBe(43);
     expect(stats.speed).toBeGreaterThan(1200);
     expect((stats.charState & CHARACTER_STATE.DOUBLE_JUMP) !== 0).toBe(true);
   });
 
   test("Elemental and cursed katanas are equipped with distinctive custom slash punch effects", () => {
     const cursed = WEARABLE_MODS.get(9058);
-    expect(cursed?.punchType).toBe(29);
+    expect(cursed?.punchType).toBe(43);
     expect(cursed?.punchPower).toBe(300);
 
     const sonic = WEARABLE_MODS.get(11118);
-    expect(sonic?.punchType).toBe(8);
+    expect(sonic?.punchType).toBe(43);
     expect(sonic?.speed).toBe(120);
 
     const dark = WEARABLE_MODS.get(13710);
-    expect(dark?.punchType).toBe(8);
+    expect(dark?.punchType).toBe(43);
 
     const immortal = WEARABLE_MODS.get(16428);
-    expect(immortal?.punchType).toBe(8);
+    expect(immortal?.punchType).toBe(43);
     expect(immortal?.speed).toBe(140);
     expect((immortal?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
   });

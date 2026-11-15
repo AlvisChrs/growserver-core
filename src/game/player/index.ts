@@ -70,49 +70,50 @@ const PROTECTED_ITEMS: ReadonlySet<number> = new Set([ITEM_ID.FIST, ITEM_ID.WREN
  * Maps specific weapons/hand items to their true visual punch animations in Growtopia.
  */
 export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
-  // Katana series (punchType 8 = iconic Katana blade slice)
-  2592: 8,  // Legendary Katana
-  9058: 29, // Cursed Katana (slasher dark cut)
-  11118: 8, // Sonic Buster Katana
-  13710: 8, // Dark Magic Katana
-  16428: 8, // Immortal Sonic Buster Katana
+  // Katana series (punchType 43 = iconic Katana blade slice)
+  2592: 43,  // Legendary Katana
+  9058: 43,  // Cursed Katana (slasher dark blade cut)
+  11118: 43, // Sonic Buster Katana
+  13710: 43, // Dark Magic Katana
+  16428: 43, // Immortal Sonic Buster Katana
 
-  // Scythes (punchType 29 = sweeping reaper blade slash)
-  1068: 29,  // Hand Scythe
-  1484: 29,  // Atomic Shadow Scythe
-  2386: 29,  // Heavenly Scythe
-  2572: 29,  // Flame Scythe
-  4166: 29,  // Death's Scythe
-  7098: 29,  // Apocalypse Scythe
-  9032: 29,  // Scythe of the Underworld
-  10498: 29, // Candy Cane Scythe
-  11006: 29, // Soul Scythe
-  11464: 29, // Ice Dragon Scythe
-  13400: 29, // Bamboo Scythe
-  13828: 29, // Soul Harvester's Scythe
-  15574: 29, // Scythed Hero Scythes
+  // Scythes
+  1068: 13,  // Hand Scythe
+  1484: 13,  // Atomic Shadow Scythe
+  2386: 36,  // Heavenly Scythe
+  2572: 42,  // Flame Scythe
+  4166: 13,  // Death's Scythe
+  7098: 13,  // Apocalypse Scythe
+  9032: 13,  // Scythe of the Underworld
+  10498: 13, // Candy Cane Scythe
+  11006: 13, // Soul Scythe
+  11464: 13, // Ice Dragon Scythe
+  13400: 13, // Bamboo Scythe
+  13828: 13, // Soul Harvester's Scythe
+  15574: 13, // Scythed Hero Scythes
 
   // Dragon Hands
-  900: 19,   // Dragon Hand (Fire dragon breath punch)
-  1378: 2,   // Ice Dragon Hand (Frost breath punch)
+  900: 6,    // Dragon Hand (Fire dragon breath punch)
+  1378: 11,  // Ice Dragon Hand (Frost breath punch)
 
   // Fists & Boxing Gloves
   96: 1,     // Just One Boxing Glove
   7940: 1,   // Flaming Boxing Gloves
-  5480: 6,   // Rayman's Fist (Disembodied floating fists)
-  12018: 6,  // Rok's Fists
+  5480: 80,  // Rayman's Fist (Disembodied floating fists)
+  12018: 80, // Rok's Fists
 
   // Guns & Mecha
-  1780: 5,   // Legendbot-009 (Exploding rockets)
-  1958: 10,  // Death Ray (Optic laser)
-  12014: 10, // Dal's Phasers
+  1780: 20,  // Legendbot-009 (Robotic blast)
+  1958: 8,   // Death Ray (Optic laser)
+  12014: 8,  // Dal's Phasers
   3716: 69,  // Hunting Ghosts / Neutron Pack (Neutron beam)
   3066: 57,  // Fire Hose (Water stream)
 
   // Bows & Staves
-  278: 20,   // Heart Bow (Cupid hearts)
+  278: 2,    // Heart Bow (Cupid hearts)
   1874: 24,  // Ring of Force (Force ring)
   4746: 75,  // Energized Horn (Horn lightning)
+  1454: 14,  // Pet Leprechaun (Rainbows!)
   10406: 2,  // Staff of Deepest Winter (Ice)
 };
 
@@ -695,9 +696,17 @@ export class Player {
    * Toggles avatar transformation (vehicle/robot mode for Growformer, or hero stance).
    */
   public toggleTransform(): boolean {
-    if (!this.canTransform()) {
-      this.variants.sendOnConsoleMessage("`4You need a transformable item (like Go-Go-Growformer! or a Hero Suit) to transform!``");
-      return false;
+    if (!this.hasTransformItem()) {
+      if (this.inventory.hasItem(7384)) {
+        this.inventory.clothes.feet = 7384;
+      } else if (this.isDeveloper || this.isModerator) {
+        this.addItemInven(7384, 1);
+        this.inventory.clothes.feet = 7384;
+        this.sendInventory();
+      } else if (!this.canTransform()) {
+        this.variants.sendOnConsoleMessage("`4You need a transformable item (like Go-Go-Growformer! or a Hero Suit) to transform!``");
+        return false;
+      }
     }
 
     this.isTransformed = !this.isTransformed;

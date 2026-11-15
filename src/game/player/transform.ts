@@ -182,36 +182,28 @@ export const MORPH_ITEMS: ReadonlySet<number> = new Set([
 export function computeEffectiveClothes(clothes: Readonly<PlayerClothes>, isTransformed = false): PlayerClothes {
   const effective: PlayerClothes = { ...clothes };
 
-  // Overlay full-body hero suit when a hero item is worn in the necklace slot
-  const heroSuit = HERO_SUIT_SETS[clothes.necklace];
-  if (heroSuit) {
-    if (heroSuit.hair !== undefined) effective.hair = heroSuit.hair;
-    if (heroSuit.shirt !== undefined) effective.shirt = heroSuit.shirt;
-    if (heroSuit.pants !== undefined) effective.pants = heroSuit.pants;
-    if (heroSuit.feet !== undefined) effective.feet = heroSuit.feet;
-    if (heroSuit.face !== undefined) effective.face = heroSuit.face;
-    if (heroSuit.hand !== undefined) effective.hand = heroSuit.hand;
-    if (heroSuit.back !== undefined) effective.back = heroSuit.back;
-    if (heroSuit.mask !== undefined) effective.mask = heroSuit.mask;
+  // Overlay full-body hero suit when a hero item is worn in the necklace slot.
+  // In Growtopia, the UbiWeek hero neck item (Ezio, Altair, Bayek, etc.) renders
+  // the iconic tall full-body model directly. We suppress chibi civilian garments
+  // so the tall hero avatar renders cleanly without conflicting clothes drawn over it.
+  if (FULL_BODY_SUITS.has(clothes.necklace)) {
+    effective.hair = 0;
+    effective.shirt = 0;
+    effective.pants = 0;
+    effective.feet = 0;
+    effective.face = 0;
+    effective.mask = 0;
   }
 
   // Go-Go-Growformer! (Feet #7384)
   if (clothes.feet === 7384) {
-    if (!isTransformed) {
-      // Car Mode: Suppress clashing civilian clothes so the sleek racecar renders cleanly
-      effective.hair = 0;
-      effective.shirt = 0;
-      effective.pants = 0;
-      effective.face = 0;
-      effective.mask = 0;
-      effective.feet = 7384;
-    } else {
+    if (isTransformed) {
       // Robot Automaton Mode: Towering battle mech
+      effective.feet = 7384;
       effective.shirt = 1780;  // Legendbot-009 chassis
       effective.pants = 6384;  // Robot Legs
       effective.hair = 16132;  // Robotic Helmet
       effective.back = 7582;   // Robotic MK.IV Wings
-      effective.feet = 1438;   // Mech Power Boots
       effective.face = 0;
       effective.mask = 0;
     }

@@ -672,11 +672,15 @@ export class VariantHandler {
     const tank = GameUpdatePacket.create({
       type: TANK_PACKET_TYPE.SET_CHARACTER_STATE,
       netID,
+      objectType: punchId & 0xff,
+      jumpCount: Math.min(255, stats.buildRange),
+      buildRange: Math.min(255, stats.punchRange),
       itemID: stats.charState | extraState,
       posX: Math.max(stats.accel, stats.speed),
       posY: stats.punchPower,
       speedX: stats.speed,
       speedY: stats.gravity,
+      float_var: stats.waterSpeed,
     }).parse()!;
 
     // byte layout after the 4-byte packet type header

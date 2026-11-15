@@ -45,7 +45,7 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
 
   world.broadcast(tank.parse()!, player.id);
 
-  // Royal Lock "Rainbows for the King!" trail effect
+  // Royal Lock "Rainbows for the King!" & Rainbow Wings trail effect
   if (world.isRoyalRainbowsActive(player)) {
     const now = Date.now();
     const moved = Math.abs(data.posX - (player.lastRainbowX ?? 0)) > 6 || Math.abs(data.posY - (player.lastRainbowY ?? 0)) > 6;
@@ -53,7 +53,11 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
       player.lastRainbowAt = now;
       player.lastRainbowX = data.posX;
       player.lastRainbowY = data.posY;
-      world.sendParticleEffect(4, data.posX + 10, data.posY + 26);
+      const rx = data.posX + 10;
+      const ry = data.posY + 26;
+      // Effect 14 is the authentic Growtopia Rainbow particle effect
+      world.sendParticleEffect(14, rx, ry);
+      world.broadcastVariant(Variant.from("OnParticleEffect", 14, [rx, ry]));
     }
   }
 

@@ -1374,46 +1374,122 @@ registerCommand({
     if (isCurrentlyInvisible) {
       player.state.characterState &= ~(CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS);
       if (world) {
-        // Exiting invis: grandiose dark portal transition with portal vortex, shadow rifts and smoke bursts
-        const portalOffsets = [
+        // Exiting invis: grandiose multi-layered dark portal transition
+        // Wave 1 (0ms): Dense dark portal core vortexes and dark matter burst
+        const portalCore = [
           [0, 0],
-          [-16, -10], [16, -10],
-          [-12, 12], [12, 12],
-          [0, -18], [0, 18],
-          [-20, 0], [20, 0],
+          [-8, -8], [8, -8],
+          [-8, 8], [8, 8],
         ];
-        for (const [ox, oy] of portalOffsets) {
+        for (const [ox, oy] of portalCore) {
           world.sendParticleEffect?.(12, px + ox, py + oy);
+          world.broadcastVariant?.(Variant.from("OnParticleEffect", 12, [px + ox, py + oy]));
         }
-        // Additional dark matter bursts and smoke rings around the portal
-        world.sendParticleEffect?.(44, px - 16, py - 16);
-        world.sendParticleEffect?.(44, px + 16, py - 16);
-        world.sendParticleEffect?.(44, px, py + 16);
+        world.sendParticleEffect?.(44, px - 12, py - 12);
+        world.sendParticleEffect?.(44, px + 12, py - 12);
         world.playPositioned?.("audio/teleport.wav", player.netID);
         world.playPositioned?.("audio/magic_hit.wav", player.netID);
+
+        // Wave 2 (100ms): Expanding ring of dark portal vortices
+        setTimeout(() => {
+          if (!world) return;
+          const portalRing = [
+            [-18, -12], [18, -12],
+            [-14, 14], [14, 14],
+            [0, -22], [0, 22],
+            [-22, 0], [22, 0],
+          ];
+          for (const [ox, oy] of portalRing) {
+            world.sendParticleEffect?.(12, px + ox, py + oy);
+            world.broadcastVariant?.(Variant.from("OnParticleEffect", 12, [px + ox, py + oy]));
+          }
+          world.sendParticleEffect?.(44, px, py + 16);
+        }, 100);
+
+        // Wave 3 (200ms): Final dissipation shockwave
+        setTimeout(() => {
+          if (!world) return;
+          const outerRift = [
+            [-30, -18], [30, -18],
+            [-30, 18], [30, 18],
+          ];
+          for (const [ox, oy] of outerRift) {
+            world.sendParticleEffect?.(12, px + ox, py + oy);
+            world.broadcastVariant?.(Variant.from("OnParticleEffect", 12, [px + ox, py + oy]));
+          }
+        }, 200);
       }
       player.sendClothesToWorld();
       player.variants.sendOnConsoleMessage("`4Invisibility disabled. You step back through the dark shadow portal into reality.``");
     } else {
       player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
       if (world) {
-        // Entering invis: massive swarm of flying ghosts/spirits surrounding avatar widely
-        const ghostOffsets = [
-          [0, 0],
-          [-14, -10], [14, -10], [-10, 10], [10, 10],
-          [0, -25], [0, 25], [-25, 0], [25, 0],
-          [-28, -20], [28, -20], [-28, 20], [28, 20],
-          [-38, -8], [38, -8], [-38, 8], [38, 8],
-          [-18, -35], [18, -35], [-18, 35], [18, 35],
-          [-45, -24], [45, -24], [-45, 24], [45, 24],
-          [0, -48], [0, 48], [-48, 0], [48, 0],
-        ];
-        for (const [ox, oy] of ghostOffsets) {
-          world.sendParticleEffect?.(3, px + ox, py + oy);
-        }
+        // Entering invis: dramatic staggered waves of flying ghosts/spirits bursting outward
+        // Wave 1 (0ms): Center dark rift + first 3 close ghosts erupting around avatar
         world.sendParticleEffect?.(12, px, py);
+        world.broadcastVariant?.(Variant.from("OnParticleEffect", 12, [px, py]));
+        const wave1 = [
+          [0, -10],
+          [-12, 8],
+          [12, 8],
+        ];
+        for (const [ox, oy] of wave1) {
+          world.sendParticleEffect?.(3, px + ox, py + oy);
+          world.broadcastVariant?.(Variant.from("OnParticleEffect", 3, [px + ox, py + oy]));
+        }
         world.playPositioned?.("audio/spooky.wav", player.netID);
-        world.playPositioned?.("audio/haunt.wav", player.netID);
+
+        // Wave 2 (120ms): 4 spirits expanding outward
+        setTimeout(() => {
+          if (!world) return;
+          const wave2 = [
+            [-18, -16],
+            [18, -16],
+            [-20, 16],
+            [20, 16],
+          ];
+          for (const [ox, oy] of wave2) {
+            world.sendParticleEffect?.(3, px + ox, py + oy);
+            world.broadcastVariant?.(Variant.from("OnParticleEffect", 3, [px + ox, py + oy]));
+          }
+          world.playPositioned?.("audio/haunt.wav", player.netID);
+        }, 120);
+
+        // Wave 3 (240ms): 6 spirits swirling outward
+        setTimeout(() => {
+          if (!world) return;
+          const wave3 = [
+            [-32, -8],
+            [32, -8],
+            [-12, -28],
+            [12, -28],
+            [-14, 28],
+            [14, 28],
+          ];
+          for (const [ox, oy] of wave3) {
+            world.sendParticleEffect?.(3, px + ox, py + oy);
+            world.broadcastVariant?.(Variant.from("OnParticleEffect", 3, [px + ox, py + oy]));
+          }
+        }, 240);
+
+        // Wave 4 (360ms): 8 spirits swooping across widest perimeter
+        setTimeout(() => {
+          if (!world) return;
+          const wave4 = [
+            [-46, -22],
+            [46, -22],
+            [-46, 22],
+            [46, 22],
+            [0, -48],
+            [0, 48],
+            [-48, 0],
+            [48, 0],
+          ];
+          for (const [ox, oy] of wave4) {
+            world.sendParticleEffect?.(3, px + ox, py + oy);
+            world.broadcastVariant?.(Variant.from("OnParticleEffect", 3, [px + ox, py + oy]));
+          }
+        }, 360);
       }
       player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadow spirits swarm as you vanish into the unseen.``");
     }
@@ -1852,7 +1928,54 @@ registerCommand({
   aliases: ["morph", "growformer"],
   description: "Toggle vehicle or robot transform mode with transformable items",
   cooldown: 1,
-  execute(player) {
+  execute(player, args) {
+    const sub = args[0]?.toLowerCase();
+
+    // Revert / untransform
+    if (sub === "off" || sub === "revert" || sub === "normal" || sub === "civilian") {
+      player.untransform();
+      return;
+    }
+
+    // Hero alias
+    if (sub === "hero" || sub === "ezio" || sub === "altair") {
+      const heroCmd = commands.get("hero");
+      if (heroCmd) return heroCmd.execute(player, args.slice(sub === "hero" ? 1 : 0));
+    }
+
+    // Auto-equip Go-Go-Growformer! (#7384) if not equipped
+    if (player.inventory.clothes.feet !== 7384) {
+      if (player.inventory.hasItem(7384)) {
+        player.inventory.clothes.feet = 7384;
+      } else if (player.isDeveloper || player.isModerator) {
+        player.addItemInven(7384, 1);
+        player.inventory.clothes.feet = 7384;
+        player.sendInventory();
+      }
+    }
+
+    if (sub === "car" || sub === "vehicle") {
+      player.isTransformed = false;
+      player.playMods.remove("transformed");
+      player.sendClothesToWorld();
+      player.sendCharacterState();
+      player.sendTextBubble("`3Growformer: Car Mode!``", true);
+      player.variants.sendOnConsoleMessage("`3Go-Go-Growformer: Switched to sports car vehicle mode! 🏎️``");
+      player.sendSfx("audio/jet_engine01.wav");
+      return;
+    }
+
+    if (sub === "robot" || sub === "mech" || sub === "automaton") {
+      player.isTransformed = true;
+      player.playMods.add("transformed");
+      player.sendClothesToWorld();
+      player.sendCharacterState();
+      player.sendTextBubble("`3Growformer: Robot Automaton!``", true);
+      player.variants.sendOnConsoleMessage("`3Go-Go-Growformer: Activated Robot Automaton battle mech mode! 🤖``");
+      player.sendSfx("audio/jet_engine01.wav");
+      return;
+    }
+
     player.toggleTransform();
   },
 });
@@ -2362,10 +2485,10 @@ registerCommand({
     const heroName = targetHero.name;
     player.isTransformed = true;
 
-    // Equip the coordinated full-body suit components
+    // Equip the coordinated full-body suit components in inventory clothes
     const heroSuit = HERO_SUIT_SETS[targetHero.id];
+    player.inventory.clothes.necklace = targetHero.id;
     if (heroSuit) {
-      player.inventory.clothes.necklace = targetHero.id;
       player.inventory.clothes.hair = heroSuit.hair ?? 0;
       player.inventory.clothes.shirt = heroSuit.shirt ?? 0;
       player.inventory.clothes.pants = heroSuit.pants ?? 0;
@@ -2374,8 +2497,6 @@ registerCommand({
       player.inventory.clothes.hand = heroSuit.hand ?? 0;
       player.inventory.clothes.back = heroSuit.back ?? 0;
       player.inventory.clothes.mask = heroSuit.mask ?? 0;
-    } else {
-      player.inventory.clothes.necklace = targetHero.id;
     }
 
     player.playMods?.add?.("hero_suit");

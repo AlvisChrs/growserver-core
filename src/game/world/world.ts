@@ -827,8 +827,13 @@ export class World {
     return true;
   }
 
-  /** Checks if Royal Rainbows are active for a player in this world. */
+  /** Checks if Royal Rainbows or rainbow trails are active for a player in this world. */
   public isRoyalRainbowsActive(player: Player): boolean {
+    // Rainbow Wings (#1672) or active customizable rift wing trails
+    if (player.inventory.clothes.back === 1672 || player.effectiveClothes.back === 1672) return true;
+    if (player.inventory.clothes.back === 10424 && (player.riftCapeConfig?.particleTrail ?? true)) return true;
+    if (player.inventory.clothes.back === 11478 && (player.riftWingsConfig?.particleTrail ?? true)) return true;
+
     const tile = this.worldLockTile;
     if (!tile || !isRoyalLock(tile.fg)) return false;
     const rainbows = tile.worldLockData?.royalRainbows ?? true;

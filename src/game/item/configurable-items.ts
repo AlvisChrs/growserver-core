@@ -130,6 +130,11 @@ registerDialog("rift_cape_config", (player, action) => {
         particleTrail: player.riftCapeConfig?.particleTrail ?? true,
       };
 
+      // Auto-equip Rift Cape if not currently worn so visual color updates immediately
+      if (player.inventory.clothes.back !== 10424) {
+        player.inventory.clothes.back = 10424;
+      }
+
       triggerRiftEffect(player, `Applied preset: \`5${preset.name}\`\``);
       player.variants.sendOnDialogRequest(riftCapeDialog(player));
       return;
@@ -150,6 +155,11 @@ registerDialog("rift_cape_config", (player, action) => {
     particleTrail,
   };
 
+  // Auto-equip Rift Cape if not currently worn
+  if (player.inventory.clothes.back !== 10424) {
+    player.inventory.clothes.back = 10424;
+  }
+
   triggerRiftEffect(player, `Collar: \`w${collarUp ? "Raised" : "Down"}\`\`, Color: \`5RGB(${capeRgb.join(",")})\`\``);
 });
 
@@ -166,6 +176,11 @@ registerDialog("rift_wings_config", (player, action) => {
         particleTrail: player.riftWingsConfig?.particleTrail ?? true,
       };
 
+      // Auto-equip Rift Wings if not currently worn so visual color updates immediately
+      if (player.inventory.clothes.back !== 11478) {
+        player.inventory.clothes.back = 11478;
+      }
+
       triggerRiftEffect(player, `Applied preset: \`5${preset.name}\`\``);
       player.variants.sendOnDialogRequest(riftWingsDialog(player));
       return;
@@ -181,6 +196,11 @@ registerDialog("rift_wings_config", (player, action) => {
     particleTrail,
   };
 
+  // Auto-equip Rift Wings if not currently worn
+  if (player.inventory.clothes.back !== 11478) {
+    player.inventory.clothes.back = 11478;
+  }
+
   triggerRiftEffect(player, `Wings Color: \`5RGB(${wingsRgb.join(",")})\`\`, Trail: \`w${particleTrail ? "Active" : "Off"}\`\``);
 });
 
@@ -191,9 +211,11 @@ function triggerRiftEffect(player: Player, summary: string): void {
 
   if (world) {
     world.sendParticleEffect(12, px, py);
+    world.broadcastVariant(Variant.from("OnParticleEffect", 12, [px, py]));
     world.playPositioned("audio/magic_hit.wav", player.netID);
   }
 
+  player.applyPlayMods();
   player.sendClothesToWorld();
   player.sendCharacterState();
   player.sendTextBubble("`5[Rift Matrix Configured!]``", true);

@@ -4,6 +4,7 @@ import * as m20260905_02_better_auth_schema from "./20260905_02_better_auth_sche
 import * as m20261108_03_player_stats from "./20261108_03_player_stats";
 import * as m20261108_04_home_world from "./20261108_04_home_world";
 import * as m20261108_05_quest_data from "./20261108_05_quest_data";
+import * as m20261115_06_friends_and_guilds from "./20261115_06_friends_and_guilds";
 
 /**
  * Static registry of all migrations bundled with the application.
@@ -14,4 +15,5 @@ export const migrations: Record<string, Migration> = {
   "20261108_03_player_stats": m20261108_03_player_stats,
   "20261108_04_home_world": m20261108_04_home_world,
   "20261108_05_quest_data": m20261108_05_quest_data,
+  "20261115_06_friends_and_guilds": m20261115_06_friends_and_guilds,
 };

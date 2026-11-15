@@ -3,3 +3,4 @@ export * from "./account-db";
 export * from "./session-db";
 export * from "./verification-db";
 export * from "./world-db";
+export * from "./guild-db";

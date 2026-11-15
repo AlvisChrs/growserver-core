@@ -30,6 +30,12 @@ export interface PlayerTable {
   quest_data: string | null;
   /** World the player warps to with /home, null when unset. */
   home_world: Generated<string | null>;
+  /** JSON blob of friends list and pending requests ({ friends: number[], incoming: number[] }). */
+  friends_data: string | null;
+  /** ID of the guild the player belongs to, null when none. */
+  guild_id: number | null;
+  /** Role within their guild: leader, co_leader, elder, or member. */
+  guild_role: string | null;
   created_at: Generated<string>;
   updated_at: Generated<string>;
   deleted_at: string | null;

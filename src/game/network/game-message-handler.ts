@@ -247,6 +247,8 @@ function StoreNavigate(player: Player, action: TextParser): void {
 }
 
 /** Skin colors every account may pick in the settings menu. */
+import { FriendManager } from "../friends/friend-manager";
+
 const BASIC_SKIN_COLORS: ReadonlySet<number> = new Set([0x505c78ff, 0x647296ff, 0x788ab4ff, 0x8295c3ff, 0x96ace1ff, 0xaac3ffff, 0xb4ceffff, 0xc8e5ffff]);
 /** Extra skin colors for supporters. */
 const SUPPORTER_SKIN_COLORS: ReadonlySet<number> = new Set([0xa3ddb1ff, 0xc5c241ff, 0x2b4bd7ff, 0x2a8a41ff, 0xd551a9ff, 0xf0f0f0ff, 0xd27a3cff, 0xefcbb1ff, 0x0b94ffff, 0x5032ffa0]);
@@ -310,7 +312,9 @@ export const GameMessageMap: Record<string, (player: Player, action: TextParser)
   validate_world: Ignore,
   log: Ignore,
   growid: Ignore,
-  friends: Ignore,
+  friends: (player) => {
+    FriendManager.openFriendsDialog(player);
+  },
   getDRAnimations: Ignore,
   dialog_action: Ignore,
 };

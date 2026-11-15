@@ -348,6 +348,8 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   11140: 20, // Legendary Destroyer (Rocket mech punch / Fists of Fury)
 };
 
+import type { GuildRole } from "../../database/tables/guilds";
+
 export class Player {
   /** Global unique player identifier (e.g. "server-17091:0") */
   public id: string;
@@ -424,6 +426,14 @@ export class Player {
   public riftWingsConfig?: RiftWingsConfig;
   /** Timestamp of the last back item particle emitted while moving. */
   public lastBackParticleAt?: number;
+  /** Set of friend player IDs. */
+  public friends: Set<number> = new Set();
+  /** Set of incoming friend request player IDs. */
+  public incomingFriendRequests: Set<number> = new Set();
+  /** ID of the guild the player belongs to, null when none. */
+  public guildId: number | null = null;
+  /** Role within their guild: leader, co_leader, elder, or member. */
+  public guildRole: GuildRole | null = null;
 
   public state: PlayerState = {
     x: 0,
@@ -528,6 +538,15 @@ export class Player {
     this.playMods.load(record.play_mods);
     this.quests.load(record.quest_data);
     this.homeWorld = record.home_world ?? null;
+    this.guildId = record.guild_id ?? null;
+    this.guildRole = (record.guild_role as GuildRole) ?? null;
+    if (record.friends_data) {
+      try {
+        const parsed = JSON.parse(record.friends_data);
+        this.friends = new Set(Array.isArray(parsed.friends) ? parsed.friends : []);
+        this.incomingFriendRequests = new Set(Array.isArray(parsed.incoming) ? parsed.incoming : []);
+      } catch {}
+    }
 
     if (!this.inventory.load(record.inventory)) {
       this.inventory.addItem(ITEM_ID.FIST, 1);
@@ -779,6 +798,12 @@ export class Player {
         playtime: this.savedPlaytime,
         play_mods: this.playMods.serialize(),
         quest_data: this.quests.serialize(),
+        friends_data: JSON.stringify({
+          friends: [...this.friends],
+          incoming: [...this.incomingFriendRequests],
+        }),
+        guild_id: this.guildId,
+        guild_role: this.guildRole,
       });
     } catch (err) {
       logger.error({ err, playerId: this.playerId }, "failed to save player");

@@ -10,6 +10,8 @@ import { worldManager } from "../world/world-manager";
 import { questDailyDialog, sendGoalsDialog } from "../quests";
 import { registerDialog } from "./dialog-handler";
 import { tradeManager } from "../trade/trade-manager";
+import { FriendManager } from "../friends/friend-manager";
+import { GuildManager } from "../guild/guild-manager";
 import { serverManager } from "../server/server-manager";
 import { riftCapeDialog, riftWingsDialog } from "../item/configurable-items";
 
@@ -78,7 +80,9 @@ export function selfProfileDialog(player: Player): string {
     .addTextBox(`\`oGems: \`w${player.gems}\`\`  Role: \`w${PLAYER_ROLE_NAMES[player.role] ?? "Player"}\`\``)
     .addSpacer("small")
     .addButton("daily_quests", "`2Daily Quests``")
-    .addButton("role_goals", "`2Goals``");
+    .addButton("role_goals", "`2Goals``")
+    .addButton("friends_list", "`2Friends List``")
+    .addButton("guild_menu", "`6Guild``");
 
   if (player.canTransform()) {
     const transformLabel = player.inventory.clothes.feet === 7384
@@ -117,6 +121,7 @@ export function otherProfileDialog(target: Player): string {
     .addButton("trade", "`wTrade``")
     .addButton("sendpm", "`wSend Message``")
     .addButton("friend_add", "`wAdd as friend``")
+    .addButton("guild_invite", "`6Invite to Guild``")
     .addButton("show_clothes", "`wView worn clothes``")
     .addButton("ignore_player", "`wIgnore Player``")
     .addButton("report_player", "`wReport Player``")
@@ -137,8 +142,21 @@ registerDialog("popup", (player, action) => {
   const target = player.world?.players.find((other) => other.netID === targetNetId);
 
   // Quick shortcuts are only present in the player's own wrench popup.
-  if (["home_world", "daily_quests", "role_goals", "my_worlds", "transform", "customize_rift_cape", "customize_rift_wings"].includes(button) && targetNetId !== player.netID) return;
+  if (["home_world", "daily_quests", "role_goals", "friends_list", "guild_menu", "my_worlds", "transform", "customize_rift_cape", "customize_rift_wings"].includes(button) && targetNetId !== player.netID) return;
   switch (button) {
+    case "friends_list": {
+      FriendManager.openFriendsDialog(player);
+      return;
+    }
+    case "guild_menu": {
+      GuildManager.openGuildDialog(player);
+      return;
+    }
+    case "guild_invite": {
+      if (!target) return;
+      GuildManager.inviteMember(player, target);
+      return;
+    }
     case "customize_rift_cape": {
       player.variants.sendOnDialogRequest(riftCapeDialog(player));
       return;
@@ -201,9 +219,7 @@ registerDialog("popup", (player, action) => {
     }
     case "friend_add": {
       if (!target) return;
-      player.variants.sendOnConsoleMessage(`\`2Friend request sent to \`$${target.displayName}\`2!\`\``);
-      target.variants.sendOnConsoleMessage(`\`2\`$${player.displayName} \`2wants to be your friend!\`\``);
-      target.sendTextBubble(`\`2Friend request from \`$${player.displayName}\`2!\`\``, true);
+      FriendManager.sendRequest(player, target);
       return;
     }
     case "ignore_player":

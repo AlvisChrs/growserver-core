@@ -23,6 +23,9 @@ import { tradeManager } from "../trade/trade-manager";
 import { eventManager, GameEventType } from "../events/event-manager";
 import { riftCapeDialog, riftWingsDialog } from "../item/configurable-items";
 import { HERO_SUIT_SETS } from "../player/transform";
+import { spawnInvisGhostSwarm, spawnInvisReappearDarkFlames } from "../player/invis-effects";
+import { FriendManager } from "../friends/friend-manager";
+import { GuildManager } from "../guild/guild-manager";
 
 const ROLE_NAMES = PLAYER_ROLE_NAMES;
 
@@ -1374,122 +1377,14 @@ registerCommand({
     if (isCurrentlyInvisible) {
       player.state.characterState &= ~(CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS);
       if (world) {
-        // Exiting invis: grandiose multi-layered dark portal transition
-        // Wave 1 (0ms): Dense dark portal core vortexes and dark matter burst
-        const portalCore = [
-          [0, 0],
-          [-8, -8], [8, -8],
-          [-8, 8], [8, 8],
-        ];
-        for (const [ox, oy] of portalCore) {
-          world.sendParticleEffect?.(12, px + ox, py + oy);
-          world.broadcastVariant?.(Variant.from("OnParticleEffect", 12, [px + ox, py + oy]));
-        }
-        world.sendParticleEffect?.(44, px - 12, py - 12);
-        world.sendParticleEffect?.(44, px + 12, py - 12);
-        world.playPositioned?.("audio/teleport.wav", player.netID);
-        world.playPositioned?.("audio/magic_hit.wav", player.netID);
-
-        // Wave 2 (100ms): Expanding ring of dark portal vortices
-        setTimeout(() => {
-          if (!world) return;
-          const portalRing = [
-            [-18, -12], [18, -12],
-            [-14, 14], [14, 14],
-            [0, -22], [0, 22],
-            [-22, 0], [22, 0],
-          ];
-          for (const [ox, oy] of portalRing) {
-            world.sendParticleEffect?.(12, px + ox, py + oy);
-            world.broadcastVariant?.(Variant.from("OnParticleEffect", 12, [px + ox, py + oy]));
-          }
-          world.sendParticleEffect?.(44, px, py + 16);
-        }, 100);
-
-        // Wave 3 (200ms): Final dissipation shockwave
-        setTimeout(() => {
-          if (!world) return;
-          const outerRift = [
-            [-30, -18], [30, -18],
-            [-30, 18], [30, 18],
-          ];
-          for (const [ox, oy] of outerRift) {
-            world.sendParticleEffect?.(12, px + ox, py + oy);
-            world.broadcastVariant?.(Variant.from("OnParticleEffect", 12, [px + ox, py + oy]));
-          }
-        }, 200);
+        spawnInvisReappearDarkFlames(world, px, py, player.netID);
       }
       player.sendClothesToWorld();
       player.variants.sendOnConsoleMessage("`4Invisibility disabled. You step back through the dark shadow portal into reality.``");
     } else {
       player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
       if (world) {
-        // Entering invis: dramatic staggered waves of flying ghosts/spirits bursting outward
-        // Wave 1 (0ms): Center dark rift + first 3 close ghosts erupting around avatar
-        world.sendParticleEffect?.(12, px, py);
-        world.broadcastVariant?.(Variant.from("OnParticleEffect", 12, [px, py]));
-        const wave1 = [
-          [0, -10],
-          [-12, 8],
-          [12, 8],
-        ];
-        for (const [ox, oy] of wave1) {
-          world.sendParticleEffect?.(3, px + ox, py + oy);
-          world.broadcastVariant?.(Variant.from("OnParticleEffect", 3, [px + ox, py + oy]));
-        }
-        world.playPositioned?.("audio/spooky.wav", player.netID);
-
-        // Wave 2 (120ms): 4 spirits expanding outward
-        setTimeout(() => {
-          if (!world) return;
-          const wave2 = [
-            [-18, -16],
-            [18, -16],
-            [-20, 16],
-            [20, 16],
-          ];
-          for (const [ox, oy] of wave2) {
-            world.sendParticleEffect?.(3, px + ox, py + oy);
-            world.broadcastVariant?.(Variant.from("OnParticleEffect", 3, [px + ox, py + oy]));
-          }
-          world.playPositioned?.("audio/haunt.wav", player.netID);
-        }, 120);
-
-        // Wave 3 (240ms): 6 spirits swirling outward
-        setTimeout(() => {
-          if (!world) return;
-          const wave3 = [
-            [-32, -8],
-            [32, -8],
-            [-12, -28],
-            [12, -28],
-            [-14, 28],
-            [14, 28],
-          ];
-          for (const [ox, oy] of wave3) {
-            world.sendParticleEffect?.(3, px + ox, py + oy);
-            world.broadcastVariant?.(Variant.from("OnParticleEffect", 3, [px + ox, py + oy]));
-          }
-        }, 240);
-
-        // Wave 4 (360ms): 8 spirits swooping across widest perimeter
-        setTimeout(() => {
-          if (!world) return;
-          const wave4 = [
-            [-46, -22],
-            [46, -22],
-            [-46, 22],
-            [46, 22],
-            [0, -48],
-            [0, 48],
-            [-48, 0],
-            [48, 0],
-          ];
-          for (const [ox, oy] of wave4) {
-            world.sendParticleEffect?.(3, px + ox, py + oy);
-            world.broadcastVariant?.(Variant.from("OnParticleEffect", 3, [px + ox, py + oy]));
-          }
-        }, 360);
+        spawnInvisGhostSwarm(world, px, py, player.netID);
       }
       player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadow spirits swarm as you vanish into the unseen.``");
     }
@@ -2798,5 +2693,131 @@ registerCommand({
       }
       return player.variants.sendOnConsoleMessage("`4You need to own or equip a Rift Cape (#10424) or Rift Wings (#11478) to customize them.``");
     }
+  },
+});
+
+registerCommand({
+  name: "friends",
+  aliases: ["friendlist", "fl"],
+  description: "Open your Friends List",
+  role: PLAYER_ROLE.BASIC,
+  cooldown: 1,
+  async execute(player) {
+    await FriendManager.openFriendsDialog(player);
+  },
+});
+
+registerCommand({
+  name: "friend",
+  aliases: ["addfriend"],
+  description: "Send a friend request to a player",
+  usage: "/friend <player name>",
+  role: PLAYER_ROLE.BASIC,
+  cooldown: 1,
+  async execute(player, args) {
+    const targetName = args[0]?.trim();
+    if (!targetName) return player.variants.sendOnConsoleMessage("`4Usage: /friend <player name>``");
+    const target = serverManager.getPlayerByName(targetName);
+    if (!target) return player.variants.sendOnConsoleMessage("`4Player \"`$" + targetName + "`4\" is not online!``");
+    await FriendManager.sendRequest(player, target);
+  },
+});
+
+registerCommand({
+  name: "unfriend",
+  description: "Remove a friend from your Friends List",
+  usage: "/unfriend <player name>",
+  role: PLAYER_ROLE.BASIC,
+  cooldown: 1,
+  async execute(player, args) {
+    const targetName = args[0]?.trim();
+    if (!targetName) return player.variants.sendOnConsoleMessage("`4Usage: /unfriend <player name>``");
+    const target = serverManager.getPlayerByName(targetName);
+    if (target) {
+      await FriendManager.removeFriend(player, target.playerId);
+      return;
+    }
+    const record = await PlayerDB.findByName(targetName);
+    if (!record) return player.variants.sendOnConsoleMessage("`4Player \"`$" + targetName + "`4\" not found!``");
+    await FriendManager.removeFriend(player, record.id);
+  },
+});
+
+registerCommand({
+  name: "guild",
+  aliases: ["g"],
+  description: "Open Guild dashboard or manage your guild",
+  usage: "/guild [create <name> <tag> | invite <name> | leave | kick <name> | disband]",
+  role: PLAYER_ROLE.BASIC,
+  cooldown: 1,
+  async execute(player, args) {
+    const sub = (args[0] ?? "").toLowerCase();
+    if (!sub) {
+      await GuildManager.openGuildDialog(player);
+      return;
+    }
+
+    switch (sub) {
+      case "create": {
+        const name = args[1]?.trim();
+        const tag = args[2]?.trim();
+        if (!name || !tag) return player.variants.sendOnConsoleMessage("`4Usage: /guild create <name> <tag> (e.g. /guild create Legends LGND)``");
+        await GuildManager.createGuild(player, name, tag);
+        return;
+      }
+      case "invite": {
+        const targetName = args[1]?.trim();
+        if (!targetName) return player.variants.sendOnConsoleMessage("`4Usage: /guild invite <player name>``");
+        const target = serverManager.getPlayerByName(targetName);
+        if (!target) return player.variants.sendOnConsoleMessage("`4Player \"`$" + targetName + "`4\" is not online!``");
+        await GuildManager.inviteMember(player, target);
+        return;
+      }
+      case "leave": {
+        await GuildManager.leaveGuild(player);
+        return;
+      }
+      case "disband": {
+        await GuildManager.disbandGuild(player);
+        return;
+      }
+      case "kick": {
+        const targetName = args[1]?.trim();
+        if (!targetName) return player.variants.sendOnConsoleMessage("`4Usage: /guild kick <player name>``");
+        const target = serverManager.getPlayerByName(targetName);
+        if (target) {
+          await GuildManager.kickMember(player, target.playerId);
+          return;
+        }
+        const record = await PlayerDB.findByName(targetName);
+        if (!record) return player.variants.sendOnConsoleMessage("`4Player \"`$" + targetName + "`4\" not found!``");
+        await GuildManager.kickMember(player, record.id);
+        return;
+      }
+      case "chat":
+      case "msg": {
+        const msg = args.slice(1).join(" ");
+        if (!msg) return player.variants.sendOnConsoleMessage("`4Usage: /guild chat <message>``");
+        GuildManager.sendGuildChat(player, msg);
+        return;
+      }
+      default: {
+        await GuildManager.openGuildDialog(player);
+      }
+    }
+  },
+});
+
+registerCommand({
+  name: "gc",
+  aliases: ["guildchat"],
+  description: "Send a message to your guild members",
+  usage: "/gc <message>",
+  role: PLAYER_ROLE.BASIC,
+  cooldown: 1,
+  execute(player, args) {
+    const msg = args.join(" ");
+    if (!msg) return player.variants.sendOnConsoleMessage("`4Usage: /gc <message>``");
+    GuildManager.sendGuildChat(player, msg);
   },
 });

@@ -127,6 +127,10 @@ export class Player {
   public homeWorld: string | null = null;
   /** Name of the player who last whispered to this player (for `/r`). */
   public lastWhisperFrom: string | null = null;
+  /** Saved civilian clothes when /hero disguise is active. */
+  public heroOriginalClothes?: PlayerClothes;
+  /** Whether cosmetic /hero disguise is currently active. */
+  public isHeroDisguised: boolean = false;
 
   public state: PlayerState = {
     x: 0,

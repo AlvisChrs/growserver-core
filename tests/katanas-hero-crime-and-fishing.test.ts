@@ -318,7 +318,7 @@ describe("Fishing & Aquarium Verification", () => {
     expect(mockPlayer.fishing?.baitId).toBe(2914);
   });
 
-  test("/hero transforms player into Ezio Auditore and gives hero items", () => {
+  test("/hero transforms player into Ezio Auditore as cosmetic disguise without giving backpack items", () => {
     const cmd = findCommand("hero");
     expect(cmd).toBeDefined();
 
@@ -334,6 +334,7 @@ describe("Fishing & Aquarium Verification", () => {
       addItemInven: (id: number, count = 1) => inv.set(id, (inv.get(id) ?? 0) + count),
       playMods: {
         add: (id: string) => mods.add(id),
+        remove: (id: string) => mods.delete(id),
       },
       sendClothesToWorld: () => {},
       sendCharacterState: () => {},
@@ -345,7 +346,7 @@ describe("Fishing & Aquarium Verification", () => {
 
     cmd?.execute(mockPlayer, []);
 
-    // Full Ezio outfit equipped
+    // Full Ezio outfit equipped visually
     expect(clothes.hair).toBe(7080); // Ezio's Hood
     expect(clothes.shirt).toBe(7082); // Ezio's Vest
     expect(clothes.back).toBe(7084); // Ezio's Cape
@@ -355,6 +356,7 @@ describe("Fishing & Aquarium Verification", () => {
     expect(clothes.feet).toBe(7094); // Ezio's Boots
     expect(clothes.necklace).toBe(11560); // Ezio Morph
     expect(mods.has("hero_suit")).toBe(true);
+    expect(inv.size).toBe(0); // Zero items added to inventory to protect economy!
 
     // /hero super transforms into Superhero
     cmd?.execute(mockPlayer, ["super"]);
@@ -363,6 +365,7 @@ describe("Fishing & Aquarium Verification", () => {
     expect(clothes.pants).toBe(2098);
     expect(clothes.feet).toBe(2122);
     expect(clothes.back).toBe(350);
+    expect(inv.size).toBe(0);
   });
 
   test("/transforms gives Go-Go-Growformer!, PowerKey, Mystic Crystal, and Space Rabbit", () => {

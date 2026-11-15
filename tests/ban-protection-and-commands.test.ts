@@ -240,7 +240,7 @@ describe("Tiered Command Permissions by Role", () => {
     // Supporter commands
     const ghost = findCommand("ghost");
     const pid = findCommand("pid");
-    expect(ghost?.role).toBe(PLAYER_ROLE.SUPPORTER);
+    expect(ghost?.role).toBe(PLAYER_ROLE.MODERATOR);
     expect(pid?.role).toBe(PLAYER_ROLE.SUPPORTER);
 
     // Basic / User commands
@@ -262,7 +262,7 @@ describe("Tiered Command Permissions by Role", () => {
     const guardianCommand = findCommand("warn")!;
     const modCommand = findCommand("ban")!;
     const devCommand = findCommand("startevent")!;
-    const supporterCommand = findCommand("ghost")!;
+    const supporterCommand = findCommand("pid")!;
     const basicCommand = findCommand("help")!;
 
     const basicPlayer: any = { role: PLAYER_ROLE.BASIC };

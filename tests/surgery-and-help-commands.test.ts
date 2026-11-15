@@ -201,8 +201,10 @@ describe("Categorized /help and /? Command", () => {
     expect(capturedDialog).not.toContain("Developer Commands");
     expect(capturedDialog).not.toContain("Moderator Commands");
     expect(capturedDialog).not.toContain("/resetworld");
-    expect(capturedDialog).toContain("/surg");
+    expect(capturedDialog).not.toContain("/surg");
     expect(capturedDialog).toContain("/rules");
+    expect(capturedDialog).toContain("/hero");
+    expect(capturedDialog).toContain("/transform");
   });
 });
 
@@ -244,5 +246,71 @@ describe("World Restore & Reset Safety", () => {
     expect(mockWorld.data.weather.id).toBe(WEATHER_CLEAR);
     expect(mockWorld.data.blocks.length).toBe(100 * 60);
     expect(consoleMsgs.some((m) => m.includes("restored to its procedural template"))).toBe(true);
+  });
+});
+
+describe("/hero Cosmetic Disguise & /rules Interactive Dialog", () => {
+  test("/hero toggles disguise without adding any items to backpack", async () => {
+    let itemsAdded = 0;
+    const initialClothes = { hair: 12, shirt: 34, pants: 56, feet: 78, face: 0, hand: 0, back: 0, mask: 0, necklace: 0, ances: 0 };
+    const mockPlayer: any = {
+      role: PLAYER_ROLE.BASIC,
+      inventory: {
+        clothes: { ...initialClothes },
+        hasItem: () => false,
+      },
+      addItemInven: () => {
+        itemsAdded++;
+      },
+      playMods: {
+        add: () => {},
+        remove: () => {},
+      },
+      sendClothesToWorld: () => {},
+      sendCharacterState: () => {},
+      sendSfx: () => {},
+      sendTextBubble: () => {},
+      variants: {
+        sendOnConsoleMessage: () => {},
+      },
+    };
+
+    const cmd = findCommand("hero");
+    expect(cmd).toBeDefined();
+
+    // 1. Transform into Ezio
+    await cmd!.execute(mockPlayer, ["ezio"], "hero ezio");
+    expect(itemsAdded).toBe(0); // Zero items added to backpack!
+    expect(mockPlayer.isHeroDisguised).toBe(true);
+    expect(mockPlayer.inventory.clothes.hair).toBe(7080); // Ezio's Hood
+
+    // 2. Untransform with /hero off
+    await cmd!.execute(mockPlayer, ["off"], "hero off");
+    expect(itemsAdded).toBe(0);
+    expect(mockPlayer.isHeroDisguised).toBe(false);
+    expect(mockPlayer.inventory.clothes.hair).toBe(12); // Restored original civilian hair!
+  });
+
+  test("/rules sends interactive DialogBuilder popup with comprehensive rules", async () => {
+    let capturedDialog = "";
+    const consoleMsgs: string[] = [];
+    const mockPlayer: any = {
+      variants: {
+        sendOnDialogRequest: (d: string) => {
+          capturedDialog = d;
+        },
+        sendOnConsoleMessage: (m: string) => consoleMsgs.push(m),
+      },
+    };
+
+    const cmd = findCommand("rules");
+    expect(cmd).toBeDefined();
+    await cmd!.execute(mockPlayer, [], "rules");
+
+    expect(capturedDialog).toContain("GrowServer Rules & Guidelines");
+    expect(capturedDialog).toContain("Respect & Decency");
+    expect(capturedDialog).toContain("Fair Play & Economy");
+    expect(capturedDialog).toContain("I Agree & Understand");
+    expect(consoleMsgs.some((m) => m.includes("GrowServer Rules"))).toBe(true);
   });
 });

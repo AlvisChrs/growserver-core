@@ -436,7 +436,7 @@ registerCommand({
   name: "ghost",
   aliases: ["unghost"],
   description: "Toggle ghost mode to walk through blocks.",
-  role: PLAYER_ROLE.SUPPORTER,
+  role: PLAYER_ROLE.MODERATOR,
   cooldown: 2,
   execute(player) {
     player.state.isGhost = !player.state.isGhost;
@@ -1621,7 +1621,7 @@ registerCommand({
   name: "locks",
   aliases: ["getlocks", "lockpack"],
   description: "Receive 200 of all lock types (WL, DL, BGL, Royal Lock, Builder's Lock, Area Locks)",
-  role: PLAYER_ROLE.SUPPORTER,
+  role: PLAYER_ROLE.DEVELOPER,
   cooldown: 2,
   execute(player) {
     const lockList = [
@@ -1797,11 +1797,29 @@ registerCommand({
   description: "View server rules",
   cooldown: 2,
   execute(player) {
+    const dialog = new DialogBuilder()
+      .defaultColor()
+      .addLabelWithIcon("`wGrowServer Rules & Guidelines``", ITEM_ID.WRENCH, "big")
+      .addSpacer("small")
+      .addSmallText("`2Welcome to GrowServer! By playing here, you agree to the following server rules:``")
+      .addSpacer("small")
+      .addTextBox("`w1. Respect & Decency:`` No harassment, hate speech, severe toxicity, or discriminatory behavior toward any player.")
+      .addTextBox("`w2. Fair Play & Economy:`` No scamming, gambling fraud, duping, botting/macroing, or exploiting glitches. Report exploits to Developers.")
+      .addTextBox("`w3. Safe Trading:`` Always double check trade windows before accepting. You are responsible for your own items and account security.")
+      .addTextBox("`w4. World Etiquette:`` Do not grief or trap visitors in public worlds. World Locks and Area Locks belong to their respective owners.")
+      .addTextBox("`w5. Staff Guidance:`` Respect and follow instructions from Guardians, Moderators, and Developers. Impersonating staff is strictly prohibited.")
+      .addSpacer("small")
+      .addSmallText("`5Violations will result in warnings, temporary mutes, world bans, or permanent account suspensions.``")
+      .addSpacer("small")
+      .addQuickExit()
+      .endDialog("rules_dialog", "", "I Agree & Understand")
+      .str();
+
+    player.variants.sendOnDialogRequest(dialog);
     player.variants.sendOnConsoleMessage("`2=== GrowServer Rules ===``");
-    player.variants.sendOnConsoleMessage("`o1. Be respectful to other players. No harassment or hate speech.");
+    player.variants.sendOnConsoleMessage("`o1. Respect everyone. No toxicity, harassment, or hate speech.");
     player.variants.sendOnConsoleMessage("`o2. No scamming, duping, or exploiting bugs.");
-    player.variants.sendOnConsoleMessage("`o3. Follow instructions from Moderators and Developers.");
-    player.variants.sendOnConsoleMessage("`2Have fun building and exploring!``");
+    player.variants.sendOnConsoleMessage("`o3. Follow staff instructions. Have fun building and exploring!``");
   },
 });
 
@@ -2174,7 +2192,7 @@ registerCommand({
   name: "katana",
   aliases: ["lkat", "katanas"],
   description: "Give Legendary Katana and elemental katana series",
-  role: PLAYER_ROLE.USER,
+  role: PLAYER_ROLE.DEVELOPER,
   execute(player) {
     const katanas = [
       { id: 2592, name: "Legendary Katana" },
@@ -2197,80 +2215,68 @@ registerCommand({
 registerCommand({
   name: "hero",
   aliases: ["superhero", "herosuit", "assassin", "ezio"],
-  description: "Transform into a legendary hero (Ezio Auditore or Superhero)",
-  role: PLAYER_ROLE.USER,
+  description: "Transform into a legendary hero (Ezio Auditore or Superhero) without adding items to inventory",
+  role: PLAYER_ROLE.BASIC,
   execute(player, args) {
     const choice = (args[0] ?? "").toLowerCase();
 
-    if (choice === "super" || choice === "superhero") {
-      const superItems = [
-        2134, // Superhero Mask - Red
-        2170, // Superheroine Top - Red
-        2098, // Heroic Tights - Red
-        2122, // Heroic Boots - Red
-        350,  // Heroman Cape
-      ];
-      for (const id of superItems) {
-        if (!player.inventory.hasItem(id)) player.addItemInven(id, 1);
+    // Revert/untransform check
+    if (choice === "off" || choice === "revert" || choice === "normal" || choice === "remove" || (player.isHeroDisguised && !choice)) {
+      if (player.heroOriginalClothes) {
+        Object.assign(player.inventory.clothes, player.heroOriginalClothes);
+        delete player.heroOriginalClothes;
       }
+      player.isHeroDisguised = false;
+      player.playMods?.remove?.("hero_suit");
+      player.sendClothesToWorld?.();
+      player.sendCharacterState?.();
+      player.sendSfx?.("audio/change_clothes.wav");
+      player.sendTextBubble?.("`5Returned to civilian appearance!``", true);
+      player.variants?.sendOnConsoleMessage("`5You have stepped out of your hero disguise. Civilian appearance restored!``");
+      return;
+    }
+
+    // Save previous civilian clothes if not already saved
+    if (!player.heroOriginalClothes) {
+      player.heroOriginalClothes = { ...player.inventory.clothes };
+    }
+    player.isHeroDisguised = true;
+
+    if (choice === "super" || choice === "superhero") {
       player.inventory.clothes.hair = 0;
-      player.inventory.clothes.mask = 2134;
-      player.inventory.clothes.shirt = 2170;
-      player.inventory.clothes.pants = 2098;
-      player.inventory.clothes.feet = 2122;
-      player.inventory.clothes.back = 350;
+      player.inventory.clothes.mask = 2134; // Superhero Mask - Red
+      player.inventory.clothes.shirt = 2170; // Superheroine Top - Red
+      player.inventory.clothes.pants = 2098; // Heroic Tights - Red
+      player.inventory.clothes.feet = 2122; // Heroic Boots - Red
+      player.inventory.clothes.back = 350;  // Heroman Cape
       player.inventory.clothes.necklace = 0;
 
-      player.playMods.add("hero_suit");
-      player.sendClothesToWorld();
-      player.sendCharacterState();
-      player.sendInventory();
-      player.sendSfx("audio/change_clothes.wav");
-      player.sendTextBubble("`5Up, up, and away! Superhero powers engaged!``", true);
-      player.variants.sendOnConsoleMessage("`5Transformed into Superhero! Double jump and heroic speed activated!``");
-      player.variants.sendOnConsoleMessage("`oTip: Type /hero ezio to transform into Ezio Auditore!``");
+      player.playMods?.add?.("hero_suit");
+      player.sendClothesToWorld?.();
+      player.sendCharacterState?.();
+      player.sendSfx?.("audio/change_clothes.wav");
+      player.sendTextBubble?.("`5Up, up, and away! Superhero powers engaged!``", true);
+      player.variants?.sendOnConsoleMessage("`5Transformed into Superhero! (Cosmetic disguise active - no items added to backpack). Type /hero off to revert.``");
       return;
     }
 
     // Default: Ezio Auditore Complete Assassin Transformation
-    const ezioItems = [
-      7080,  // Ezio's Hood
-      7082,  // Ezio's Vest
-      7084,  // Ezio's Cape
-      7086,  // Ezio's Trousers
-      7088,  // Ezio's Armguards
-      7090,  // Ezio's Beard
-      7094,  // Ezio's Boots
-      11560, // Ezio Morph
-      12646, // Altair
-      11558, // Sam Fisher
-      350,   // Heroman Cape
-      2134,  // Superhero Mask
-      2098,  // Superhero Tights
-      2170,  // Superhero Top
-    ];
-    for (const id of ezioItems) {
-      if (!player.inventory.hasItem(id)) player.addItemInven(id, 1);
-    }
+    player.inventory.clothes.hair = 7080;  // Ezio's Hood
+    player.inventory.clothes.shirt = 7082; // Ezio's Vest
+    player.inventory.clothes.back = 7084;  // Ezio's Cape
+    player.inventory.clothes.pants = 7086; // Ezio's Trousers
+    player.inventory.clothes.hand = 7088;  // Ezio's Armguards
+    player.inventory.clothes.face = 7090;  // Ezio's Beard
+    player.inventory.clothes.feet = 7094;  // Ezio's Boots
+    player.inventory.clothes.necklace = 11560; // Ezio Morph
 
-    // Directly equip the complete authentic Ezio Assassin set
-    player.inventory.clothes.hair = 7080;
-    player.inventory.clothes.shirt = 7082;
-    player.inventory.clothes.back = 7084;
-    player.inventory.clothes.pants = 7086;
-    player.inventory.clothes.hand = 7088;
-    player.inventory.clothes.face = 7090;
-    player.inventory.clothes.feet = 7094;
-    player.inventory.clothes.necklace = 11560;
-
-    player.playMods.add("hero_suit");
-    player.sendClothesToWorld();
-    player.sendCharacterState();
-    player.sendInventory();
-    player.sendSfx("audio/change_clothes.wav");
-    player.sendTextBubble("`5Nothing is true, everything is permitted! Ezio transformed!``", true);
-    player.variants.sendOnConsoleMessage("`5Transformed into Ezio Auditore! Equipped Ezio's Hood, Vest, Cape, Trousers, Armguards, Boots, and Morph!``");
-    player.variants.sendOnConsoleMessage("`oTip: Type /hero super to transform into classic Superhero!``");
+    player.playMods?.add?.("hero_suit");
+    player.sendClothesToWorld?.();
+    player.sendCharacterState?.();
+    player.sendSfx?.("audio/change_clothes.wav");
+    player.sendTextBubble?.("`5Nothing is true, everything is permitted! Ezio transformed!``", true);
+    player.variants?.sendOnConsoleMessage("`5Transformed into Ezio Auditore! (Cosmetic disguise active - no items added to backpack). Type /hero off to revert.``");
+    player.variants?.sendOnConsoleMessage("`oTip: Type /hero super to disguise as classic Superhero!``");
   },
 });
 
@@ -2278,7 +2284,7 @@ registerCommand({
   name: "transforms",
   aliases: ["transformitems", "morphs"],
   description: "Receive transform items: Go-Go-Growformer, PowerKey, Mystic Transform Crystal, Space Rabbit, and Hero Suits",
-  role: PLAYER_ROLE.USER,
+  role: PLAYER_ROLE.DEVELOPER,
   execute(player) {
     const items = [
       7384,  // Go-Go-Growformer! (Feet)
@@ -2315,7 +2321,7 @@ registerCommand({
   name: "criminal",
   aliases: ["villain", "crime", "mastermind"],
   description: "Receive Crime Wave, Crime In Progress, Criminal Mastermind, and full deck of Superpower Cards",
-  role: PLAYER_ROLE.USER,
+  role: PLAYER_ROLE.DEVELOPER,
   execute(player) {
     // Spawners & Villains
     player.addItemInven(2382, 5);  // Crime Wave (consumable spawner)
@@ -2355,7 +2361,7 @@ registerCommand({
   name: "fish",
   aliases: ["fishing", "angler"],
   description: "Receive fishing rods, baits, fish tank and port starter pack",
-  role: PLAYER_ROLE.USER,
+  role: PLAYER_ROLE.DEVELOPER,
   execute(player) {
     const fishingPack = [
       { id: 2912, count: 1 }, // Fishing Rod
@@ -2382,7 +2388,7 @@ registerCommand({
   name: "wizard",
   aliases: ["lquester", "legendarywizard"],
   description: "Get Legendary Wizard NPC block and interact with the wizard",
-  role: PLAYER_ROLE.USER,
+  role: PLAYER_ROLE.DEVELOPER,
   execute(player) {
     player.addItemInven(1790, 1); // Legendary Wizard
     player.sendSfx("audio/magic_hit.wav");
@@ -2395,7 +2401,7 @@ registerCommand({
   name: "surg",
   aliases: ["surgery", "surgtools", "med"],
   description: "Receive Surg-E practice dummies and full kit of all 14 surgical tools",
-  role: PLAYER_ROLE.BASIC,
+  role: PLAYER_ROLE.DEVELOPER,
   execute(player) {
     player.addItemInven(4296, 5); // Surg-E Anatomical Dummy
     player.addItemInven(8558, 5); // Train-E

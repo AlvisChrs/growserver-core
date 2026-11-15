@@ -112,9 +112,52 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   // Bows & Staves
   278: 2,    // Heart Bow (Cupid hearts)
   1874: 24,  // Ring of Force (Force ring)
-  4746: 75,  // Energized Horn (Horn lightning)
-  1454: 14,  // Pet Leprechaun (Rainbows!)
   10406: 2,  // Staff of Deepest Winter (Ice)
+  3466: 29,  // Slasher
+  4506: 29,  // Machete / Slasher knife
+
+  // Face: Eyes & Visors
+  2476: 39,  // Burning Eyes (Fiery flame punch)
+  10336: 39, // Black Burning Eyes (Dark flame punch)
+  1204: 10,  // Focused Eyes (Optic zap laser)
+  452: 1,    // Cyclopean Visor (Optic blast)
+  1872: 10,  // Cybernetic Eye
+
+  // Hair / Head: Eyes, Horns, Crowns & Wigs
+  8372: 8,   // Giant Eye Head (Baleful optic gaze)
+  4746: 75,  // Energized Horn (Horn lightning)
+  4748: 75,  // Energized Horns (Horn lightning)
+  4750: 75,  // Double Energized Horns (Horn lightning)
+  4456: 40,  // Diamond Horns (Diamond sparkle blast)
+  306: 14,   // Rainbow Wig (Rainbow burst)
+  9034: 19,  // Horns of the Underworld (Demon flame)
+  2780: 8,   // Medusa's Head (Petrifying gaze)
+  3836: 19,  // Burning Crown (Fire strike)
+
+  // Back: Wings & Capes
+  1674: 19,  // Phoenix Wings (Fire punch)
+  1672: 14,  // Rainbow Wings (Rainbow punch)
+  8286: 4,   // Da Vinci Wings (Golden spark)
+  16262: 4,  // Immortal Da Vinci Wings (Golden spark)
+  350: 1,    // Heroman Cape (Heroic punch)
+  2168: 1,   // Superhero Cape (Heroic punch)
+  1784: 19,  // Dragon Wings (Fire punch)
+  160: 19,   // Demon Wings (Dark flame)
+  7150: 40,  // Golden Angel Wings (Golden feathers)
+
+  // Necklace & Pets
+  1782: 21,  // Dragon of Legend / Legendary!
+  1454: 14,  // Pet Leprechaun (Rainbows!)
+  1538: 14,  // Unicorn Garland (Rainbows!)
+  1968: 13,  // Death's Scarf (Dark pulse)
+
+  // Mask
+  2988: 13,  // Anubis Mask (Sand magic)
+  912: 6,    // Dragon Mask (Dragon fire)
+  4182: 13,  // Malevolent Hair (Shadow punch)
+
+  // Feet
+  7384: 5,   // Go-Go-Growformer! (Rocket explosion)
 };
 
 export class Player {
@@ -627,6 +670,20 @@ export class Player {
     } else {
       const slot = CLOTH_MAP[item.bodyPartType as ClothTypes];
       if (!slot) return;
+
+      // If equipping standard body clothing while wearing a full-body hero suit in necklace,
+      // unequip the hero suit so the newly equipped item renders clearly without conflict.
+      if (FULL_BODY_SUITS.has(this.inventory.clothes.necklace) && slot !== "necklace" && slot !== "ances") {
+        this.inventory.clothes.necklace = 0;
+        this.isTransformed = false;
+        this.isHeroDisguised = false;
+      }
+
+      // If transformed in vehicle/robot mode and changing body parts (face, hair, shirt, pants, feet):
+      if (this.isTransformed && itemId !== 7384 && (slot === "shirt" || slot === "pants" || slot === "feet" || slot === "hair" || slot === "face")) {
+        this.untransform();
+      }
+
       this.inventory.clothes[slot] = itemId;
     }
 
@@ -777,6 +834,7 @@ export class Player {
     this.applyPlayMods();
     this.sendClothesToWorld();
     this.sendCharacterState();
+    this.sendInventory();
     this.sendSfx("audio/change_clothes.wav");
     this.scheduleInventorySave();
   }
@@ -843,20 +901,56 @@ export class Player {
   /** Punch effect id forced with /pid; null uses the active mods' punch type. */
   public customPunchId: number | null = null;
 
-  /** Punch effect id: forced, or the one of the active mods, weapon punch, or 0 for plain fist. */
+  /** Punch effect id: forced, weapon punch, head/face/body punch, active mods, or 0 for plain fist. */
   public get punchId(): number {
     if (this.customPunchId !== null) return this.customPunchId;
-    if (this.characterStats.punchType) return this.characterStats.punchType;
 
-    // Check Robot Automaton mode
-    if (this.isTransformed && this.inventory.clothes.feet === 7384) {
-      return 5; // Exploding rockets
-    }
-
-    // Check equipped weapon in hand slot
+    // 1. Hand weapon takes top priority (actively swung weapon)
     const handItem = this.effectiveClothes.hand || this.inventory.clothes.hand;
     if (handItem && WEAPON_PUNCH_TYPES[handItem] !== undefined) {
       return WEAPON_PUNCH_TYPES[handItem]!;
+    }
+
+    // 2. Robot Automaton mode (exploding rocket blasts)
+    if (this.isTransformed && (this.inventory.clothes.feet === 7384 || this.effectiveClothes.feet === 7384)) {
+      return 5;
+    }
+
+    // 3. Face accessories (Burning Eyes, Black Burning Eyes, Focused Eyes, Cyclopean Visor)
+    const faceItem = this.effectiveClothes.face || this.inventory.clothes.face;
+    if (faceItem && WEAPON_PUNCH_TYPES[faceItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[faceItem]!;
+    }
+
+    // 4. Head / Hair accessories (Giant Eye Head, Energized Horns, Diamond Horns, Rainbow Wig)
+    const hairItem = this.effectiveClothes.hair || this.inventory.clothes.hair;
+    if (hairItem && WEAPON_PUNCH_TYPES[hairItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[hairItem]!;
+    }
+
+    // 5. Back accessories (Phoenix Wings, Rainbow Wings, Da Vinci Wings, Heroman Cape)
+    const backItem = this.effectiveClothes.back || this.inventory.clothes.back;
+    if (backItem && WEAPON_PUNCH_TYPES[backItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[backItem]!;
+    }
+
+    // 6. Active play mod punch type (food, potions, consumables)
+    if (this.characterStats.punchType) return this.characterStats.punchType;
+
+    // 7. Other clothing slots (necklace, mask, feet)
+    const neckItem = this.effectiveClothes.necklace || this.inventory.clothes.necklace;
+    if (neckItem && WEAPON_PUNCH_TYPES[neckItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[neckItem]!;
+    }
+
+    const maskItem = this.effectiveClothes.mask || this.inventory.clothes.mask;
+    if (maskItem && WEAPON_PUNCH_TYPES[maskItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[maskItem]!;
+    }
+
+    const feetItem = this.effectiveClothes.feet || this.inventory.clothes.feet;
+    if (feetItem && WEAPON_PUNCH_TYPES[feetItem] !== undefined) {
+      return WEAPON_PUNCH_TYPES[feetItem]!;
     }
 
     return 0;

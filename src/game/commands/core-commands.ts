@@ -2414,6 +2414,53 @@ registerCommand({
 });
 
 registerCommand({
+  name: "immortal",
+  aliases: ["immortals", "immortalset"],
+  description: "Receive the full Immortal Collection (Katana, Da Vinci Wings, Pickaxe, Swordfish, and Giant Eye Head)",
+  role: PLAYER_ROLE.BASIC,
+  execute(player) {
+    const immortalItems = [
+      { id: 16428, name: "Immortal Sonic Buster Katana" },
+      { id: 16262, name: "Immortal Da Vinci Wings" },
+      { id: 16426, name: "Immortal Pickaxe" },
+      { id: 16258, name: "Immortal Swordfish Sword" },
+      { id: 16264, name: "Immortal Alaskan King Crab Crown" },
+      { id: 16340, name: "Immortal Night Vision Goggles" },
+      { id: 16430, name: "Immortal Title" },
+      { id: 16432, name: "Immortal Puppy Leash" },
+      { id: 8372, name: "Giant Eye Head (Immortal GEH Variant)" },
+    ];
+    for (const item of immortalItems) {
+      if (!player.inventory.hasItem(item.id)) player.addItemInven(item.id, 1);
+    }
+    player.sendSfx("audio/thousandSlash.wav");
+    player.sendTextBubble("`#Received Immortal Collection!``", true);
+    player.variants.sendOnConsoleMessage("`#The celestial powers of the Immortal Collection are now yours! Equipped with Giant Eye Head!``");
+  },
+});
+
+registerCommand({
+  name: "eyes",
+  aliases: ["burningeyes", "gianteye"],
+  description: "Receive iconic eye cosmetics: Burning Eyes, Black Burning Eyes, and Giant Eye Head",
+  role: PLAYER_ROLE.BASIC,
+  execute(player) {
+    const eyeItems = [
+      { id: 2476, name: "Burning Eyes" },
+      { id: 10336, name: "Black Burning Eyes" },
+      { id: 1204, name: "Focused Eyes" },
+      { id: 8372, name: "Giant Eye Head" },
+    ];
+    for (const item of eyeItems) {
+      if (!player.inventory.hasItem(item.id)) player.addItemInven(item.id, 1);
+    }
+    player.sendSfx("audio/change_clothes.wav");
+    player.sendTextBubble("`4Received iconic Eye items!``", true);
+    player.variants.sendOnConsoleMessage("`4Received Burning Eyes, Black Burning Eyes, Focused Eyes, and Giant Eye Head!``");
+  },
+});
+
+registerCommand({
   name: "hero",
   aliases: ["superhero", "herosuit", "assassin", "ezio"],
   description: "Transform into a legendary hero (Ezio Auditore or Superhero) without adding items to inventory",

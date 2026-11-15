@@ -175,16 +175,20 @@ async function TileChangeRequest(player: Player, tank: GameUpdatePacket, world: 
     // Charger drops it in to charge
     if (itemMeta.id === DEAD_GEIGER_COUNTER && (await depositDeadGeiger(player, world, block))) return;
 
-    // clothes are never placed. Used on the player's own tile they toggle
+    // clothes are never placed. Used on the player's own tile or avatar they toggle
     // wear/unwear, anywhere else the click is ignored
     if (type === ActionTypes.CLOTHES || type === ActionTypes.ANCES) {
       if (itemMeta.id === 3172 && player.playMods.has("malpractice")) {
         player.equipClothes(3172);
         return;
       }
-      const ownX = Math.floor((player.state.x + 10) / 32);
-      const ownY = Math.floor((player.state.y + 16) / 32);
-      if (data.tileX === ownX && data.tileY === ownY) player.equipClothes(itemMeta.id ?? 0);
+      const minX = Math.floor((player.state.x - 4) / 32);
+      const maxX = Math.floor((player.state.x + 24) / 32);
+      const minY = Math.floor((player.state.y - 4) / 32);
+      const maxY = Math.floor((player.state.y + 36) / 32);
+      if (data.tileX >= minX && data.tileX <= maxX && data.tileY >= minY && data.tileY <= maxY) {
+        player.equipClothes(itemMeta.id ?? 0);
+      }
       return;
     }
 

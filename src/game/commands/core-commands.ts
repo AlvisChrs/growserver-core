@@ -567,7 +567,7 @@ registerCommand({
   aliases: ["setrole", "myrole"],
   description: "Switch your active role/disguise or set another player's role",
   usage: "/role <dev|mod|guardian|supporter|user|owner> OR /role <target> <role>",
-  role: PLAYER_ROLE.BASIC,
+  role: PLAYER_ROLE.DEVELOPER,
   cooldown: 1,
   async execute(player, args) {
     if (!player.canManageRoles) {

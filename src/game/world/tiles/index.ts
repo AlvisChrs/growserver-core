@@ -33,6 +33,7 @@ import { TrainingPortTile } from "./training-port-tile";
 import { OvenTile } from "./oven-tile";
 import { ChemicalCombinerTile } from "./chemical-combiner-tile";
 import { BurglarTile } from "./burglar-tile";
+import { SurgeryRobotTile } from "./surgery-robot-tile";
 import { DefaultExtraTile, getDefaultExtra, UNSUPPORTED_EXTRA_TYPES } from "./default-extra-tile";
 import { ITEM_ID } from "../constants";
 // dialog modules register their dialog returns on import
@@ -111,6 +112,10 @@ export const TileMapByItem: Partial<Record<number, TileClass>> = {
   1790: NpcTile,
   // Crime In Progress villain block
   2302: BurglarTile,
+  // Surgery practice robots & hospital bed
+  4296: SurgeryRobotTile, // Surg-E Anatomical Dummy
+  8558: SurgeryRobotTile, // Train-E
+  1256: SurgeryRobotTile, // Hospital Bed
 };
 
 /**

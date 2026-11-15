@@ -11,7 +11,7 @@ import { serverManager } from "../server/server-manager";
 import { registerDialog } from "../network/dialog-handler";
 import { homeWorldDialog } from "../network/home-world-dialog";
 import { questDailyDialog, sendGoalsDialog } from "../quests";
-import { ActionTypes, ITEM_ID, LOCKS, LockPermission } from "../world/constants";
+import { ActionTypes, ITEM_ID, LOCKS, LockPermission, WEATHER_CLEAR } from "../world/constants";
 import { generateDefaultWorld } from "../world/generation/default";
 import { worldManager } from "../world/world-manager";
 import { SeedTile } from "../world/tiles/seed-tile";
@@ -52,7 +52,7 @@ function sendTargetUsage(player: Player, usage: string): void {
 registerCommand({
   name: "help",
   aliases: ["?", "commands", "cmds"],
-  description: "Shows available commands",
+  description: "Shows available commands categorized by role",
   usage: "/help [command]",
   cooldown: 2,
   execute(player, args) {
@@ -76,12 +76,89 @@ registerCommand({
       return player.variants.sendOnDialogRequest(dialog);
     }
 
-    const available = commands
+    const userRole = player.role ?? PLAYER_ROLE.BASIC;
+    const userRoleName = ROLE_NAMES[userRole] ?? "User";
+    const userRank = roleRank(userRole);
+
+    const allowed = commands
       .toArray()
-      .filter((command: ChatCommand) => canUseCommand(player, command))
-      .map((command) => `/${command.name}`)
-      .sort();
-    player.variants.sendOnConsoleMessage(`Available commands: ${available.join(", ")}`);
+      .filter((command: ChatCommand) => canUseCommand(player, command));
+
+    const devCmds: ChatCommand[] = [];
+    const modCmds: ChatCommand[] = [];
+    const guardianCmds: ChatCommand[] = [];
+    const supporterCmds: ChatCommand[] = [];
+    const userCmds: ChatCommand[] = [];
+
+    for (const cmd of allowed) {
+      const requiredRole = cmd.role ?? PLAYER_ROLE.BASIC;
+      const cmdRank = roleRank(requiredRole);
+      if (cmdRank >= roleRank(PLAYER_ROLE.DEVELOPER)) {
+        devCmds.push(cmd);
+      } else if (cmdRank >= roleRank(PLAYER_ROLE.MODERATOR)) {
+        modCmds.push(cmd);
+      } else if (cmdRank >= roleRank(PLAYER_ROLE.GUARDIAN)) {
+        guardianCmds.push(cmd);
+      } else if (cmdRank >= roleRank(PLAYER_ROLE.SUPPORTER)) {
+        supporterCmds.push(cmd);
+      } else {
+        userCmds.push(cmd);
+      }
+    }
+
+    const sortFn = (a: ChatCommand, b: ChatCommand) => a.name.localeCompare(b.name);
+    devCmds.sort(sortFn);
+    modCmds.sort(sortFn);
+    guardianCmds.sort(sortFn);
+    supporterCmds.sort(sortFn);
+    userCmds.sort(sortFn);
+
+    const dialog = new DialogBuilder()
+      .defaultColor()
+      .addLabelWithIcon("`wGrowServer Command Manual``", ITEM_ID.WRENCH, "big")
+      .addSpacer("small")
+      .addSmallText(`Your Role: \`2${userRoleName}\`\` (Rank ${userRank}) | Total Commands: \`w${allowed.length}\`\``)
+      .addSmallText("`oTip: Use `w/help <command>`o for full parameter usage & description!``")
+      .addSpacer("small");
+
+    if (devCmds.length > 0) {
+      dialog.addLabelWithIcon(`\`#Developer Commands (${devCmds.length})\`\``, 32, "small");
+      dialog.addTextBox(devCmds.map((c) => `\`2/${c.name}\`\``).join(", "));
+      dialog.addSpacer("small");
+    }
+
+    if (modCmds.length > 0) {
+      dialog.addLabelWithIcon(`\`^Moderator Commands (${modCmds.length})\`\``, 1256, "small");
+      dialog.addTextBox(modCmds.map((c) => `\`^/${c.name}\`\``).join(", "));
+      dialog.addSpacer("small");
+    }
+
+    if (guardianCmds.length > 0) {
+      dialog.addLabelWithIcon(`\`0Guardian Commands (${guardianCmds.length})\`\``, 242, "small");
+      dialog.addTextBox(guardianCmds.map((c) => `\`0/${c.name}\`\``).join(", "));
+      dialog.addSpacer("small");
+    }
+
+    if (supporterCmds.length > 0) {
+      dialog.addLabelWithIcon(`\`eSupporter Commands (${supporterCmds.length})\`\``, 756, "small");
+      dialog.addTextBox(supporterCmds.map((c) => `\`e/${c.name}\`\``).join(", "));
+      dialog.addSpacer("small");
+    }
+
+    if (userCmds.length > 0) {
+      dialog.addLabelWithIcon(`\`$Player & Public Commands (${userCmds.length})\`\``, 18, "small");
+      dialog.addTextBox(userCmds.map((c) => `\`$/${c.name}\`\``).join(", "));
+      dialog.addSpacer("small");
+    }
+
+    dialog
+      .addQuickExit()
+      .endDialog("help_overview", "", "Ok");
+
+    player.variants.sendOnDialogRequest(dialog.str());
+    player.variants.sendOnConsoleMessage(
+      `\`o[Help]: Showing \`w${allowed.length}\`o commands for \`2${userRoleName}\`o. Type \`/help <cmd>\` for individual info.`,
+    );
   },
 });
 
@@ -1098,21 +1175,63 @@ registerCommand({
 registerCommand({
   name: "restore",
   aliases: ["restoreworld", "loadsnapshot"],
-  description: "Restore the world from your manual /backup snapshot",
+  description: "Restore the world from your manual /backup snapshot or procedural template",
+  usage: "/restore [template]",
   role: PLAYER_ROLE.DEVELOPER,
   cooldown: 2,
-  execute(player) {
+  async execute(player, args) {
     const world = player.world;
     if (!world) return;
+
+    const sub = args[0]?.toLowerCase();
+    if (sub === "template" || sub === "default") {
+      const template = generateDefaultWorld(world.name, world.width, world.height);
+      world.data.blocks = template.blocks;
+      world.data.dropped = { uid: 0, items: [] };
+      delete world.data.worldLockIndex;
+      world.data.weather = { id: WEATHER_CLEAR };
+      world.markDirty();
+
+      const door = world.mainDoor;
+      const doorX = door?.x ?? 0;
+      const doorY = door?.y ?? 0;
+
+      const playersInWorld = [...world.players];
+      for (const p of playersInWorld) {
+        world.leave(p);
+        await world.enter(p, doorX, doorY);
+        p.sendInventory();
+        p.sendTextBubble("`2The world was reset to its original template!``", true);
+        p.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 was regenerated to its clean procedural template.\`\``);
+      }
+      player.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 was restored to its procedural template.\`\``);
+      return;
+    }
+
     const backup = manualWorldBackups.get(world.name);
-    if (!backup) return player.variants.sendOnConsoleMessage("`4No manual snapshot found for this world. Use \`/backup\` first.\`\``");
+    if (!backup) {
+      player.variants.sendOnConsoleMessage(
+        "`4No manual snapshot found for this world. Use \`/backup\` first to save a snapshot, or use \`/restore template\` (or \`/resetworld\`) to reset to default procedural template.\`\`",
+      );
+      return;
+    }
 
     world.data.blocks = JSON.parse(backup);
+    world.data.weather ??= { id: WEATHER_CLEAR };
     world.markDirty();
-    for (const p of world.players) {
-      p.leaveWorld();
+
+    const door = world.mainDoor;
+    const doorX = door?.x ?? 0;
+    const doorY = door?.y ?? 0;
+
+    const playersInWorld = [...world.players];
+    for (const p of playersInWorld) {
+      world.leave(p);
+      await world.enter(p, doorX, doorY);
+      p.sendInventory();
+      p.sendTextBubble("`2World restored to snapshot!``", true);
+      p.variants.sendOnConsoleMessage(`\`2World \`o${world.name}\`2 restored to snapshot!\`\``);
     }
-    player.variants.sendOnConsoleMessage(`\`2World \`o${world.name}\`2 restored to snapshot! Re-enter to view.\`\``);
   },
 });
 
@@ -1905,18 +2024,18 @@ registerCommand({
     world.data.blocks = template.blocks;
     world.data.dropped = { uid: 0, items: [] };
     delete world.data.worldLockIndex;
-    delete world.data.weather;
+    world.data.weather = { id: WEATHER_CLEAR };
     world.markDirty();
 
-    // Teleport all online players to main door and resend world
+    // Teleport all online players to main door and re-enter world cleanly
     const door = world.mainDoor;
-    const doorX = (door?.x ?? 0) * 32;
-    const doorY = (door?.y ?? 0) * 32;
+    const doorX = door?.x ?? 0;
+    const doorY = door?.y ?? 0;
 
-    for (const p of world.players) {
-      p.state.x = doorX;
-      p.state.y = doorY;
-      p.sendWorld(world);
+    const playersInWorld = [...world.players];
+    for (const p of playersInWorld) {
+      world.leave(p);
+      await world.enter(p, doorX, doorY);
       p.sendInventory();
       p.sendTextBubble("`2The world was reset to its original template!``", true);
       p.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 was regenerated to its clean procedural template.\`\``);
@@ -2032,5 +2151,45 @@ registerCommand({
     player.sendSfx("audio/magic_hit.wav");
     player.sendTextBubble("`9The Legendary Wizard answers your call!``", true);
     player.variants.sendOnConsoleMessage("`9Received Legendary Wizard block! Place it or interact to undertake Legendary Quests!``");
+  },
+});
+
+registerCommand({
+  name: "surg",
+  aliases: ["surgery", "surgtools", "med"],
+  description: "Receive Surg-E practice dummies and full kit of all 14 surgical tools",
+  role: PLAYER_ROLE.BASIC,
+  execute(player) {
+    player.addItemInven(4296, 5); // Surg-E Anatomical Dummy
+    player.addItemInven(8558, 5); // Train-E
+    player.addItemInven(1256, 1); // Hospital Bed
+    player.addItemInven(1280, 1); // Caduceus
+
+    const tools = [
+      { id: 1258, count: 50 }, // Sponge
+      { id: 1260, count: 50 }, // Scalpel
+      { id: 1262, count: 50 }, // Anesthetic
+      { id: 1264, count: 50 }, // Antiseptic
+      { id: 1266, count: 50 }, // Antibiotics
+      { id: 1268, count: 50 }, // Splint
+      { id: 1270, count: 50 }, // Stitches
+      { id: 1296, count: 1 },  // Fix it!
+      { id: 4308, count: 50 }, // Pins
+      { id: 4310, count: 50 }, // Transfusion
+      { id: 4312, count: 50 }, // Defibrillator
+      { id: 4314, count: 50 }, // Clamp
+      { id: 4316, count: 50 }, // Ultrasound
+      { id: 4318, count: 50 }, // Lab Kit
+    ];
+
+    for (const tool of tools) {
+      player.addItemInven(tool.id, tool.count);
+    }
+
+    player.sendInventory();
+    player.sendSfx("audio/bleep_clean.wav");
+    player.sendTextBubble("`2Received Surg-E dummies and all 14 surgical tools!``", true);
+    player.variants.sendOnConsoleMessage("`2[Surgery]: Received Surg-E dummies (#4296), Train-E (#8558), and 50x of each surgical tool!``");
+    player.variants.sendOnConsoleMessage("`oTip: Place Surg-E (#4296) and punch or wrench it to practice surgery.`");
   },
 });

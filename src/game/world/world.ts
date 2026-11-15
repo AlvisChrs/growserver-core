@@ -49,7 +49,11 @@ export class World {
   /** Next avatar net ID handed out to a player entering this world; 0 means "not in a world". */
   private nextNetId = 1;
 
-  constructor(public data: WorldData) {}
+  constructor(public data: WorldData) {
+    if (!this.data.weather) {
+      this.data.weather = { id: WEATHER_CLEAR };
+    }
+  }
 
   public get name(): string {
     return this.data.name;
@@ -311,14 +315,15 @@ export class World {
 
     // modern worlds end with the weather trailer: base weather, an unknown
     // field, the current weather and six reserved bytes
+    const weatherId = this.data.weather?.id ?? WEATHER_CLEAR;
     if (WORLD_DATA_VERSION >= 0x19) {
-      tail.writeU16(this.data.weather.id);
+      tail.writeU16(weatherId);
       tail.writeU16(0);
-      tail.writeU16(this.data.weather.id);
+      tail.writeU16(weatherId);
       tail.writeBytes(Buffer.alloc(6));
     } else if (WORLD_DATA_VERSION > 0) {
-      tail.writeU16(this.data.weather.id);
-      tail.writeU16(this.data.weather.id === WEATHER_CLEAR ? 0 : 1);
+      tail.writeU16(weatherId);
+      tail.writeU16(weatherId === WEATHER_CLEAR ? 0 : 1);
       tail.writeU32(0);
       tail.writeU32(0);
     }

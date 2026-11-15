@@ -221,6 +221,7 @@ export function handleSurgeryWrench(player: Player, world: World, tileX: number,
     `add_textbox|Are you sure you want to perform surgery on this robot? Whether you succeed or fail, the robot will be destroyed in the process.|left|\n` +
     `add_spacer|small|\n` +
     `add_button|surge_start|Okay!|noflags|0|0|\n` +
+    (blockId !== HOSPITAL_BED_ID ? `add_button|surge_break|Break Robot|noflags|0|0|\n` : "") +
     `add_button|surge_cancel|Cancel|noflags|0|0|\n` +
     `end_dialog|surge|||`;
 
@@ -302,7 +303,7 @@ export function sendSurgeryDialog(player: Player): void {
   let tray = "";
   for (const toolId of SURGERY_TRAY) {
     if (!toolAvailable(player, s, toolId)) {
-      tray += `\nadd_button_with_icon|tool0||noflags|${EMPTY_TRAY_ID}||`;
+      tray += `\nadd_button_with_icon|tool${toolId}||noflags|${EMPTY_TRAY_ID}||`;
       continue;
     }
     const name = TOOL_LABELS[toolId] ?? getItem(toolId)?.name ?? String(toolId);
@@ -352,7 +353,12 @@ export function handleSurgeryAction(player: Player, world: World, button: string
 
   // Clicking an empty tray slot explains why the tool is missing.
   if (!toolAvailable(player, s, toolId)) {
-    player.sendTextBubble(emptySlotReason(player, s, toolId), true);
+    const reason = emptySlotReason(player, s, toolId);
+    player.sendTextBubble(reason, true);
+    player.variants.sendOnConsoleMessage(`\`4[Surgery]: \`o${reason}`);
+    if (!player.inventory.hasItem(toolId)) {
+      player.variants.sendOnConsoleMessage("`6Tip: Use `2/surg`6 to quickly obtain all surgical tools and anatomical dummies!``");
+    }
     sendSurgeryDialog(player);
     return;
   }
@@ -401,7 +407,10 @@ export function handleSurgeryAction(player: Player, world: World, button: string
 /** Why a tray slot is empty, for the tooltip bubble. */
 function emptySlotReason(player: Player, s: ActiveSurgery, toolId: number): string {
   if (s.dirt >= 10 && toolId !== 1258) return "The site is too dirty, use the Sponge first!";
-  if (!player.inventory.hasItem(toolId)) return `You don't have a ${getItem(toolId)?.name ?? "tool"}!`;
+  if (!player.inventory.hasItem(toolId)) {
+    const toolName = TOOL_LABELS[toolId] ?? getItem(toolId)?.name ?? "tool";
+    return `You don't have a ${toolName}!`;
+  }
   switch (toolId) {
     case 1266:
       return "Run the Lab Kit before using antibiotics.";

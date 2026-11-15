@@ -55,6 +55,21 @@ registerDialog("surge", async (player, action) => {
     player.surgery = null;
     return;
   }
+  if (button === "surge_break") {
+    const robotId = player.surgery?.robotId ?? 4296;
+    const x = player.surgery?.tileX ?? 0;
+    const y = player.surgery?.tileY ?? 0;
+    player.surgery = null;
+    const block = world.getTileAt(x, y);
+    if (block && block.fg === robotId) {
+      block.fg = 0;
+      block.damage = 0;
+      world.broadcastTileChange(x, y, 0);
+      world.drop(player, x * 32, y * 32, robotId, 1);
+      player.variants.sendOnConsoleMessage(`\`2Retrieved practice dummy!\`\``);
+    }
+    return;
+  }
   startSurgery(player, world);
 });
 

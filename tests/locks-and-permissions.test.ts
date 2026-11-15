@@ -298,4 +298,46 @@ describe("world locks and special lock behaviors", () => {
     await handleChatInput(king, "Welcome to my realm!");
     expect(king.sentBubbles.some((b) => b.includes("Silence, peasants"))).toBe(false);
   });
+
+  test("moderators and developers have full override permissions in locked worlds, while regular users are blocked", async () => {
+    const world = createMockWorld("SECUREFORT");
+    const owner = createMockPlayer(100, "FortOwner", world);
+    const mod = createMockPlayer(200, "ModPlayer", world);
+    mod.isModerator = true;
+    const dev = createMockPlayer(300, "DevPlayer", world);
+    dev.isDeveloper = true;
+    const stranger = createMockPlayer(400, "RandomUser", world);
+
+    // Place a World Lock
+    owner.inventory.addItem(ITEM_ID.WORLD_LOCK, 1);
+    const lockTile = tileFrom(world, world.getTileAt(5, 5)!, 3, ITEM_ID.WORLD_LOCK);
+    await lockTile.onPlaceForeground(owner, { id: ITEM_ID.WORLD_LOCK, name: "World Lock", type: 3 } as any);
+
+    const normalTile = world.getTileAt(15, 15)!;
+
+    // 1. Regular user CANNOT break or build
+    expect(await world.hasTilePermission(stranger, normalTile, LockPermission.BREAK)).toBe(false);
+    expect(await world.hasTilePermission(stranger, normalTile, LockPermission.BUILD)).toBe(false);
+
+    // 2. Owner CAN break and build
+    expect(await world.hasTilePermission(owner, normalTile, LockPermission.BREAK)).toBe(true);
+    expect(await world.hasTilePermission(owner, normalTile, LockPermission.BUILD)).toBe(true);
+
+    // 3. Moderator CAN break and build freely
+    expect(await world.hasTilePermission(mod, normalTile, LockPermission.BREAK)).toBe(true);
+    expect(await world.hasTilePermission(mod, normalTile, LockPermission.BUILD)).toBe(true);
+
+    // 4. Developer CAN break and build freely
+    expect(await world.hasTilePermission(dev, normalTile, LockPermission.BREAK)).toBe(true);
+    expect(await world.hasTilePermission(dev, normalTile, LockPermission.BUILD)).toBe(true);
+
+    // 5. Breaking block awards character EXP
+    let gainedXp = 0;
+    stranger.addXp = (amount: number) => {
+      gainedXp += amount;
+    };
+    normalTile.fg = ITEM_ID.DIRT;
+    await tileFrom(world, normalTile).onDestroy(stranger);
+    expect(gainedXp).toBeGreaterThanOrEqual(1);
+  });
 });

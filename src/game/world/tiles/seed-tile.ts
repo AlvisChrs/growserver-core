@@ -71,6 +71,9 @@ export class SeedTile extends Tile {
     this.tileUpdate();
 
     player.removeItemInven(splicerSeedId, 1);
+    const spliceXp = Math.max(5, Math.min(50, Math.floor((resultSeedMeta.rarity ?? 0) / 4) + 5));
+    player.addXp?.(spliceXp);
+    addRoleXp(player, "farmer", spliceXp);
     player.sendTextBubble(`${currentSeedMeta.name} and ${item.name} have been spliced to make an \`o${resultSeedMeta.name} Tree\`0!`);
     this.world.playPositioned("audio/success.wav", player.netID);
     return true;

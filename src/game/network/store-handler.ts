@@ -96,7 +96,7 @@ export function openStore(player: Player): void {
 /**
  * Handles `buy` / `storenavigate`: `name` is either a tab button or a product button.
  */
-export function handleStoreBuy(player: Player, name: string, selection = ""): void {
+export async function handleStoreBuy(player: Player, name: string, selection = ""): Promise<void> {
   const tab = STORE_TAB_BUTTONS.get(name);
   if (tab !== undefined) {
     player.variants.sendVariant(Variant.from("OnStoreRequest", storePage(player, tab, selection)));
@@ -105,7 +105,7 @@ export function handleStoreBuy(player: Player, name: string, selection = ""): vo
 
   const product = storeProducts.get(name) ?? (name === "surgery_pack" ? storeProducts.get("surg_pack") : undefined);
   if (!product) return;
-  purchase(player, product);
+  await purchase(player, product);
 }
 
 function randomItems(filter: (rarity: number, type: number) => boolean, count: number): Array<{ id: number; amount: number }> {
@@ -136,7 +136,7 @@ function rollProductItems(product: StoreProduct): Array<{ id: number; amount: nu
   }
 }
 
-function purchase(player: Player, product: StoreProduct): void {
+async function purchase(player: Player, product: StoreProduct): Promise<void> {
   const cost = productCost(player, product);
   const withTokens = product.tab === StoreTab.GROWTOKENS;
   const balance = withTokens ? player.inventory.getAmount(ITEM_ID.GROWTOKEN) : player.gems;
@@ -191,6 +191,9 @@ function purchase(player: Player, product: StoreProduct): void {
     player.addItemInven(entry.id, entry.amount);
     received.push(`${getItem(entry.id)?.name ?? entry.id}${entry.amount > 1 ? ` x${entry.amount}` : ""}`);
   }
+
+  // Immediately commit updated gems, balance, and inventory to database
+  await player.saveToDatabase();
 
   player.sendSfx(PURCHASE_SOUND);
 

@@ -18,6 +18,9 @@ const USE_LOCK_SOUND = "audio/use_lock.wav";
 /** Bits of the settings byte in a lock's extra data. */
 const enum LockSettings {
   IGNORE_EMPTY_AIR = 1 << 0,
+  ALLOW_MUSIC = 1 << 1,
+  ROYAL_RAINBOWS = 1 << 2,
+  SILENCE_PEASANTS = 1 << 3,
   DISABLE_MUSIC = 1 << 4,
   INVISIBLE_MUSIC = 1 << 5,
   BUILD_ONLY = 1 << 6,
@@ -240,6 +243,10 @@ export class LockTile extends Tile {
     const worldLock = this.data.worldLockData;
     if (worldLock?.customMusicBlocksDisabled) flags |= LockSettings.DISABLE_MUSIC;
     if (worldLock?.invisMusicBlocks) flags |= LockSettings.INVISIBLE_MUSIC;
+    if (isRoyalLock(this.data.fg)) {
+      if (worldLock?.royalRainbows) flags |= LockSettings.ROYAL_RAINBOWS;
+      if (worldLock?.silencePeasants) flags |= LockSettings.SILENCE_PEASANTS;
+    }
     return flags;
   }
 

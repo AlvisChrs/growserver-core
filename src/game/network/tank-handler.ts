@@ -44,6 +44,17 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
 
   world.broadcast(tank.parse()!, player.id);
 
+  // Royal Lock rainbow trail for owner, admins, and developers when enabled
+  if (world.isRoyalLocked && world.worldLockTile?.worldLockData?.royalRainbows) {
+    if (world.getOwnerPlayerId() === player.playerId || world.isWorldAdmin(player.playerId) || player.isDeveloper) {
+      const now = Date.now();
+      if (now - (player.lastRainbowAt ?? 0) >= 300) {
+        player.lastRainbowAt = now;
+        world.broadcastVariant(Variant.from("OnParticleEffect", 46, [data.posX + 10, data.posY + 16]));
+      }
+    }
+  }
+
   // tile the player is standing on, only reported when not punching
   if (data.tileX > 0 || data.tileY > 0) return;
   const block =

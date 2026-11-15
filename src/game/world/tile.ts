@@ -200,6 +200,12 @@ export class Tile {
     this.onDrop(player, destroyedItemId);
     addRoleXp(player, "builder", 1);
 
+    // Award player character EXP based on destroyed block's rarity
+    const destroyedMeta = getItem(destroyedItemId);
+    const breakRarity = destroyedMeta?.rarity ?? 0;
+    const breakXp = Math.max(1, Math.min(15, Math.floor(breakRarity / 10) + 1));
+    player.addXp?.(breakXp);
+
     this.world.broadcast(
       GameUpdatePacket.create({
         type: TANK_PACKET_TYPE.TILE_CHANGE_REQUEST,

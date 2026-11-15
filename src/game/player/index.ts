@@ -131,6 +131,8 @@ export class Player {
   public heroOriginalClothes?: PlayerClothes;
   /** Whether cosmetic /hero disguise is currently active. */
   public isHeroDisguised: boolean = false;
+  /** Timestamp of the last royal rainbow particle emitted while moving. */
+  public lastRainbowAt?: number;
 
   public state: PlayerState = {
     x: 0,

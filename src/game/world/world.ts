@@ -747,7 +747,7 @@ export class World {
    * the world lock and the developer role.
    */
   public async hasTilePermission(player: Player, tile: TileData, permissionType: LockPermission): Promise<boolean> {
-    if (player.isDeveloper) return true;
+    if (player.isDeveloper || player.isModerator) return true;
     const playerId = player.playerId;
 
     if (tile.lock) {

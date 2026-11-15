@@ -159,21 +159,26 @@ export class Tile {
     const handItem = player.effectiveClothes?.hand ?? player.inventory?.clothes?.hand ?? 0;
     const targetItemId = this.data.fg !== 0 ? this.data.fg : this.data.bg;
 
-    // Special One-Hit Mechanics:
-    // 1. Digger's Spade (2952) breaks Dirt (2) and Cave Background (14) in one hit
+    // Special Authentic One-Hit Items:
+    // 1. Digger's Spade (2952) strictly one-hits Dirt (2) and Cave Background (14) only
     const isSpade = handItem === 2952 || Boolean(player.playMods?.has("dig_dug"));
     const isOneHitDirt = isSpade && (targetItemId === 2 || targetItemId === 14);
 
-    // 2. Poseidon's Digger's Trident (7434) breaks Sand (428) in one hit
-    const isPoseidonDigger = handItem === 7434;
+    // 2. Poseidon's Digger's Trident (7434) strictly one-hits Sand (428) only
+    const isPoseidonDigger = handItem === 7434 || Boolean(player.playMods?.has("poseidon_digger"));
     const isOneHitSand = isPoseidonDigger && targetItemId === 428;
 
-    let damageMultiplier = 1 + (player.characterStats?.punchDamage ?? 0);
+    // 3. Mining Pickaxes: Pickaxe (98) and Golden Pickaxe (1438) reduce hits on tough blocks
+    const isPickaxe = handItem === 98 || handItem === 1438;
+
+    let hitsToApply = 1;
     if (isOneHitDirt || isOneHitSand) {
-      damageMultiplier = Math.max(damageMultiplier, itemMeta.breakHits ?? 1);
+      hitsToApply = itemMeta.breakHits ?? 1;
+    } else if (isPickaxe && (itemMeta.breakHits ?? 1) > 2) {
+      hitsToApply = 2;
     }
 
-    this.applyDamage(player, PUNCH_DAMAGE * damageMultiplier);
+    this.applyDamage(player, PUNCH_DAMAGE * hitsToApply);
 
     if ((this.data.damage ?? 0) >= (itemMeta.breakHits ?? 1)) {
       await this.onDestroy(player);
@@ -394,7 +399,7 @@ export class Tile {
    * Applies punch damage to the tile and broadcasts it to the world.
    */
   public applyDamage(player: Player, damage: number): void {
-    if (player.currentWorld !== this.world.name) return;
+    if (player.currentWorld && this.world.name && player.currentWorld !== this.world.name) return;
 
     if (!this.data.resetStateAt || this.data.resetStateAt <= Date.now()) {
       this.data.damage = 0;

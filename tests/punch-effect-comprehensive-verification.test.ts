@@ -57,6 +57,8 @@ describe("Comprehensive Punch Effects & Weapon Category Fallbacks", () => {
     expect(WEAPON_PUNCH_TYPES[3716]).toBe(69); // Neutron Gun
     expect(WEAPON_PUNCH_TYPES[4474]).toBe(72); // Skull Launcher
     expect(WEAPON_PUNCH_TYPES[4840]).toBe(78); // Balloon Launcher
+    expect(WEAPON_PUNCH_TYPES[11140]).toBe(20); // Legendary Destroyer (Fists of Fury Rocket Mech Punch)
+    expect(WEAPON_PUNCH_TYPES[11142]).toBe(21); // Legendary Owl (Legendary Night Pulse)
 
     // Bows
     expect(WEAPON_PUNCH_TYPES[278]).toBe(2);   // Heart Bow

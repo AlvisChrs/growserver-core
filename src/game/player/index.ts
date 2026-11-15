@@ -283,6 +283,7 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   2476: 39,  // Burning Eyes (Fiery flame punch)
   2976: 10,  // Cybernetic Eye
   10336: 39, // Black Burning Eyes (Dark flame punch)
+  11142: 21, // Legendary Owl (Legendary night pulse)
   14294: 10, // Captain Laserhawk's Eye (Optic zap)
 
   // Hair / Head: Eyes, Horns, Crowns & Wigs
@@ -340,6 +341,7 @@ export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
   1940: 5,   // Diamond Rocket Shoes (Rocket propulsion)
   7384: 5,   // Go-Go-Growformer! (Rocket explosion)
   9252: 5,   // Confetti Rocket Shoes (Confetti rocket propulsion)
+  11140: 20, // Legendary Destroyer (Rocket mech punch / Fists of Fury)
 };
 
 export class Player {

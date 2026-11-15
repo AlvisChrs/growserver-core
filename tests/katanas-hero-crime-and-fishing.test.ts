@@ -29,20 +29,20 @@ describe("Legendary Katana & Katana Series", () => {
     expect((stats.charState & CHARACTER_STATE.DOUBLE_JUMP) !== 0).toBe(true);
   });
 
-  test("Elemental and cursed katanas rely on native hand item rendering without conflicting punch overrides", () => {
+  test("Elemental and cursed katanas are equipped with distinctive custom slash punch effects", () => {
     const cursed = WEARABLE_MODS.get(9058);
-    expect(cursed?.punchType).toBeUndefined();
+    expect(cursed?.punchType).toBe(29);
     expect(cursed?.punchPower).toBe(300);
 
     const sonic = WEARABLE_MODS.get(11118);
-    expect(sonic?.punchType).toBeUndefined();
+    expect(sonic?.punchType).toBe(75);
     expect(sonic?.speed).toBe(120);
 
     const dark = WEARABLE_MODS.get(13710);
-    expect(dark?.punchType).toBeUndefined();
+    expect(dark?.punchType).toBe(112);
 
     const immortal = WEARABLE_MODS.get(16428);
-    expect(immortal?.punchType).toBeUndefined();
+    expect(immortal?.punchType).toBe(43);
     expect(immortal?.speed).toBe(140);
     expect((immortal?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
   });

@@ -50,7 +50,7 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
       const now = Date.now();
       if (now - (player.lastRainbowAt ?? 0) >= 300) {
         player.lastRainbowAt = now;
-        world.broadcastVariant(Variant.from("OnParticleEffect", 46, [data.posX + 10, data.posY + 16]));
+        world.broadcastVariant(Variant.from("OnParticleEffect", 14, [data.posX + 10, data.posY + 16]));
       }
     }
   }

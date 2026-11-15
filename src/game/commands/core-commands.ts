@@ -1483,7 +1483,7 @@ registerCommand({
 
 registerCommand({
   name: "speed",
-  description: "Set custom run speed (e.g. /speed 2500, /speed reset)",
+  description: "Set custom run speed (e.g. /speed 500, /speed reset)",
   usage: "/speed <number or reset>",
   role: PLAYER_ROLE.DEVELOPER,
   cooldown: 1,
@@ -1492,12 +1492,12 @@ registerCommand({
     if (!input || input === "reset" || input === "default") {
       player.customSpeed = undefined;
       player.sendCharacterState();
-      return player.variants.sendOnConsoleMessage("`2Speed reset to normal (1200).``");
+      return player.variants.sendOnConsoleMessage("`2Speed reset to normal (250).``");
     }
 
     const val = Number.parseInt(input, 10);
     if (Number.isNaN(val) || val < 100 || val > 10000) {
-      return player.variants.sendOnConsoleMessage("`4Usage: /speed <100-10000> or /speed reset (normal is 1200)``");
+      return player.variants.sendOnConsoleMessage("`4Usage: /speed <100-10000> or /speed reset (normal is 250)``");
     }
 
     player.customSpeed = val;
@@ -1528,6 +1528,27 @@ registerCommand({
     player.customGravity = val;
     player.sendCharacterState();
     player.variants.sendOnConsoleMessage(`\`2Gravity set to \`o${val}\`2! Enjoy low/high gravity!\`\``);
+  },
+});
+
+registerCommand({
+  name: "particle",
+  aliases: ["pe", "part"],
+  description: "Spawn particle effect at your position (e.g. /particle 14 for Rainbow, /particle 46 for Stars)",
+  usage: "/particle <id>",
+  role: PLAYER_ROLE.DEVELOPER,
+  cooldown: 1,
+  execute(player, args) {
+    const id = Number.parseInt(args[0] ?? "", 10);
+    if (Number.isNaN(id) || id < 0 || id > 500) {
+      return player.variants.sendOnConsoleMessage("`4Usage: /particle <0-500> (14: Rainbow, 46: Stars, 2: Hearts)``");
+    }
+    const world = player.world;
+    if (!world) return;
+    const x = player.state.x + 10;
+    const y = player.state.y + 16;
+    world.broadcastVariant(Variant.from("OnParticleEffect", id, [x, y]));
+    player.variants.sendOnConsoleMessage(`\`2Spawned particle effect ID \`o${id}\`2 at (${Math.round(x)}, ${Math.round(y)})!\`\``);
   },
 });
 
@@ -2227,7 +2248,9 @@ registerCommand({
         delete player.heroOriginalClothes;
       }
       player.isHeroDisguised = false;
+      player.isTransformed = false;
       player.playMods?.remove?.("hero_suit");
+      player.playMods?.remove?.("transformed");
       player.sendClothesToWorld?.();
       player.sendCharacterState?.();
       player.sendSfx?.("audio/change_clothes.wav");
@@ -2243,6 +2266,7 @@ registerCommand({
     player.isHeroDisguised = true;
 
     if (choice === "super" || choice === "superhero") {
+      player.isTransformed = false;
       player.inventory.clothes.hair = 0;
       player.inventory.clothes.mask = 2134; // Superhero Mask - Red
       player.inventory.clothes.shirt = 2170; // Superheroine Top - Red
@@ -2260,7 +2284,11 @@ registerCommand({
       return;
     }
 
-    // Default: Ezio Auditore Complete Assassin Transformation
+    // Default: Ezio Auditore (11560) or specific Assassin's Creed hero
+    const suitId = choice === "altair" ? 12646 : choice === "bayek" ? 12650 : choice === "sam" ? 11558 : 11560;
+    const heroName = choice === "altair" ? "Altair" : choice === "bayek" ? "Bayek" : choice === "sam" ? "Sam Fisher" : "Ezio Auditore";
+
+    player.isTransformed = true;
     player.inventory.clothes.hair = 7080;  // Ezio's Hood
     player.inventory.clothes.shirt = 7082; // Ezio's Vest
     player.inventory.clothes.back = 7084;  // Ezio's Cape
@@ -2268,15 +2296,15 @@ registerCommand({
     player.inventory.clothes.hand = 7088;  // Ezio's Armguards
     player.inventory.clothes.face = 7090;  // Ezio's Beard
     player.inventory.clothes.feet = 7094;  // Ezio's Boots
-    player.inventory.clothes.necklace = 11560; // Ezio Morph
+    player.inventory.clothes.necklace = suitId; // Ezio/Hero Full-Body Suit!
 
     player.playMods?.add?.("hero_suit");
     player.sendClothesToWorld?.();
     player.sendCharacterState?.();
     player.sendSfx?.("audio/change_clothes.wav");
-    player.sendTextBubble?.("`5Nothing is true, everything is permitted! Ezio transformed!``", true);
-    player.variants?.sendOnConsoleMessage("`5Transformed into Ezio Auditore! (Cosmetic disguise active - no items added to backpack). Type /hero off to revert.``");
-    player.variants?.sendOnConsoleMessage("`oTip: Type /hero super to disguise as classic Superhero!``");
+    player.sendTextBubble?.(`\`5Nothing is true, everything is permitted! ${heroName} transformed!\`\``, true);
+    player.variants?.sendOnConsoleMessage(`\`5Transformed into ${heroName}! (Cosmetic disguise active - no items added to backpack). Type /hero off to revert.\`\``);
+    player.variants?.sendOnConsoleMessage("`oTip: Type /hero super for classic Superhero, /hero altair for Altair, /hero off to revert!``");
   },
 });
 

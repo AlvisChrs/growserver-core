@@ -109,7 +109,7 @@ export const ITEM_ID = {
 } as const;
 
 /** Weather id of the default (clear) sky. */
-export const WEATHER_CLEAR = 41;
+export const WEATHER_CLEAR = 0;
 
 /**
  * Toggleable blocks whose sound is a piece of music (the wiki's music block

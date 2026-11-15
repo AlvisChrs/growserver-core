@@ -45,6 +45,16 @@ export const MORPH_ITEMS: ReadonlySet<number> = new Set([
 export function computeEffectiveClothes(clothes: Readonly<PlayerClothes>, isTransformed = false): PlayerClothes {
   const effective: PlayerClothes = { ...clothes };
 
+  if (isTransformed && FULL_BODY_SUITS.has(clothes.necklace)) {
+    // In full-body hero suit mode (Ezio, Altair, etc.), hide human torso, pants, hair, face, and shoes so the suit renders cleanly
+    effective.shirt = 0;
+    effective.pants = 0;
+    effective.hair = 0;
+    effective.face = 0;
+    effective.mask = 0;
+    effective.feet = 0;
+  }
+
   if (isTransformed && clothes.feet === 7384) {
     // In vehicle mode, hide human torso, pants, hair, and face so the car base renders cleanly
     effective.shirt = 0;

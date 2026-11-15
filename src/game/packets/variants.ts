@@ -673,9 +673,9 @@ export class VariantHandler {
       type: TANK_PACKET_TYPE.SET_CHARACTER_STATE,
       netID,
       itemID: stats.charState | extraState,
-      posX: stats.speed,
+      posX: Math.max(stats.accel, stats.speed),
       posY: stats.punchPower,
-      speedX: stats.accel,
+      speedX: stats.speed,
       speedY: stats.gravity,
     }).parse()!;
 

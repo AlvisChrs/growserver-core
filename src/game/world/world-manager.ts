@@ -3,6 +3,7 @@ import { Collection } from "../../utils/collection";
 import { logger } from "../../utils/logger";
 import { WorldDB } from "../../database/services/world-db";
 import { generateDefaultWorld } from "./generation/default";
+import { generateShopWorld } from "./generation/shop";
 import { World } from "./world";
 import type { WorldData } from "./types";
 
@@ -116,7 +117,7 @@ export class WorldManager {
     }
 
     if (!data) {
-      data = generateDefaultWorld(worldName);
+      data = worldName === "SHOP" ? generateShopWorld() : generateDefaultWorld(worldName);
       logger.info({ world: worldName }, "generated new world");
       if (!(await WorldDB.exists(worldName))) {
         await WorldDB.create(worldName);

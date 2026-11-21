@@ -260,32 +260,66 @@ export class BotPlayer extends Player {
       let currentX = curTileX;
       let currentY = curTileY;
 
-      for (let i = 1; i <= steps; i++) {
+      for (let i = 0; i < steps; i++) {
         if (!this.world || (this.state.characterState & CHARACTER_STATE.IS_FROZEN) !== 0) break;
+        if (currentX === targetTileX) break;
 
-        const nextX = curTileX + direction * i;
+        const nextX = currentX + direction;
+        let stepTargetX = nextX;
+        let groundY = currentY;
+        let jump = false;
 
-        // Wall collision check (prevent clipping through blocks at foot or head level)
-        if (this.world.isSolid(nextX, currentY) || this.world.isSolid(nextX, currentY - 1)) {
+        // Obstacle detection in front of the bot
+        if (this.world.isSolid(nextX, currentY)) {
+          // Check if obstacle is 1 block high with headroom clear (at currentY - 1 and currentY - 2)
+          if (!this.world.isSolid(nextX, currentY - 1) && !this.world.isSolid(nextX, currentY - 2)) {
+            const leapX = nextX + direction;
+            const leapGroundY = findGroundTileY(this.world, leapX, Math.max(0, currentY - 2));
+
+            // If tile behind the 1-block obstacle is clear and has solid ground, leap over it directly!
+            if (
+              leapX >= 0 &&
+              leapX < this.world.width &&
+              !this.world.isSolid(leapX, leapGroundY) &&
+              !this.world.isSolid(leapX, leapGroundY - 1) &&
+              Math.abs(leapGroundY - currentY) <= 1
+            ) {
+              stepTargetX = leapX;
+              groundY = leapGroundY;
+              jump = true;
+            } else {
+              // Otherwise, jump onto the 1-block step/ledge
+              stepTargetX = nextX;
+              groundY = currentY - 1;
+              jump = true;
+            }
+          } else {
+            // Wall is 2+ blocks tall or ceiling is blocked, cannot pass
+            break;
+          }
+        } else if (this.world.isSolid(nextX, currentY - 1)) {
+          // Low ceiling / overhead obstruction at head level
           break;
+        } else {
+          // Normal ground traversal
+          groundY = findGroundTileY(this.world, nextX, Math.max(0, currentY - 2));
+          if (Math.abs(groundY - currentY) > 2) {
+            break;
+          }
+          jump = groundY < currentY;
         }
 
-        // Ground check (prevent hovering over air/cliffs)
-        const groundY = findGroundTileY(this.world, nextX, Math.max(0, currentY - 2));
-        if (Math.abs(groundY - currentY) > 2) {
-          break;
-        }
-
-        const jump = groundY < currentY;
-        const isLast = i === steps;
+        const isLast = currentX === targetTileX || stepTargetX === targetTileX || i === steps - 1;
         const speedX = isLast ? 0 : (direction < 0 ? -180 : 180);
 
-        this.walkTo(nextX * 32, groundY * 32, direction < 0, jump, speedX);
-        currentX = nextX;
+        this.walkTo(stepTargetX * 32, groundY * 32, direction < 0, jump, speedX);
+        currentX = stepTargetX;
         currentY = groundY;
 
+        if (currentX === targetTileX) break;
+
         if (!isLast) {
-          await new Promise((resolve) => setTimeout(resolve, 140));
+          await new Promise((resolve) => setTimeout(resolve, stepTargetX !== nextX ? 220 : 140));
         }
       }
     } finally {

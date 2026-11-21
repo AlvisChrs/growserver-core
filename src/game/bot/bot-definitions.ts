@@ -196,8 +196,8 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     maxTileX: 48,
     skinColor: 0xffdfd3ff,
     clothes: {
-      shirt: 4,       // White Shirt
-      pants: 6,       // Blue Jeans
+      shirt: 1120,    // Plain White Tee
+      pants: 48,      // Jeans
       feet: 40,       // Brown Shoes
     },
     dialoguePool: [
@@ -808,6 +808,275 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Comparing prices across all these vending machines!",
       "Maybe I'll buy a rare set if the price is right!",
       "Such a bustling marketplace, love the energy here!",
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
+  // PRO Bot Variants (High-Tier Prestigious Gear in START & TRADE)
+  // ---------------------------------------------------------------------------
+  {
+    name: "RaymanGod_99",
+    role: PLAYER_ROLE.BASIC,
+    level: 98,
+    gems: 8500000,
+    country: "us",
+    behavior: "wanderer",
+    worldName: "START",
+    targetTileX: 55,
+    targetTileY: 23,
+    minTileX: 25,
+    maxTileX: 85,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 76,      // Black Pants
+      feet: 1940,     // Diamond Rocket Shoes
+      face: 1204,     // Focused Eyes
+      back: 1460,     // Golden Angel Wings
+      hand: 5480,     // Rayman's Fist
+    },
+    dialoguePool: [
+      "Rayman's Fist punch range is unbeatable! Breaking 3 blocks at once!",
+      "Golden Angel Wings + Focused Eyes is the classic GT flex set.",
+      "Check out /warp shop if you want to buy rare gear and seeds!",
+      "Grinding since 2013, feels good to have full pro gear!",
+      "Never give up on your Growtopia goals!",
+      "Taking a smooth walk around START before heading to the shop!",
+    ],
+  },
+  {
+    name: "MagplantWhale",
+    role: PLAYER_ROLE.BASIC,
+    level: 95,
+    gems: 12000000,
+    country: "sg",
+    behavior: "wanderer",
+    worldName: "START",
+    targetTileX: 40,
+    targetTileY: 23,
+    minTileX: 18,
+    maxTileX: 72,
+    skinColor: 0xffe4b5ff,
+    clothes: {
+      hair: 462,      // Fedora
+      shirt: 38,      // Tuxedo
+      pants: 468,     // Pinstripe Pants
+      feet: 1940,     // Diamond Rocket Shoes
+      face: 146,      // Gold-Rimmed Glasses
+      back: 1784,     // Legendary Wings
+      hand: 5638,     // MAGPLANT 5000
+    },
+    dialoguePool: [
+      "Magplant 5000 remote auto-collect is peak efficiency.",
+      "Storing 5,000 blocks in my Magplant makes farming effortless!",
+      "Always keep Diamond Locks safe in your inventory!",
+      "Head over to /warp shop, best vends in town!",
+      "Looking for farm partners? Send me a PM!",
+    ],
+  },
+  {
+    name: "CultistMaster",
+    role: PLAYER_ROLE.BASIC,
+    level: 92,
+    gems: 4200000,
+    country: "fr",
+    behavior: "social",
+    worldName: "START",
+    targetTileX: 70,
+    targetTileY: 23,
+    minTileX: 50,
+    maxTileX: 88,
+    skinColor: 0xffffffff,
+    clothes: {
+      hair: 1216,     // Cultist Hood
+      shirt: 1218,    // Cultist Robe
+      face: 1204,     // Focused Eyes
+      back: 1206,     // Devil Wings
+      feet: 1940,     // Diamond Rocket Shoes
+      hand: 2866,     // Wizard's Staff
+    },
+    dialoguePool: [
+      "The ancient shadows whisper secrets of the old worlds...",
+      "Cultist Hood and Robe with Focused Eyes is an eternal look.",
+      "Seeking dark relics and mysterious artifacts!",
+      "May your harvests be plentiful and your gems infinite.",
+      "Wandering between dimensions... peace be with you.",
+    ],
+  },
+  {
+    name: "BGL_Overlord",
+    role: PLAYER_ROLE.BASIC,
+    level: 100,
+    gems: 25000000,
+    country: "id",
+    behavior: "trader",
+    worldName: "TRADE",
+    targetTileX: 48,
+    targetTileY: 23,
+    minTileX: 42,
+    maxTileX: 58,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 76,      // Black Pants
+      feet: 1940,     // Diamond Rocket Shoes
+      face: 1204,     // Focused Eyes
+      back: 1674,     // Phoenix Wings
+      hand: 7188,     // Blue Gem Lock
+    },
+    dialoguePool: [
+      "100 DL = 1 BGL! Pure blue gem luxury.",
+      "Buying whole worlds, shops, and rare stocks! Trade me!",
+      "BGL in hand, legendary status achieved!",
+      "Check out /warp shop for the server's biggest marketplace!",
+      "Fair deals only, fast transaction guaranteed!",
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
+  // SHOP World (Fully Stocked Vending Marketplace)
+  // ---------------------------------------------------------------------------
+  {
+    name: "ShopOwner_VIP",
+    role: PLAYER_ROLE.BASIC,
+    level: 94,
+    gems: 6000000,
+    country: "us",
+    behavior: "trader",
+    worldName: "SHOP",
+    targetTileX: 52,
+    targetTileY: 23,
+    minTileX: 48,
+    maxTileX: 56,
+    skinColor: 0xffdfd3ff,
+    clothes: {
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 76,      // Black Pants
+      feet: 78,       // Patent Leather Shoes
+      face: 146,      // Gold-Rimmed Glasses
+      back: 1460,     // Golden Angel Wings
+      hand: 1438,     // Golden Pickaxe
+    },
+    dialoguePool: [
+      "Welcome to SHOP! All 4 floors of vending machines are fully restocked!",
+      "Floor 1: Seeds & Tools | Floor 2: Wings | Floor 3: Clothes | Floor 4: PRO Items!",
+      "Safe automated trading with vending machines! 100% scam-free!",
+      "Wrench any vending machine to check price and purchase with World Locks!",
+      "Enjoy your shopping! Thanks for supporting our server marketplace!",
+    ],
+  },
+  {
+    name: "BulkBuyer_GT",
+    role: PLAYER_ROLE.BASIC,
+    level: 52,
+    gems: 450000,
+    country: "id",
+    behavior: "wanderer",
+    worldName: "SHOP",
+    targetTileX: 40,
+    targetTileY: 23,
+    minTileX: 34,
+    maxTileX: 48,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      mask: 70,       // Spikey Hair
+      shirt: 36,      // Green Shirt
+      pants: 48,      // Jeans
+      feet: 496,      // Air Robinsons
+      hand: 98,       // Pickaxe
+    },
+    dialoguePool: [
+      "Just bought 200 Laser Grid seeds from the vend! Time to farm!",
+      "Vending machine prices here are cheaper than anywhere else!",
+      "Stocking up on Chandelier seeds before the price rises!",
+      "Checking the tool vend... nice, Pickaxes are 5 for 1 WL!",
+      "Best seed prices on the entire server!",
+    ],
+  },
+  {
+    name: "WingEnthusiast",
+    role: PLAYER_ROLE.BASIC,
+    level: 44,
+    gems: 180000,
+    country: "my",
+    behavior: "wanderer",
+    worldName: "SHOP",
+    targetTileX: 58,
+    targetTileY: 23,
+    minTileX: 52,
+    maxTileX: 66,
+    skinColor: 0xffe0bdff,
+    clothes: {
+      hair: 890,      // Straw Hat
+      shirt: 304,     // Tie Dyed Shirt
+      pants: 48,      // Jeans
+      feet: 40,       // Brown Shoes
+      back: 156,      // Fairy Wings
+    },
+    dialoguePool: [
+      "Floor 2 has all the wings! Angel, Devil, Ripper, and Crimson!",
+      "Saving up for Golden Angel Wings... almost have enough World Locks!",
+      "Devil Wings look so sick with Black Pants!",
+      "I love browsing this shop, everything is organized so neatly!",
+    ],
+  },
+  {
+    name: "ProShopper_99",
+    role: PLAYER_ROLE.BASIC,
+    level: 78,
+    gems: 2200000,
+    country: "ph",
+    behavior: "wanderer",
+    worldName: "SHOP",
+    targetTileX: 42,
+    targetTileY: 19,
+    minTileX: 35,
+    maxTileX: 65,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 462,      // Fedora
+      shirt: 38,      // Tuxedo
+      pants: 468,     // Pinstripe Pants
+      feet: 1940,     // Diamond Rocket Shoes
+      face: 1204,     // Focused Eyes
+      back: 818,      // Ripper Wings
+    },
+    dialoguePool: [
+      "Floor 4 has the legendary Rayman's Fist and Magplant 5000!",
+      "50 DL for Rayman's Fist? That's an incredible bargain!",
+      "Vending machines make buying pro gear so easy and fast.",
+      "Bought my whole pro outfit right here in /warp shop!",
+    ],
+  },
+  {
+    name: "DealHunter_ID",
+    role: PLAYER_ROLE.BASIC,
+    level: 60,
+    gems: 620000,
+    country: "id",
+    behavior: "wanderer",
+    worldName: "SHOP",
+    targetTileX: 60,
+    targetTileY: 19,
+    minTileX: 35,
+    maxTileX: 65,
+    skinColor: 0xffe4b5ff,
+    clothes: {
+      mask: 70,       // Spikey Hair
+      shirt: 892,     // Overalls
+      pants: 48,      // Jeans
+      feet: 42,       // Boots
+      back: 678,      // Crimson Eagle Wings
+      hand: 98,       // Pickaxe
+    },
+    dialoguePool: [
+      "Checking every single vending machine for limited deals!",
+      "Got 2 Diamond Locks and some rare seeds today! Big profits!",
+      "Shoutout to the shopkeeper for keeping everything stocked!",
+      "Hunting for bargains on all 4 floors!",
     ],
   },
 ];

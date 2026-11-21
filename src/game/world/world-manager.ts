@@ -3,7 +3,7 @@ import { Collection } from "../../utils/collection";
 import { logger } from "../../utils/logger";
 import { WorldDB } from "../../database/services/world-db";
 import { generateDefaultWorld } from "./generation/default";
-import { generateShopWorld } from "./generation/shop";
+import { generateShopWorld, WEATHER_SUNSET, LUXURY_BLOCKS } from "./generation/shop";
 import { World } from "./world";
 import type { WorldData } from "./types";
 
@@ -92,7 +92,19 @@ export class WorldManager {
     const worldName = WorldManager.normalizeName(name);
 
     const loaded = this.worlds.get(worldName);
-    if (loaded) return loaded;
+    if (loaded) {
+      if (worldName === "SHOP" && (loaded.data.weather?.id !== WEATHER_SUNSET || loaded.data.blocks[50 + 24 * 100]?.fg !== LUXURY_BLOCKS.GOLDEN_BLOCK)) {
+        logger.info({ world: worldName }, "upgrading legacy shop world in memory to luxury marketplace");
+        const shopTemplate = generateShopWorld(loaded.width, loaded.height);
+        loaded.data.blocks = shopTemplate.blocks;
+        loaded.data.weather = shopTemplate.weather;
+        loaded.data.dropped = { uid: 0, items: [] };
+        delete loaded.data.worldLockIndex;
+        loaded.markDirty();
+        void this.save(loaded);
+      }
+      return loaded;
+    }
 
     const inFlight = this.loading.get(worldName);
     if (inFlight) return inFlight;
@@ -116,6 +128,18 @@ export class WorldManager {
       }
     }
 
+    if (worldName === "SHOP") {
+      const isLegacyShop = !data || data.weather?.id !== WEATHER_SUNSET || data.blocks[50 + 24 * 100]?.fg !== LUXURY_BLOCKS.GOLDEN_BLOCK;
+      if (isLegacyShop) {
+        logger.info({ world: worldName }, "upgrading legacy shop world to luxury marketplace");
+        data = generateShopWorld();
+        const world = new World(data);
+        this.worlds.set(worldName, world);
+        await this.save(world);
+        return world;
+      }
+    }
+
     if (!data) {
       data = worldName === "SHOP" ? generateShopWorld() : generateDefaultWorld(worldName);
       logger.info({ world: worldName }, "generated new world");
@@ -127,6 +151,62 @@ export class WorldManager {
     const world = new World(data);
     this.worlds.set(worldName, world);
     if (!binary) this.markDirty(world);
+    return world;
+  }
+
+  /**
+   * Forces a world to reload from template or disk, resetting in-memory cache and re-entering players.
+   */
+  public async reloadWorld(name: string, fromTemplate = false): Promise<World> {
+    const worldName = WorldManager.normalizeName(name);
+    const existing = this.worlds.get(worldName);
+
+    const pendingTimer = this.pendingSaves.get(worldName);
+    if (pendingTimer) {
+      clearTimeout(pendingTimer);
+      this.pendingSaves.delete(worldName);
+    }
+
+    let data: WorldData | null = null;
+    if (fromTemplate || worldName === "SHOP") {
+      data = worldName === "SHOP" ? generateShopWorld() : generateDefaultWorld(worldName);
+    } else {
+      const binary = await WorldDB.readBinary(worldName);
+      if (binary) {
+        try {
+          data = decodeWorldFile(binary);
+        } catch {
+          data = generateDefaultWorld(worldName);
+        }
+      } else {
+        data = generateDefaultWorld(worldName);
+      }
+    }
+
+    let world: World;
+    if (existing) {
+      existing.data = data;
+      existing.invalidateXenonite();
+      world = existing;
+    } else {
+      world = new World(data);
+      this.worlds.set(worldName, world);
+    }
+
+    await this.save(world);
+
+    const door = world.mainDoor;
+    const doorX = door?.x ?? 0;
+    const doorY = door?.y ?? 0;
+    const playersInWorld = [...world.players];
+    for (const player of playersInWorld) {
+      world.leave(player);
+      await world.enter(player, doorX, doorY);
+      player.sendInventory();
+      player.sendTextBubble("`2World was reloaded!``", true);
+      player.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 has been reloaded.\`\``);
+    }
+
     return world;
   }
 

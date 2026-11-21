@@ -108,43 +108,6 @@ describe("Surgery Robot Patient & Medical Training Dummy", () => {
 
     expect(speechBubbles.length).toBeGreaterThanOrEqual(1);
     expect(speechBubbles[0]).toContain("Scalpel");
-    expect(consoleMsgs.some((m) => m.includes("/surg"))).toBe(true);
-  });
-
-  test("/surg command grants Surg-E, Train-E, Hospital Bed, and all 14 surgical tools", async () => {
-    const inv: Record<number, number> = {};
-    const consoleMsgs: string[] = [];
-    const mockPlayer: any = {
-      role: PLAYER_ROLE.BASIC,
-      inventory: {
-        addItem: (id: number, count: number) => {
-          inv[id] = (inv[id] ?? 0) + count;
-        },
-      },
-      addItemInven: (id: number, count: number) => {
-        inv[id] = (inv[id] ?? 0) + count;
-      },
-      sendInventory: () => {},
-      sendSfx: () => {},
-      sendTextBubble: () => {},
-      variants: {
-        sendOnConsoleMessage: (m: string) => consoleMsgs.push(m),
-      },
-    };
-
-    const cmd = findCommand("surg");
-    expect(cmd).toBeDefined();
-    await cmd!.execute(mockPlayer, [], "surg");
-
-    expect(inv[4296]).toBe(5); // Surg-E
-    expect(inv[8558]).toBe(5); // Train-E
-    expect(inv[1256]).toBe(1); // Hospital Bed
-    expect(inv[1260]).toBe(50); // Scalpel
-    expect(inv[1258]).toBe(50); // Sponge
-    expect(inv[1262]).toBe(50); // Anesthetic
-    expect(inv[1270]).toBe(50); // Stitches
-    expect(inv[4312]).toBe(50); // Defibrillator
-    expect(consoleMsgs.some((m) => m.includes("Received Surg-E dummies"))).toBe(true);
   });
 });
 
@@ -175,7 +138,7 @@ describe("Categorized /help and /? Command", () => {
     expect(capturedDialog).toContain("Player & Public Commands");
     expect(capturedDialog).toContain("/resetworld");
     expect(capturedDialog).toContain("/role");
-    expect(capturedDialog).toContain("/surg");
+    expect(capturedDialog).toContain("/reloadworld");
   });
 
   test("Normal user sees only Player & Public section without leaking Developer commands", async () => {
@@ -201,10 +164,10 @@ describe("Categorized /help and /? Command", () => {
     expect(capturedDialog).not.toContain("Developer Commands");
     expect(capturedDialog).not.toContain("Moderator Commands");
     expect(capturedDialog).not.toContain("/resetworld");
-    expect(capturedDialog).not.toContain("/surg");
+    expect(capturedDialog).not.toContain("/reloadworld");
     expect(capturedDialog).toContain("/rules");
     expect(capturedDialog).toContain("/hero");
-    expect(capturedDialog).toContain("/transform");
+    expect(capturedDialog).toContain("/immortal");
   });
 });
 

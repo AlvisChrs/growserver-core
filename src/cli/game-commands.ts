@@ -92,4 +92,21 @@ export function registerGameConsoleCommands(): void {
       logger.info({ players: serverManager.players.size, worlds: worldManager.worlds.size }, "players and worlds saved");
     },
   });
+
+  serverConsole.registerCommand({
+    name: "reloadworld",
+    aliases: ["resetworld"],
+    description: "Forces a world to reload from template or disk and refreshes connected players",
+    usage: "reloadworld <name> [template]",
+    execute: async (args) => {
+      const worldName = args[0]?.trim();
+      if (!worldName) {
+        logger.warn("usage: reloadworld <world_name> [template]");
+        return;
+      }
+      const fromTemplate = args[1]?.toLowerCase() === "template" || worldName.toUpperCase() === "SHOP";
+      const reloaded = await worldManager.reloadWorld(worldName, fromTemplate);
+      logger.info({ world: reloaded.name }, "world reloaded and refreshed for players");
+    },
+  });
 }

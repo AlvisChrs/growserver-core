@@ -13,6 +13,7 @@ import { homeWorldDialog } from "../network/home-world-dialog";
 import { questDailyDialog, sendGoalsDialog } from "../quests";
 import { ActionTypes, ITEM_ID, LOCKS, LockPermission, TileFlags, WEATHER_CLEAR } from "../world/constants";
 import { generateDefaultWorld } from "../world/generation/default";
+import { generateShopWorld } from "../world/generation/shop";
 import { worldManager } from "../world/world-manager";
 import { SeedTile } from "../world/tiles/seed-tile";
 import { ProviderTile } from "../world/tiles/provider-tile";
@@ -449,7 +450,7 @@ registerDialog("search_item", (player, action) => {
   player.variants.sendOnConsoleMessage(`Added \`6${item.name}\`\` (200) to your inventory.`);
 });
 
-const GHOST_STATE = CHARACTER_STATE.WALK_IN_BLOCKS | CHARACTER_STATE.DOUBLE_JUMP | CHARACTER_STATE.HAVE_FLYING_PINEAPPLE;
+const GHOST_STATE = CHARACTER_STATE.WALK_IN_BLOCKS | CHARACTER_STATE.DOUBLE_JUMP | CHARACTER_STATE.HAVE_FLYING_PINEAPPLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
 
 registerCommand({
   name: "ghost",
@@ -1366,12 +1367,13 @@ registerCommand({
 
     const sub = args[0]?.toLowerCase();
     if (sub === "template" || sub === "default") {
-      const template = generateDefaultWorld(world.name, world.width, world.height);
+      const template = world.name === "SHOP" ? generateShopWorld(world.width, world.height) : generateDefaultWorld(world.name, world.width, world.height);
       world.data.blocks = template.blocks;
       world.data.dropped = { uid: 0, items: [] };
       delete world.data.worldLockIndex;
-      world.data.weather = { id: WEATHER_CLEAR };
+      world.data.weather = template.weather ?? { id: WEATHER_CLEAR };
       world.markDirty();
+      await worldManager.save(world);
 
       const door = world.mainDoor;
       const doorX = door?.x ?? 0;
@@ -1538,30 +1540,30 @@ registerCommand({
     const py = player.state.y + 16;
 
     if (isCurrentlyInvisible) {
-      player.state.characterState &= ~CHARACTER_STATE.IS_INVISIBLE;
+      player.state.characterState &= ~(CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS);
       if (world) {
         spawnInvisReappearDarkFlames(world, px, py, player.netID);
       }
-      player.refreshAvatar();
-      player.sendClothesToWorld();
-      player.sendCharacterState();
+      player.refreshAvatar?.();
+      player.sendClothesToWorld?.();
+      player.sendCharacterState?.();
       // Re-spawn Wukong's clones if wearing staff
-      const handItem = player.inventory.clothes.hand || player.effectiveClothes.hand;
+      const handItem = player.inventory?.clothes?.hand || player.effectiveClothes?.hand;
       if (handItem === 11630) {
         player.wukongClones.spawn(player);
       }
       player.variants.sendOnConsoleMessage("`4Invisibility disabled. You step back through the dark shadow portal into reality.``");
     } else {
-      player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE;
+      player.state.characterState |= (CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS);
       if (player.wukongClones?.isActive) {
         player.wukongClones.despawn(player);
       }
       if (world) {
         spawnInvisGhostSwarm(world, px, py, player.netID);
       }
-      player.refreshAvatar();
-      player.sendClothesToWorld();
-      player.sendCharacterState();
+      player.refreshAvatar?.();
+      player.sendClothesToWorld?.();
+      player.sendCharacterState?.();
       player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadow spirits swarm as you vanish into the unseen.``");
     }
     player.sendCharacterState();
@@ -2417,13 +2419,14 @@ registerCommand({
       return;
     }
 
-    // Generate pristine procedural default template
-    const template = generateDefaultWorld(world.name, world.width, world.height);
+    // Generate pristine procedural default template or specialized template (e.g. SHOP)
+    const template = world.name === "SHOP" ? generateShopWorld(world.width, world.height) : generateDefaultWorld(world.name, world.width, world.height);
     world.data.blocks = template.blocks;
     world.data.dropped = { uid: 0, items: [] };
     delete world.data.worldLockIndex;
-    world.data.weather = { id: WEATHER_CLEAR };
+    world.data.weather = template.weather ?? { id: WEATHER_CLEAR };
     world.markDirty();
+    await worldManager.save(world);
 
     // Teleport all online players to main door and re-enter world cleanly
     const door = world.mainDoor;
@@ -2440,6 +2443,23 @@ registerCommand({
     }
 
     player.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 successfully reset to procedural template!\`\``);
+  },
+});
+
+registerCommand({
+  name: "reloadworld",
+  aliases: ["worldreload", "forceshop"],
+  description: "Force reload the current world from template or disk and refresh for all players",
+  usage: "/reloadworld [template]",
+  role: PLAYER_ROLE.DEVELOPER,
+  cooldown: 2,
+  async execute(player, args) {
+    const world = player.world;
+    if (!world) return;
+
+    const fromTemplate = args[0]?.toLowerCase() === "template" || world.name === "SHOP";
+    await worldManager.reloadWorld(world.name, fromTemplate);
+    player.variants.sendOnConsoleMessage(`\`2World \`w${world.name}\`2 reloaded successfully!\`\``);
   },
 });
 

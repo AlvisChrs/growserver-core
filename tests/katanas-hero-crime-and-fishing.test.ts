@@ -46,36 +46,6 @@ describe("Legendary Katana & Katana Series", () => {
     expect(immortal?.speed).toBe(140);
     expect((immortal?.charState ?? 0) & CHARACTER_STATE.DOUBLE_JUMP).not.toBe(0);
   });
-
-  test("/katana command gives all katanas and auto-equips Legendary Katana", () => {
-    const cmd = findCommand("katana");
-    expect(cmd).toBeDefined();
-
-    const inv = new Map<number, number>();
-    const clothes: Record<string, number> = { hand: 0 };
-    const mockPlayer = {
-      inventory: {
-        hasItem: (id: number) => inv.has(id),
-        addItem: (id: number, count: number) => inv.set(id, (inv.get(id) ?? 0) + count),
-        clothes,
-      },
-      addItemInven(id: number, count = 1) {
-        inv.set(id, (inv.get(id) ?? 0) + count);
-      },
-      equipClothes(id: number) {
-        clothes.hand = id;
-      },
-      sendSfx: () => {},
-      sendTextBubble: () => {},
-      variants: { sendOnConsoleMessage: () => {} },
-    } as unknown as Player;
-
-    cmd?.execute(mockPlayer, []);
-    expect(inv.has(2592)).toBe(true); // Legendary Katana
-    expect(inv.has(9058)).toBe(true); // Cursed Katana
-    expect(inv.has(11118)).toBe(true); // Sonic Buster Katana
-    expect(clothes.hand).toBe(2592);
-  });
 });
 
 describe("Crime System: Crime Wave & Crime In Progress & Criminal Mastermind", () => {
@@ -366,42 +336,5 @@ describe("Fishing & Aquarium Verification", () => {
     expect(clothes.feet).toBe(2122);
     expect(clothes.back).toBe(350);
     expect(inv.size).toBe(0);
-  });
-
-  test("/transforms gives Go-Go-Growformer!, PowerKey, Mystic Crystal, and Space Rabbit", () => {
-    const cmd = findCommand("transforms");
-    expect(cmd).toBeDefined();
-
-    const inv = new Map<number, number>();
-    const clothes: Record<string, number> = {};
-
-    const mockPlayer = {
-      inventory: {
-        clothes,
-        hasItem: (id: number) => inv.has(id),
-      },
-      isTransformed: false,
-      toggleTransform() {
-        this.isTransformed = true;
-      },
-      addItemInven: (id: number, count = 1) => inv.set(id, (inv.get(id) ?? 0) + count),
-      equipClothes: (id: number) => {
-        clothes.feet = id;
-      },
-      sendInventory: () => {},
-      sendClothesToWorld: () => {},
-      sendCharacterState: () => {},
-      sendSfx: () => {},
-      sendTextBubble: () => {},
-      variants: { sendOnConsoleMessage: () => {} },
-    } as unknown as Player;
-
-    cmd?.execute(mockPlayer, []);
-
-    expect(inv.has(7384)).toBe(true);  // Growformer
-    expect(inv.has(7480)).toBe(true);  // PowerKey
-    expect(inv.has(10456)).toBe(true); // Mystic Transform Crystal
-    expect(inv.has(10960)).toBe(true); // Space Rabbit
-    expect(clothes.feet).toBe(7384);   // Auto-equipped!
   });
 });

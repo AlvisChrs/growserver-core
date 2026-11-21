@@ -4,6 +4,7 @@ import { Variant } from "../packets/variants";
 import type { Player } from "../player";
 import { executeCommand } from "../commands";
 import { CHARACTER_STATE, PLAYER_ROLE } from "../../constants";
+import { botManager } from "../bot";
 
 /**
  * Handles the `input` action: slash commands or world chat.
@@ -103,4 +104,5 @@ export async function broadcastWorldChat(player: Player, rawMessage: string): Pr
   world.broadcastVariant(
     Variant.from("OnConsoleMessage", "CP:_PL:0_OID:_CT:[W]_ `6<" + name + "`6> `$player_chat=`" + chatcode + message),
   );
+  botManager.onPlayerChat(player, message);
 }

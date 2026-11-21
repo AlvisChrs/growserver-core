@@ -53,6 +53,9 @@ function addAdmin(player: Player, world: World, lock: LockParent, targetNetId: n
   player.sendTextBubble(`Added ${target.displayName} access to lock`, false);
   broadcastConsole(world, `${player.displayName} added ${target.displayName} to a ${lockName}.`);
   target.sendSfx("audio/secret.wav");
+  if ((target as any).isBot) {
+    (target as any).say?.("Yay! Thanks for the lock access!");
+  }
 }
 
 /** Clears the tiles owned by an area lock and claims them again with the current settings. */

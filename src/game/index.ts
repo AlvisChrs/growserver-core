@@ -7,6 +7,7 @@ import { worldManager } from "./world/world-manager";
 import { registerGameConsoleCommands } from "../cli/game-commands";
 import { loadStoreCatalog } from "./network/store-catalog";
 import { startServerTicks, stopServerTicks } from "./server-tick";
+import { botManager } from "./bot";
 
 export async function startGameServer(): Promise<void> {
   const ports = serverConfig?.game.server_ports ?? [];
@@ -21,6 +22,7 @@ export async function startGameServer(): Promise<void> {
   registerGameConsoleCommands();
   startAutosave();
   startServerTicks();
+  await botManager.start();
   logger.info({ totalServers: ports.length }, "all game servers initialized");
 }
 
@@ -49,6 +51,7 @@ function startAutosave(): void {
  * Persists every player and pending world before the process exits.
  */
 export async function shutdownGameServer(): Promise<void> {
+  botManager.stop();
   if (autosaveTimer) {
     clearInterval(autosaveTimer);
     autosaveTimer = null;

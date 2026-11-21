@@ -26,6 +26,7 @@ import { HERO_SUIT_SETS } from "../player/transform";
 import { spawnInvisGhostSwarm, spawnInvisReappearDarkFlames } from "../player/invis-effects";
 import { FriendManager } from "../friends/friend-manager";
 import { GuildManager } from "../guild/guild-manager";
+import { botManager } from "../bot";
 
 const ROLE_NAMES = PLAYER_ROLE_NAMES;
 
@@ -865,6 +866,9 @@ registerCommand({
     target.online.variants.sendOnDialogRequest(warnDialog);
     target.online.variants.sendOnConsoleMessage(`\`4[WARNING from ${player.displayName}]: \`o${reason}\`\``);
     target.online.sendSfx("audio/cant_place_tile.wav");
+    if ((target.online as any).isBot) {
+      (target.online as any).say?.("Sorry staff! I understand, won't happen again!");
+    }
     player.variants.sendOnConsoleMessage(`\`2Successfully issued warning to \`o${target.name}\`2.`);
   },
 });
@@ -954,6 +958,9 @@ registerCommand({
     target.online.sendCharacterState();
     target.online.sendTextBubble("`4*Brrr! (You have been frozen)*``", true);
     target.online.variants.sendOnConsoleMessage(`\`4You have been frozen by ${player.displayName}.\`\``);
+    if ((target.online as any).isBot) {
+      (target.online as any).say?.("Brrr! Why am I frozen?! Please unfreeze me!");
+    }
     player.variants.sendOnConsoleMessage(`\`2Successfully froze \`o${target.name}\`2.`);
   },
 });
@@ -976,6 +983,9 @@ registerCommand({
     target.online.variants.sendOnSetFreezeState(target.online.netID, false);
     target.online.sendCharacterState();
     target.online.variants.sendOnConsoleMessage(`\`2You have been unfrozen by ${player.displayName}.\`\``);
+    if ((target.online as any).isBot) {
+      (target.online as any).say?.("Phew, thanks for unfreezing me!");
+    }
     player.variants.sendOnConsoleMessage(`\`2Successfully unfroze \`o${target.name}\`2.`);
   },
 });
@@ -999,6 +1009,9 @@ registerCommand({
     target.online.state.characterState |= CHARACTER_STATE.IS_CURSED;
     target.online.sendCharacterState();
     target.online.variants.sendOnConsoleMessage(`\`4You have been cursed by ${player.displayName}!\`\``);
+    if ((target.online as any).isBot) {
+      (target.online as any).say?.("Nooo! The dark aura is consuming me! Have mercy!");
+    }
     player.variants.sendOnConsoleMessage(`\`2Successfully cursed \`o${target.name}\`2.`);
   },
 });
@@ -1180,6 +1193,11 @@ registerCommand({
       await target.online.enterWorld(player.world.name, Math.floor(player.x / 32), Math.floor(player.y / 32));
     } else {
       target.online.setPosition(player.x, player.y);
+    }
+    if ((target.online as any).isBot) {
+      (target.online as any).say?.("Whoa, where did I just get pulled to?!");
+      (target.online as any).homeTileX = Math.floor(player.x / 32);
+      (target.online as any).homeTileY = Math.floor(player.y / 32);
     }
     target.online.variants.sendOnConsoleMessage(`\`2You were pulled by \`$${player.displayName}\`2!\`\``);
     player.variants.sendOnConsoleMessage(`\`2Successfully pulled \`$${target.name}\`2 to your position.\`\``);
@@ -2042,6 +2060,9 @@ registerCommand({
     target.variants.sendOnConsoleMessage(`CP:_PL:0_OID:_CT:[W]_ \`5PM from \`w${player.displayName}\`5: \`$${message}\`\``);
     target.sendSfx("audio/camerashutter.wav");
     target.lastWhisperFrom = player.tankIDName || player.displayName;
+    if ((target as any).isBot) {
+      botManager.onPlayerWhisper(player, target as any, message);
+    }
   },
 });
 
@@ -2073,6 +2094,9 @@ registerCommand({
     target.variants.sendOnConsoleMessage(`CP:_PL:0_OID:_CT:[W]_ \`5PM from \`w${player.displayName}\`5: \`$${message}\`\``);
     target.sendSfx("audio/camerashutter.wav");
     target.lastWhisperFrom = player.tankIDName || player.displayName;
+    if ((target as any).isBot) {
+      botManager.onPlayerWhisper(player, target as any, message);
+    }
   },
 });
 
@@ -2724,5 +2748,97 @@ registerCommand({
     const msg = args.join(" ");
     if (!msg) return player.variants.sendOnConsoleMessage("`4Usage: /gc <message>``");
     GuildManager.sendGuildChat(player, msg);
+  },
+});
+
+registerCommand({
+  name: "bot",
+  aliases: ["bots"],
+  description: "Manage simulated NPC bots across worlds",
+  usage: "/bot <list|status|spawn|kick|say|respawn>",
+  role: PLAYER_ROLE.DEVELOPER,
+  cooldown: 1,
+  async execute(player, args) {
+    const sub = args[0]?.toLowerCase();
+
+    if (!sub || sub === "status" || sub === "list") {
+      const activeBots = Array.from(botManager.bots.values());
+      if (activeBots.length === 0) {
+        return player.variants.sendOnConsoleMessage("`4No simulated bots are currently active.``");
+      }
+      player.variants.sendOnConsoleMessage(`\`2Active Simulated Bots (\`w${activeBots.length}\`2):`);
+      for (const bot of activeBots) {
+        const worldName = bot.world?.name ?? "NONE";
+        const pos = `(${Math.floor(bot.x / 32)}, ${Math.floor(bot.y / 32)})`;
+        player.variants.sendOnConsoleMessage(`\`$- \`w${bot.tankIDName}\`$ [\`2${worldName}\`$ @ \`o${pos}\`$] Role: \`3${bot.behaviorType}\`$`);
+      }
+      return;
+    }
+
+    if (sub === "respawn") {
+      player.variants.sendOnConsoleMessage("`3Respawning all simulated bots...``");
+      await botManager.respawnAll();
+      player.variants.sendOnConsoleMessage(`\`2All bots respawned successfully! Total: \`w${botManager.bots.size}`);
+      return;
+    }
+
+    if (sub === "kick" || sub === "remove" || sub === "despawn") {
+      const botName = args[1];
+      if (!botName) {
+        return player.variants.sendOnConsoleMessage("`4Usage: /bot kick <bot_name>``");
+      }
+      const success = botManager.despawnBot(botName);
+      if (success) {
+        player.variants.sendOnConsoleMessage(`\`2Successfully despawned bot \`w${botName}\`2.`);
+      } else {
+        player.variants.sendOnConsoleMessage(`\`4Bot \`o${botName}\`4 not found.`);
+      }
+      return;
+    }
+
+    if (sub === "say") {
+      const botName = args[1];
+      const botMsg = args.slice(2).join(" ");
+      if (!botName || !botMsg) {
+        return player.variants.sendOnConsoleMessage("`4Usage: /bot say <bot_name> <message>``");
+      }
+      const bot = botManager.bots.get(botName.toLowerCase());
+      if (!bot) {
+        return player.variants.sendOnConsoleMessage(`\`4Bot \`o${botName}\`4 not found.`);
+      }
+      bot.say(botMsg);
+      player.variants.sendOnConsoleMessage(`\`2[${bot.displayName}]: \`$${botMsg}`);
+      return;
+    }
+
+    if (sub === "spawn") {
+      const botName = args[1];
+      const worldName = args[2] || player.world?.name || "START";
+      const behavior = (args[3]?.toLowerCase() ?? "social") as any;
+
+      if (!botName) {
+        return player.variants.sendOnConsoleMessage("`4Usage: /bot spawn <name> [world] [social|farmer|casino_host|casino_gambler|trader]``");
+      }
+
+      try {
+        const spawned = await botManager.spawnBot({
+          name: botName,
+          worldName,
+          behavior,
+          dialoguePool: [
+            "Hey everyone! Having fun?",
+            "GrowServer is pretty cool!",
+            "Anyone want to trade or hang out?",
+            "Nice world!",
+          ],
+        });
+        player.variants.sendOnConsoleMessage(`\`2Successfully spawned bot \`w${spawned.displayName}\`2 in \`w${worldName}\`2!`);
+      } catch (err: any) {
+        player.variants.sendOnConsoleMessage(`\`4Failed to spawn bot: ${err?.message ?? err}`);
+      }
+      return;
+    }
+
+    player.variants.sendOnConsoleMessage("`4Usage: /bot <status|list|spawn|kick|say|respawn>``");
   },
 });

@@ -118,7 +118,7 @@ function Wrench(player: Player, action: TextParser): void {
     return;
   }
   const target = player.world.players.find((other) => other.netID === netId);
-  if (target) player.variants.sendOnDialogRequest(otherProfileDialog(target));
+  if (target) player.variants.sendOnDialogRequest(otherProfileDialog(target, player));
 }
 
 function Drop(player: Player, action: TextParser): void {

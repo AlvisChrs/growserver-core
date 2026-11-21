@@ -4,7 +4,7 @@ import { getItem } from "../item/item-utils";
 import { Variant } from "../packets/variants";
 import { MAX_LEVEL, Player } from "../player";
 import { formatDuration } from "../player/play-mods";
-import { PLAYER_ROLE_NAMES } from "../../constants";
+import { CHARACTER_STATE, PLAYER_ROLE_NAMES } from "../../constants";
 import { ITEM_ID } from "../world/constants";
 import { worldManager } from "../world/world-manager";
 import { questDailyDialog, sendGoalsDialog } from "../quests";
@@ -14,6 +14,7 @@ import { FriendManager } from "../friends/friend-manager";
 import { GuildManager } from "../guild/guild-manager";
 import { serverManager } from "../server/server-manager";
 import { riftCapeDialog, riftWingsDialog } from "../item/configurable-items";
+import { PlayerDB } from "../../database/services/player-db";
 
 /** Buttons of the wrench menu that open one of the client's RML pages. */
 const RML_PAGES: Record<string, string> = {
@@ -111,8 +112,11 @@ export function selfProfileDialog(player: Player): string {
 /**
  * The wrench menu for another player's avatar.
  */
-export function otherProfileDialog(target: Player): string {
-  return new DialogBuilder()
+export function otherProfileDialog(target: Player, viewer?: Player): string {
+  const isStaff = viewer && (viewer.isModerator || viewer.isGuardian || viewer.isDeveloper);
+  const isWorldAuth = viewer && viewer.world && (viewer.isWorldOwner || viewer.world.isWorldAdmin(viewer.playerId));
+
+  const dialog = new DialogBuilder()
     .embed("netID", target.netID)
     .raw("add_popup_name|WrenchMenu|\n")
     .defaultColor()
@@ -122,13 +126,29 @@ export function otherProfileDialog(target: Player): string {
     .addButton("sendpm", "`wSend Message``")
     .addButton("friend_add", "`wAdd as friend``")
     .addButton("guild_invite", "`6Invite to Guild``")
-    .addButton("show_clothes", "`wView worn clothes``")
-    .addButton("ignore_player", "`wIgnore Player``")
-    .addButton("report_player", "`wReport Player``")
-    .addSpacer("small")
+    .addButton("show_clothes", "`wView worn clothes``");
+
+  if (isStaff || isWorldAuth) {
+    dialog.addSpacer("small");
+    dialog.addButton("pull_player", "`wPull``");
+    dialog.addButton("kick_player", "`wKick from World``");
+    dialog.addButton("worldban_player", "`4World Ban``");
+  }
+
+  if (isStaff) {
+    const isFrozen = (target.state.characterState & CHARACTER_STATE.IS_FROZEN) !== 0;
+    const isCursed = (target.state.characterState & CHARACTER_STATE.IS_CURSED) !== 0;
+    dialog.addButton("freeze_player", isFrozen ? "`2Unfreeze``" : "`bFreeze``");
+    dialog.addButton("curse_player", isCursed ? "`2Uncurse``" : "`4Curse``");
+    dialog.addButton("smite_player", "`eSmite / Kill``");
+    dialog.addButton("ban_player", "`4Server Ban``");
+  }
+
+  dialog.addSpacer("small")
     .addQuickExit()
-    .endDialog("popup", "", "Continue")
-    .str();
+    .endDialog("popup", "", "Continue");
+
+  return dialog.str();
 }
 
 /** Worlds owned by a player among the loaded ones. */
@@ -136,7 +156,7 @@ function ownedWorldNames(player: Player): string[] {
   return worldManager.worlds.filter((world) => world.getOwnerPlayerId() === player.playerId).map((world) => world.name);
 }
 
-registerDialog("popup", (player, action) => {
+registerDialog("popup", async (player, action) => {
   const button = action.get("buttonClicked");
   const targetNetId = action.getInt("netID", 0, player.netID);
   const target = player.world?.players.find((other) => other.netID === targetNetId);
@@ -220,6 +240,102 @@ registerDialog("popup", (player, action) => {
     case "friend_add": {
       if (!target) return;
       FriendManager.sendRequest(player, target);
+      return;
+    }
+    case "pull_player": {
+      if (!target || !player.world) return;
+      target.setPosition(player.x, player.y);
+      if ((target as any).isBot) {
+        (target as any).homeTileX = Math.floor(player.x / 32);
+        (target as any).homeTileY = Math.floor(player.y / 32);
+        (target as any).say?.("Whoa, where did I just get pulled to?!");
+        (target as any).playEmote?.("omg");
+      }
+      target.variants.sendOnConsoleMessage(`\`2You were pulled by \`$${player.displayName}\`2!\`\``);
+      player.variants.sendOnConsoleMessage(`\`2Successfully pulled \`$${target.displayName}\`2 to your position.\`\``);
+      return;
+    }
+    case "kick_player": {
+      if (!target || !player.world) return;
+      if ((target as any).isBot) {
+        (target as any).say?.("Aww, kicked out! See ya!");
+        target.leaveWorld(false);
+      } else {
+        target.leaveWorld();
+      }
+      player.variants.sendOnConsoleMessage(`\`2Successfully kicked \`o${target.displayName}\`2 from the world.\`\``);
+      return;
+    }
+    case "worldban_player": {
+      if (!target || !player.world) return;
+      player.world.banPlayer(target.playerId, 60, `Banned by ${player.displayName}`);
+      if ((target as any).isBot) {
+        (target as any).say?.("Banned from this world?! Catch you guys later!");
+        target.leaveWorld(false);
+      } else {
+        target.leaveWorld();
+      }
+      player.variants.sendOnConsoleMessage(`\`4World-banned \`o${target.displayName}\`4 for 60 minutes.\`\``);
+      return;
+    }
+    case "freeze_player": {
+      if (!target) return;
+      const isFrozen = (target.state.characterState & CHARACTER_STATE.IS_FROZEN) !== 0;
+      if (isFrozen) {
+        target.state.characterState &= ~CHARACTER_STATE.IS_FROZEN;
+        target.playMods.remove("frozen");
+        target.variants.sendOnSetFreezeState(target.netID, false);
+        target.sendCharacterState();
+        if ((target as any).isBot) (target as any).say?.("Phew, thanks for unfreezing me!");
+        player.variants.sendOnConsoleMessage(`\`2Successfully unfroze \`o${target.displayName}\`2.`);
+      } else {
+        target.state.characterState |= CHARACTER_STATE.IS_FROZEN;
+        target.playMods.add("frozen");
+        target.variants.sendOnSetFreezeState(target.netID, true);
+        target.sendCharacterState();
+        if ((target as any).isBot) (target as any).say?.("Brrr! Why am I frozen?! Please unfreeze me!");
+        player.variants.sendOnConsoleMessage(`\`2Successfully froze \`o${target.displayName}\`2.`);
+      }
+      return;
+    }
+    case "curse_player": {
+      if (!target) return;
+      const isCursed = (target.state.characterState & CHARACTER_STATE.IS_CURSED) !== 0;
+      if (isCursed) {
+        target.state.characterState &= ~CHARACTER_STATE.IS_CURSED;
+        target.sendCharacterState();
+        if ((target as any).isBot) (target as any).say?.("The curse has been lifted! I feel free!");
+        player.variants.sendOnConsoleMessage(`\`2Successfully uncursed \`o${target.displayName}\`2.`);
+      } else {
+        target.state.characterState |= CHARACTER_STATE.IS_CURSED;
+        target.sendCharacterState();
+        if ((target as any).isBot) (target as any).say?.("Nooo! The dark aura is consuming me! Have mercy!");
+        player.variants.sendOnConsoleMessage(`\`2Successfully cursed \`o${target.displayName}\`2.`);
+      }
+      return;
+    }
+    case "smite_player": {
+      if (!target || !player.world) return;
+      player.world.playPositioned("audio/zap.wav", target.netID);
+      target.kill();
+      if ((target as any).isBot) {
+        (target as any).say?.("Ouch! Struck down by the gods!");
+        (target as any).playEmote?.("sad");
+      }
+      player.variants.sendOnConsoleMessage(`\`4Smited \`o${target.displayName}\`4 with lightning!\`\``);
+      return;
+    }
+    case "ban_player": {
+      if (!target) return;
+      if ((target as any).isBot) {
+        (target as any).say?.("Banned?! Noooo!");
+        target.disconnect();
+        player.variants.sendOnConsoleMessage(`\`4Permanently banned bot \`o${target.displayName}\`4 from the server.\`\``);
+      } else {
+        await PlayerDB.softDelete(target.playerId);
+        target.disconnect();
+        player.variants.sendOnConsoleMessage(`\`4Permanently banned \`o${target.displayName}\`4 from the server.\`\``);
+      }
       return;
     }
     case "ignore_player":

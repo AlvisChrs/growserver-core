@@ -2,45 +2,12 @@ import { Collection } from "../../utils/collection";
 import { logger } from "../../utils/logger";
 import { serverManager } from "../server/server-manager";
 import { worldManager } from "../world/world-manager";
-import { BotPlayer, type BotConfig } from "./bot-player";
+import { BotPlayer, findGroundTileY, type BotConfig } from "./bot-player";
 import { DEFAULT_BOT_ROSTER } from "./bot-definitions";
 import type { Player } from "../player";
 import { CHARACTER_STATE } from "../../constants";
-import { TileFlags } from "../world/constants";
-import { getItem } from "../item/item-utils";
 import { tradeManager } from "../trade/trade-manager";
 import type { World } from "../world/world";
-
-/**
- * Scans a column to find the tile Y where an avatar can stand firmly with solid ground underneath.
- */
-export function findGroundTileY(world: World, tileX: number, startY: number = 23): number {
-  const x = Math.max(0, Math.min(world.width - 1, tileX));
-
-  for (let y = Math.max(0, startY); y < world.height - 1; y++) {
-    const tile = world.getTileAt(x, y);
-    if (tile && tile.fg !== 0) {
-      const item = getItem(tile.fg);
-      const coll = item?.collisionType ?? 0;
-      if (coll === 1 || coll === 2 || ((coll === 3 || coll === 4) && (tile.flags & TileFlags.OPEN) === 0)) {
-        return Math.max(0, y - 1);
-      }
-    }
-  }
-
-  for (let y = 1; y < world.height - 1; y++) {
-    const tile = world.getTileAt(x, y);
-    if (tile && tile.fg !== 0) {
-      const item = getItem(tile.fg);
-      const coll = item?.collisionType ?? 0;
-      if (coll === 1 || coll === 2 || ((coll === 3 || coll === 4) && (tile.flags & TileFlags.OPEN) === 0)) {
-        return Math.max(0, y - 1);
-      }
-    }
-  }
-
-  return 23;
-}
 
 /**
  * Manages all simulated NPC bots across worlds.
@@ -242,29 +209,7 @@ export class BotManager {
    */
   private executeBehaviorAction(bot: BotPlayer, now: number): void {
     const world = bot.world;
-    if (!world) return;
-
-    // Helper: moves the bot along solid ground, preventing floating or falling off cliffs
-    const walkSafely = (targetTileX: number): boolean => {
-      const curTileX = Math.floor(bot.state.x / 32);
-      const curTileY = Math.floor(bot.state.y / 32);
-      const clampedX = Math.max(bot.minTileX, Math.min(bot.maxTileX, targetTileX));
-      const groundY = findGroundTileY(world, clampedX, Math.max(0, curTileY - 2));
-
-      // Only move if target ground is within safe height (no bottomless cliff)
-      if (Math.abs(groundY - curTileY) <= 4) {
-        const targetX = clampedX * 32;
-        const targetY = groundY * 32;
-        const facingLeft = targetX < bot.state.x;
-        const jump = groundY < curTileY || Math.random() < 0.25;
-        bot.walkTo(targetX, targetY, facingLeft, jump);
-        return true;
-      } else {
-        // Turn around when encountering empty abyss
-        bot.walkTo(bot.state.x, bot.state.y, !bot.state.rotatedLeft, false);
-        return false;
-      }
-    };
+    if (!world || bot.isWalking) return;
 
     // 15% chance to execute a regular player slash command or emote animation
     if (Math.random() < 0.15 && !bot.state.isMuted) {
@@ -292,6 +237,29 @@ export class BotManager {
     const frontTile = world.getTileAt(frontTileX, currentTileY);
 
     switch (bot.behaviorType) {
+      case "wanderer": {
+        // Dedicated stroller / explorer: walks smoothly across corridors, turns, jumps, waves
+        const wanderRoll = Math.random();
+
+        if (wanderRoll < 0.75) {
+          // Walk smoothly toward a destination tile within [minTileX, maxTileX]
+          const step = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 6) + 2);
+          const targetTile = Math.max(bot.minTileX, Math.min(bot.maxTileX, currentTileX + step));
+          bot.walkPath(targetTile).catch(() => {});
+          bot.nextActionAt = now + 2500 + Math.random() * 2000;
+        } else {
+          // Pause, look around or do an emote
+          const faceLeft = Math.random() < 0.5;
+          bot.walkTo(bot.state.x, bot.state.y, faceLeft, false);
+          if (Math.random() < 0.4) {
+            const emotes = ["wave", "smile", "cheer", "dance", "love"];
+            bot.playEmote(emotes[Math.floor(Math.random() * emotes.length)]!);
+          }
+          bot.nextActionAt = now + 1800 + Math.random() * 1500;
+        }
+        break;
+      }
+
       case "farmer": {
         // Farmer activities: planting seeds, harvesting trees, rotating/punching blocks, and roaming
         const roll = Math.random();
@@ -327,9 +295,10 @@ export class BotManager {
           return;
         }
 
-        // 4. Roam along farm row safely on ground
+        // 4. Roam along farm row smoothly on ground
         const step = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 3) + 1);
-        walkSafely(currentTileX + step);
+        const targetTile = Math.max(bot.minTileX, Math.min(bot.maxTileX, currentTileX + step));
+        bot.walkPath(targetTile).catch(() => {});
         bot.nextActionAt = now + 2000 + Math.random() * 1500;
         break;
       }
@@ -374,9 +343,10 @@ export class BotManager {
           }
           bot.nextActionAt = now + 3500;
         } else {
-          // Host pacing around table safely on ground
+          // Host pacing around table smoothly on ground
           const step = Math.random() < 0.5 ? -1 : 1;
-          walkSafely(currentTileX + step);
+          const targetTile = Math.max(bot.minTileX, Math.min(bot.maxTileX, currentTileX + step));
+          bot.walkPath(targetTile).catch(() => {});
           bot.nextActionAt = now + 2500 + Math.random() * 2500;
         }
         break;
@@ -406,9 +376,10 @@ export class BotManager {
           return;
         }
 
-        // Wander along tables safely on ground
-        const step = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 2) + 1);
-        walkSafely(currentTileX + step);
+        // Wander along tables smoothly on ground
+        const step = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 3) + 1);
+        const targetTile = Math.max(bot.minTileX, Math.min(bot.maxTileX, currentTileX + step));
+        bot.walkPath(targetTile).catch(() => {});
 
         if (Math.random() < 0.2) {
           bot.playEmote(Math.random() < 0.5 ? "cheer" : "dance");
@@ -441,9 +412,10 @@ export class BotManager {
           return;
         }
 
-        // 3. Roam along trading corridor safely on ground
-        const step = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 3) + 1);
-        walkSafely(currentTileX + step);
+        // 3. Roam along trading corridor smoothly on ground
+        const step = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 4) + 1);
+        const targetTile = Math.max(bot.minTileX, Math.min(bot.maxTileX, currentTileX + step));
+        bot.walkPath(targetTile).catch(() => {});
 
         if (Math.random() < 0.15) {
           bot.playEmote("wave");
@@ -454,7 +426,7 @@ export class BotManager {
 
       case "social":
       default: {
-        // Social: rotates decorative blocks, interacts with players, emotes, roams safely on ground
+        // Social: rotates decorative blocks, interacts with players, emotes, roams smoothly on ground
         const socialRoll = Math.random();
 
         // 1. Rotate nearby block / sign
@@ -465,9 +437,10 @@ export class BotManager {
           return;
         }
 
-        // 2. Roam widely across designated street safely on ground
+        // 2. Roam widely across designated street smoothly on ground
         const step = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 4) + 1);
-        walkSafely(currentTileX + step);
+        const targetTile = Math.max(bot.minTileX, Math.min(bot.maxTileX, currentTileX + step));
+        bot.walkPath(targetTile).catch(() => {});
 
         if (Math.random() < 0.2) {
           const emotes = ["wave", "dance", "dance2", "dab", "smile", "love"];

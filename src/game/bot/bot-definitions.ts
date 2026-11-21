@@ -236,6 +236,62 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Don't just farm, dress to impress!",
     ],
   },
+  {
+    name: "CasualWalker_GT",
+    role: PLAYER_ROLE.BASIC,
+    level: 38,
+    gems: 52000,
+    country: "id",
+    behavior: "wanderer",
+    worldName: "START",
+    targetTileX: 35,
+    targetTileY: 23,
+    minTileX: 20,
+    maxTileX: 65,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 46,       // Baseball Cap
+      shirt: 36,      // Green Shirt
+      pants: 48,      // Jeans
+      feet: 40,       // Brown Shoes
+    },
+    dialoguePool: [
+      "Just taking a nice stroll around START~",
+      "I love exploring every corner of Growtopia!",
+      "Such a peaceful day for a walk!",
+      "Nice scenery here! Good job to the world builders!",
+      "Walking around keeps my character active! :D",
+    ],
+  },
+  {
+    name: "WorldExplorer_99",
+    role: PLAYER_ROLE.BASIC,
+    level: 56,
+    gems: 175000,
+    country: "us",
+    behavior: "wanderer",
+    worldName: "START",
+    targetTileX: 65,
+    targetTileY: 23,
+    minTileX: 45,
+    maxTileX: 88,
+    skinColor: 0xffe0bdff,
+    clothes: {
+      hair: 890,      // Straw Hat
+      shirt: 304,     // Tie Dyed Shirt
+      pants: 76,      // Black Pants
+      feet: 496,      // Air Robinsons
+      back: 156,      // Fairy Wings
+      face: 34,       // Shades
+    },
+    dialoguePool: [
+      "Exploring new horizons every single day!",
+      "Always checking what secrets worlds have to offer.",
+      "Remember to take breaks and stretch while gaming!",
+      "On a quest to visit every world in the server!",
+      "Strolling around, enjoying the good server vibes!",
+    ],
+  },
 
   // ---------------------------------------------------------------------------
   // FARM World (Active farming & block breaking)
@@ -350,6 +406,33 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Clean seeds, 100% genuine harvest!",
       "Stock up before the next harvest festival!",
       "PM me if you need 1,000+ seeds delivered!",
+    ],
+  },
+  {
+    name: "FarmStroller",
+    role: PLAYER_ROLE.BASIC,
+    level: 42,
+    gems: 68000,
+    country: "id",
+    behavior: "wanderer",
+    worldName: "FARM",
+    targetTileX: 45,
+    targetTileY: 23,
+    minTileX: 20,
+    maxTileX: 70,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 890,      // Straw Hat
+      shirt: 892,     // Overalls
+      pants: 48,      // Jeans
+      feet: 40,       // Brown Shoes
+    },
+    dialoguePool: [
+      "The smell of fresh soil and growing crops is the best!",
+      "Admiring the beautiful farm fields!",
+      "Hard work truly pays off in Growtopia!",
+      "Just taking a stroll through the plantation!",
+      "Seeing everyone farm together brings back great memories!",
     ],
   },
 
@@ -528,6 +611,33 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Spin that wheel, host! Make us rich!",
     ],
   },
+  {
+    name: "CasinoVisitor",
+    role: PLAYER_ROLE.BASIC,
+    level: 49,
+    gems: 94000,
+    country: "us",
+    behavior: "wanderer",
+    worldName: "CASINO",
+    targetTileX: 38,
+    targetTileY: 23,
+    minTileX: 25,
+    maxTileX: 62,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 76,      // Black Pants
+      feet: 78,       // Patent Leather Shoes
+      face: 34,       // Shades
+    },
+    dialoguePool: [
+      "Just sightseeing the casino floor, no bets for me today!",
+      "The lights and sounds of the roulette wheel are dazzling!",
+      "Wishing the best of luck to all the high rollers!",
+      "Strolling around the lobby, such an exciting atmosphere!",
+    ],
+  },
 
   // ---------------------------------------------------------------------------
   // TRADE World (High-End Trading & Vending)
@@ -671,6 +781,33 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Invest in farmables, passive income is king!",
       "Check the trade board for daily fluctuations!",
       "Selling farm bulk packages! PM for inquiries!",
+    ],
+  },
+  {
+    name: "WindowShopper",
+    role: PLAYER_ROLE.BASIC,
+    level: 36,
+    gems: 48000,
+    country: "uk",
+    behavior: "wanderer",
+    worldName: "TRADE",
+    targetTileX: 52,
+    targetTileY: 23,
+    minTileX: 25,
+    maxTileX: 78,
+    skinColor: 0xffe4b5ff,
+    clothes: {
+      hair: 46,       // Baseball Cap
+      shirt: 36,      // Green Shirt
+      pants: 48,      // Jeans
+      feet: 40,       // Brown Shoes
+      face: 34,       // Shades
+    },
+    dialoguePool: [
+      "Just window shopping for today's best deals!",
+      "Comparing prices across all these vending machines!",
+      "Maybe I'll buy a rare set if the price is right!",
+      "Such a bustling marketplace, love the energy here!",
     ],
   },
 ];

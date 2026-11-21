@@ -1018,6 +1018,52 @@ registerCommand({
 });
 
 registerCommand({
+  name: "uncurse",
+  description: "Remove the curse aura from a player",
+  usage: "/uncurse <target>",
+  role: PLAYER_ROLE.GUARDIAN,
+  cooldown: 1,
+  async execute(player, args) {
+    const rawTarget = args[0];
+    if (!rawTarget) return sendTargetUsage(player, "/uncurse <target>");
+    const target = await resolveTarget(rawTarget);
+    if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
+
+    target.online.state.characterState &= ~CHARACTER_STATE.IS_CURSED;
+    target.online.sendCharacterState();
+    target.online.variants.sendOnConsoleMessage(`\`2Your curse has been lifted by ${player.displayName}.\`\``);
+    if ((target.online as any).isBot) {
+      (target.online as any).say?.("The curse has been lifted! I feel free!");
+    }
+    player.variants.sendOnConsoleMessage(`\`2Successfully uncursed \`o${target.name}\`2.`);
+  },
+});
+
+registerCommand({
+  name: "smite",
+  aliases: ["kill", "zap"],
+  description: "Smite a player with lightning and respawn them at main door",
+  usage: "/smite <target>",
+  role: PLAYER_ROLE.MODERATOR,
+  cooldown: 1,
+  async execute(player, args) {
+    const rawTarget = args[0];
+    if (!rawTarget) return sendTargetUsage(player, "/smite <target>");
+    const target = await resolveTarget(rawTarget);
+    if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
+    if (!target.online.world) return player.variants.sendOnConsoleMessage("`4That player is not in a world.``");
+
+    target.online.world.playPositioned("audio/zap.wav", target.online.netID);
+    target.online.kill();
+    if ((target.online as any).isBot) {
+      (target.online as any).say?.("Ouch! Struck down by the gods!");
+      (target.online as any).playEmote?.("sad");
+    }
+    player.variants.sendOnConsoleMessage(`\`4Smited \`o${target.name}\`4 with thunderous wrath!\`\``);
+  },
+});
+
+registerCommand({
   name: "online",
   aliases: ["who"],
   description: "Show how many players are online",
@@ -1114,6 +1160,12 @@ registerCommand({
     }
 
     const reason = args.slice(1).join(" ") || "Banned by administrator.";
+
+    if (target.online && (target.online as any).isBot) {
+      (target.online as any).say?.("Banned?! Noooo!");
+      target.online.disconnect();
+      return player.variants.sendOnConsoleMessage(`\`2Successfully banned bot \`o${target.name}\`2.`);
+    }
 
     await PlayerDB.softDelete(target.playerId);
     if (target.online) {

@@ -7,6 +7,38 @@ import { logger } from "../../utils/logger";
 import { serverManager } from "../server/server-manager";
 import { TileFlags } from "../world/constants";
 import { getItem } from "../item/item-utils";
+import type { World } from "../world/world";
+
+/**
+ * Scans a column to find the tile Y where an avatar can stand firmly with solid ground underneath.
+ */
+export function findGroundTileY(world: World, tileX: number, startY: number = 23): number {
+  const x = Math.max(0, Math.min(world.width - 1, tileX));
+
+  for (let y = Math.max(0, startY); y < world.height - 1; y++) {
+    const tile = world.getTileAt(x, y);
+    if (tile && tile.fg !== 0) {
+      const item = getItem(tile.fg);
+      const coll = item?.collisionType ?? 0;
+      if (coll === 1 || coll === 2 || ((coll === 3 || coll === 4) && (tile.flags & TileFlags.OPEN) === 0)) {
+        return Math.max(0, y - 1);
+      }
+    }
+  }
+
+  for (let y = 1; y < world.height - 1; y++) {
+    const tile = world.getTileAt(x, y);
+    if (tile && tile.fg !== 0) {
+      const item = getItem(tile.fg);
+      const coll = item?.collisionType ?? 0;
+      if (coll === 1 || coll === 2 || ((coll === 3 || coll === 4) && (tile.flags & TileFlags.OPEN) === 0)) {
+        return Math.max(0, y - 1);
+      }
+    }
+  }
+
+  return 23;
+}
 
 /**
  * Creates a mock ENet peer for bot instances where all network sends are safe no-ops.
@@ -21,7 +53,7 @@ export function createMockPeer(peerId: number): Peer {
   } as unknown as Peer;
 }
 
-export type BotBehaviorType = "social" | "farmer" | "casino_host" | "casino_gambler" | "trader";
+export type BotBehaviorType = "social" | "farmer" | "casino_host" | "casino_gambler" | "trader" | "wanderer";
 
 export interface BotClothesConfig {
   hair?: number;
@@ -176,10 +208,12 @@ export class BotPlayer extends Player {
     target.lastWhisperFrom = this.tankIDName;
   }
 
+  public isWalking = false;
+
   /**
    * Broadcasts a movement step to the current world.
    */
-  public walkTo(x: number, y: number, facingLeft = false, jump = false): void {
+  public walkTo(x: number, y: number, facingLeft = false, jump = false, speedX = 0): void {
     if (!this.world) return;
     if ((this.state.characterState & CHARACTER_STATE.IS_FROZEN) !== 0) return;
 
@@ -197,11 +231,65 @@ export class BotPlayer extends Player {
       flags,
       posX: this.state.x,
       posY: this.state.y,
+      speedX,
+      speedY: jump ? -380 : 0,
     });
 
     const parsed = movePacket.parse();
     if (parsed) {
       this.world.broadcast(parsed, this.id);
+    }
+  }
+
+  /**
+   * Smoothly steps toward a target tile X tile-by-tile, checking ground and wall collisions at every step.
+   */
+  public async walkPath(targetTileX: number): Promise<void> {
+    if (!this.world || this.isWalking) return;
+    if ((this.state.characterState & CHARACTER_STATE.IS_FROZEN) !== 0) return;
+
+    this.isWalking = true;
+    try {
+      const curTileX = Math.floor(this.state.x / 32);
+      const curTileY = Math.floor(this.state.y / 32);
+      if (targetTileX === curTileX) return;
+
+      const direction = targetTileX > curTileX ? 1 : -1;
+      const steps = Math.min(8, Math.abs(targetTileX - curTileX));
+
+      let currentX = curTileX;
+      let currentY = curTileY;
+
+      for (let i = 1; i <= steps; i++) {
+        if (!this.world || (this.state.characterState & CHARACTER_STATE.IS_FROZEN) !== 0) break;
+
+        const nextX = curTileX + direction * i;
+
+        // Wall collision check (prevent clipping through blocks at foot or head level)
+        if (this.world.isSolid(nextX, currentY) || this.world.isSolid(nextX, currentY - 1)) {
+          break;
+        }
+
+        // Ground check (prevent hovering over air/cliffs)
+        const groundY = findGroundTileY(this.world, nextX, Math.max(0, currentY - 2));
+        if (Math.abs(groundY - currentY) > 2) {
+          break;
+        }
+
+        const jump = groundY < currentY;
+        const isLast = i === steps;
+        const speedX = isLast ? 0 : (direction < 0 ? -180 : 180);
+
+        this.walkTo(nextX * 32, groundY * 32, direction < 0, jump, speedX);
+        currentX = nextX;
+        currentY = groundY;
+
+        if (!isLast) {
+          await new Promise((resolve) => setTimeout(resolve, 140));
+        }
+      }
+    } finally {
+      this.isWalking = false;
     }
   }
 

@@ -170,6 +170,13 @@ export class TradeManager {
     if (player.playerId === session.player1.playerId) session.locked1 = true;
     else session.locked2 = true;
 
+    // If trading with a simulated bot, the bot automatically locks their side too!
+    const other = session.getOther(player);
+    if ((other as any).isBot) {
+      if (player.playerId === session.player1.playerId) session.locked2 = true;
+      else session.locked1 = true;
+    }
+
     session.syncDialogs();
   }
 
@@ -287,17 +294,31 @@ registerDialog("trade_menu", async (player, action) => {
       .addLabel("Select an item to offer:", "big")
       .addSpacer("small");
 
-    const items = player.inventory.items.toArray().filter((it) => it.id > 0 && it.amount > 0 && !((getItem(it.id)?.flags ?? 0) & BlockFlags.UNTRADEABLE));
+    const tradeableItems: Array<{ id: number; amount: number; name: string }> = [];
+    const currentOffered = session.getItems(player);
 
-    if (items.length === 0) {
-      dialog.addTextBox("`oYou have no tradeable items in your backpack.``");
-    } else {
-      for (const item of items) {
-        const itemMeta = getItem(item.id);
-        dialog.addButton(`item_${item.id}`, `\`w${itemMeta?.name ?? item.id} (Have: ${item.amount})\`\``);
+    for (const [id, amount] of player.inventory.items) {
+      if (id <= 0 || amount <= 0) continue;
+      // Do not allow offering permanent core tools (fist, wrench)
+      if (id === 18 || id === 32) continue;
+      const itemMeta = getItem(id);
+      if (!itemMeta || ((itemMeta.flags ?? 0) & BlockFlags.UNTRADEABLE) !== 0) continue;
+
+      const alreadyOffered = currentOffered.get(id) ?? 0;
+      const available = amount - alreadyOffered;
+      if (available > 0) {
+        tradeableItems.push({ id, amount: available, name: itemMeta.name });
       }
     }
-    dialog.addSpacer("small").endDialog("trade_item_picker", "Back", "Select");
+
+    if (tradeableItems.length === 0) {
+      dialog.addTextBox("`oYou have no tradeable items in your backpack.``");
+    } else {
+      for (const item of tradeableItems) {
+        dialog.addButton(`item_${item.id}`, `\`w${item.name} (Available: ${item.amount})\`\``);
+      }
+    }
+    dialog.addSpacer("small").endDialog("trade_item_picker", "Back", "");
     player.variants.sendOnDialogRequest(dialog.str());
     return;
   }
@@ -318,14 +339,19 @@ registerDialog("trade_item_picker", (player, action) => {
   }
 
   const itemId = Number.parseInt(button.replace("item_", ""), 10);
-  const max = player.inventory.getAmount(itemId);
+  const session = tradeManager.getSession(player);
+  if (!session) return;
+
+  const currentOffered = session.getItems(player);
+  const alreadyOffered = currentOffered.get(itemId) ?? 0;
+  const available = player.inventory.getAmount(itemId) - alreadyOffered;
   const itemMeta = getItem(itemId);
 
   const dialog = new DialogBuilder()
     .defaultColor()
     .addLabelWithIcon(`Offer ${itemMeta?.name ?? itemId}`, itemId, "big")
-    .addInputBox("trade_amount", "Amount", String(Math.min(max, 1)), 5)
-    .addSmallText(`You have ${max} available.`)
+    .addInputBox("trade_amount", "Amount", String(Math.min(available, 1)), 5)
+    .addSmallText(`You have ${available} available to offer.`)
     .embed("offer_item_id", itemId)
     .endDialog("trade_amount_confirm", "Cancel", "Offer")
     .str();

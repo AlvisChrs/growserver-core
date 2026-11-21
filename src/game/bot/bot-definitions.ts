@@ -865,7 +865,7 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       feet: 1940,     // Diamond Rocket Shoes
       face: 146,      // Gold-Rimmed Glasses
       back: 1784,     // Legendary Wings
-      hand: 5638,     // MAGPLANT 5000
+      hand: 1438,     // Golden Pickaxe
     },
     dialoguePool: [
       "Magplant 5000 remote auto-collect is peak efficiency.",
@@ -924,7 +924,8 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       feet: 1940,     // Diamond Rocket Shoes
       face: 1204,     // Focused Eyes
       back: 1674,     // Phoenix Wings
-      hand: 7188,     // Blue Gem Lock
+      hand: 1836,     // Diamond Flashaxe
+      mask: 12430,    // Blue Gem Lock Mask
     },
     dialoguePool: [
       "100 DL = 1 BGL! Pure blue gem luxury.",

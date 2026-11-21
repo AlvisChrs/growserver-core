@@ -59,4 +59,5 @@ apps/
 packages/
 .commandcode/
 rootCA.pem
+share(jangandipush)/
 

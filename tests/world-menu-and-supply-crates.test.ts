@@ -27,9 +27,9 @@ describe("world selection and home world", () => {
 
   test("lists a player's home world without requiring it to be loaded", () => {
     const menu = buildWorldSelectMarkup(worlds, { homeWorld: "NOTLOADED", playerId: 9 });
-    expect(menu).toContain("add_heading|Home World|");
+    expect(menu).toContain("add_heading|Home World<CR>|");
     expect(menu).toContain("add_floater|NOTLOADED|0|");
-    expect(menu).toContain("add_heading|My Worlds|");
+    expect(menu).toContain("add_heading|My Worlds<CR>|");
     expect(menu).toContain("add_floater|HOME123|1|");
     expect(menu).not.toContain("BAD|INJECT");
   });
@@ -37,7 +37,7 @@ describe("world selection and home world", () => {
   test("does not show jammed worlds or invent populated recommendation names", () => {
     const menu = buildWorldSelectMarkup(worlds, { recentWorlds: ["SECRET", "PARK", "TRADE"] });
     expect(menu).not.toContain("add_floater|SECRET|");
-    expect(menu).toContain("add_heading|Recommended Worlds|");
+    expect(menu).toContain("add_heading|Recommended Worlds<CR>|");
     expect(menu).toContain("add_floater|START|0|");
     expect(menu).not.toContain("START1");
   });
@@ -52,7 +52,7 @@ describe("world selection and home world", () => {
 
   test("has a safe starter world fallback", () => {
     const menu = buildWorldSelectMarkup([]);
-    expect(menu).toContain("add_heading|Recommended Worlds|");
+    expect(menu).toContain("add_heading|Recommended Worlds<CR>|");
     expect(menu).toContain("add_floater|START|0|");
   });
 });

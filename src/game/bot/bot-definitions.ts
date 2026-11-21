@@ -2,7 +2,8 @@ import { PLAYER_ROLE } from "../../constants";
 import type { BotConfig } from "./bot-player";
 
 /**
- * Pre-configured bot roster deployed across various social, farm, and casino worlds.
+ * Pre-configured bot roster deployed across various social, farm, casino, and trade worlds.
+ * All bots run as regular players (PLAYER_ROLE.BASIC) with authentic attire and lively behaviors.
  */
 export const DEFAULT_BOT_ROSTER: BotConfig[] = [
   // ---------------------------------------------------------------------------
@@ -10,12 +11,16 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
   // ---------------------------------------------------------------------------
   {
     name: "HamumuFan",
-    role: PLAYER_ROLE.SUPPORTER,
+    role: PLAYER_ROLE.BASIC,
     level: 54,
     gems: 120000,
     country: "us",
     behavior: "social",
     worldName: "START",
+    targetTileX: 42,
+    targetTileY: 23,
+    minTileX: 28,
+    maxTileX: 58,
     skinColor: 0xd8b598ff,
     clothes: {
       hair: 462,      // Fedora
@@ -43,6 +48,10 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     country: "sg",
     behavior: "social",
     worldName: "START",
+    targetTileX: 62,
+    targetTileY: 23,
+    minTileX: 50,
+    maxTileX: 78,
     skinColor: 0xffe4b5ff,
     clothes: {
       hair: 46,       // Baseball Cap
@@ -69,6 +78,10 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     country: "id",
     behavior: "social",
     worldName: "START",
+    targetTileX: 30,
+    targetTileY: 23,
+    minTileX: 18,
+    maxTileX: 44,
     skinColor: 0xffe0bdff,
     clothes: {
       hair: 890,      // Straw Hat
@@ -85,6 +98,90 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Nice server! So fun to play!",
     ],
   },
+  {
+    name: "ParkourPro_GT",
+    role: PLAYER_ROLE.BASIC,
+    level: 45,
+    gems: 60000,
+    country: "ca",
+    behavior: "social",
+    worldName: "START",
+    targetTileX: 78,
+    targetTileY: 20,
+    minTileX: 65,
+    maxTileX: 92,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      mask: 70,       // Spikey Hair
+      shirt: 36,      // Green Shirt
+      pants: 76,      // Black Pants
+      feet: 1940,     // Diamond Rocket Shoes
+      back: 156,      // Fairy Wings
+    },
+    dialoguePool: [
+      "Check out this jump! 3-tile gap easy!",
+      "Parkour is the ultimate test of skill!",
+      "Jump, jump, slide! Smooth landing!",
+      "Can anyone beat my world record speedrun?",
+      "Practice makes perfect in Growtopia!",
+    ],
+  },
+  {
+    name: "ChattyCathy",
+    role: PLAYER_ROLE.BASIC,
+    level: 32,
+    gems: 38000,
+    country: "uk",
+    behavior: "social",
+    worldName: "START",
+    targetTileX: 52,
+    targetTileY: 23,
+    minTileX: 38,
+    maxTileX: 66,
+    skinColor: 0xffe0bdff,
+    clothes: {
+      hair: 212,      // Froghat
+      shirt: 304,     // Tie Dyed Shirt
+      pants: 48,      // Jeans
+      feet: 40,       // Brown Shoes
+      face: 146,      // Gold-Rimmed Glasses
+    },
+    dialoguePool: [
+      "Hi everyone! Having a lovely day?",
+      "The community here is so friendly! <3",
+      "Don't forget to eat and drink water while gaming!",
+      "I love exploring all the creative worlds here!",
+      "Has anyone visited /warp trade today?",
+    ],
+  },
+  {
+    name: "RetroGrower",
+    role: PLAYER_ROLE.BASIC,
+    level: 67,
+    gems: 280000,
+    country: "us",
+    behavior: "social",
+    worldName: "START",
+    targetTileX: 20,
+    targetTileY: 23,
+    minTileX: 8,
+    maxTileX: 34,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 468,     // Pinstripe Pants
+      feet: 78,       // Patent Leather Shoes
+      hand: 2866,     // Wizard's Staff
+    },
+    dialoguePool: [
+      "Ah, the good old days of Growtopia...",
+      "Simplicity is the true art of world building.",
+      "A golden pickaxe and a smile is all you need.",
+      "Always respect the server rules and moderators!",
+      "Patience turns dirt seeds into diamond locks.",
+    ],
+  },
 
   // ---------------------------------------------------------------------------
   // FARM World (Active farming & block breaking)
@@ -97,6 +194,10 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     country: "us",
     behavior: "farmer",
     worldName: "FARM",
+    targetTileX: 25,
+    targetTileY: 23,
+    minTileX: 12,
+    maxTileX: 42,
     skinColor: 0xd8b598ff,
     clothes: {
       hair: 890,      // Straw Hat
@@ -122,6 +223,10 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     country: "my",
     behavior: "farmer",
     worldName: "FARM",
+    targetTileX: 62,
+    targetTileY: 23,
+    minTileX: 48,
+    maxTileX: 76,
     skinColor: 0xf5deb3ff,
     clothes: {
       hair: 74,       // Ski Cap
@@ -139,6 +244,60 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Pickaxe speed bonus is so satisfying.",
     ],
   },
+  {
+    name: "L-Grid_Grinder",
+    role: PLAYER_ROLE.BASIC,
+    level: 56,
+    gems: 420000,
+    country: "ph",
+    behavior: "farmer",
+    worldName: "FARM",
+    targetTileX: 42,
+    targetTileY: 23,
+    minTileX: 28,
+    maxTileX: 58,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 46,       // Baseball Cap
+      shirt: 892,     // Overalls
+      pants: 48,      // Jeans
+      feet: 42,       // Boots
+      hand: 98,       // Pickaxe
+    },
+    dialoguePool: [
+      "Laser Grid is peak efficiency! 4 hits to break!",
+      "Seed count increased by 15% this harvest cycle!",
+      "Don't forget your fuel packs for faster tractor speed!",
+      "Breaking, collecting, planting... repeat for profit!",
+      "Gotta keep that rhythm going!",
+    ],
+  },
+  {
+    name: "SeedSupplier",
+    role: PLAYER_ROLE.BASIC,
+    level: 40,
+    gems: 150000,
+    country: "id",
+    behavior: "farmer",
+    worldName: "FARM",
+    targetTileX: 80,
+    targetTileY: 23,
+    minTileX: 68,
+    maxTileX: 92,
+    skinColor: 0xffdfd3ff,
+    clothes: {
+      hair: 890,      // Straw Hat
+      shirt: 36,      // Green Shirt
+      pants: 76,      // Black Pants
+      feet: 40,       // Brown Shoes
+    },
+    dialoguePool: [
+      "Selling fresh farmable seeds! Bulk discounts available!",
+      "Clean seeds, 100% genuine harvest!",
+      "Stock up before the next harvest festival!",
+      "PM me if you need 1,000+ seeds delivered!",
+    ],
+  },
 
   // ---------------------------------------------------------------------------
   // CASINO World (Roulette Host & active gamblers)
@@ -151,6 +310,10 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     country: "us",
     behavior: "casino_host",
     worldName: "CASINO",
+    targetTileX: 50,
+    targetTileY: 23,
+    minTileX: 48,
+    maxTileX: 52,
     skinColor: 0xffdfd3ff,
     clothes: {
       hair: 66,       // Top Hat
@@ -171,12 +334,16 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
   },
   {
     name: "HighRoller_GT",
-    role: PLAYER_ROLE.SUPPORTER,
+    role: PLAYER_ROLE.BASIC,
     level: 68,
     gems: 500000,
     country: "id",
     behavior: "casino_gambler",
     worldName: "CASINO",
+    targetTileX: 46,
+    targetTileY: 23,
+    minTileX: 42,
+    maxTileX: 49,
     skinColor: 0xd8b598ff,
     clothes: {
       hair: 462,      // Fedora
@@ -203,6 +370,10 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     country: "ph",
     behavior: "casino_gambler",
     worldName: "CASINO",
+    targetTileX: 54,
+    targetTileY: 23,
+    minTileX: 51,
+    maxTileX: 58,
     skinColor: 0xffe4c4ff,
     clothes: {
       mask: 70,       // Spikey Hair
@@ -220,18 +391,77 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Rolling high tonight!",
     ],
   },
+  {
+    name: "BetMaximus",
+    role: PLAYER_ROLE.BASIC,
+    level: 70,
+    gems: 750000,
+    country: "de",
+    behavior: "casino_gambler",
+    worldName: "CASINO",
+    targetTileX: 43,
+    targetTileY: 23,
+    minTileX: 38,
+    maxTileX: 47,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 76,      // Black Pants
+      feet: 1940,     // Diamond Rocket Shoes
+      back: 1460,     // Golden Angel Wings
+    },
+    dialoguePool: [
+      "Putting 5 Diamond Locks on RED!",
+      "Fortune favors the bold!",
+      "Big stakes, big thrills!",
+      "Let's see that wheel spin!",
+      "The house always entertains!",
+    ],
+  },
+  {
+    name: "UnluckySam",
+    role: PLAYER_ROLE.BASIC,
+    level: 28,
+    gems: 15000,
+    country: "us",
+    behavior: "casino_gambler",
+    worldName: "CASINO",
+    targetTileX: 57,
+    targetTileY: 23,
+    minTileX: 53,
+    maxTileX: 64,
+    skinColor: 0xffe0bdff,
+    clothes: {
+      hair: 890,      // Straw Hat
+      shirt: 892,     // Overalls
+      pants: 48,      // Jeans
+      feet: 40,       // Brown Shoes
+    },
+    dialoguePool: [
+      "Why does it always land on the other color?! :')",
+      "Just 1 World Lock left... this is the one!",
+      "My luck has gotta turn around soon, right?",
+      "Can I get a lucky coin or something? Haha!",
+      "One day I'll win big, just you wait!",
+    ],
+  },
 
   // ---------------------------------------------------------------------------
   // TRADE World (High-End Trading & Vending)
   // ---------------------------------------------------------------------------
   {
     name: "DL_Whale",
-    role: PLAYER_ROLE.SUPPORTER,
+    role: PLAYER_ROLE.BASIC,
     level: 88,
     gems: 2500000,
     country: "sg",
     behavior: "trader",
     worldName: "TRADE",
+    targetTileX: 50,
+    targetTileY: 23,
+    minTileX: 46,
+    maxTileX: 54,
     skinColor: 0xffffff80,
     clothes: {
       hair: 66,       // Top Hat
@@ -248,6 +478,61 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Check vending machine stock on top platform!",
       "Buying all Golden Ances / Legendary items!",
       "Fair trades only, trade me to negotiate!",
+    ],
+  },
+  {
+    name: "RareBuyer_88",
+    role: PLAYER_ROLE.BASIC,
+    level: 59,
+    gems: 890000,
+    country: "my",
+    behavior: "trader",
+    worldName: "TRADE",
+    targetTileX: 32,
+    targetTileY: 23,
+    minTileX: 20,
+    maxTileX: 44,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 462,      // Fedora
+      shirt: 38,      // Tuxedo
+      pants: 48,      // Jeans
+      feet: 40,       // Brown Shoes
+      face: 34,       // Shades
+      back: 362,      // Angel Wings
+    },
+    dialoguePool: [
+      "Buying rare wings & dragon items! PM price!",
+      "Looking for trade deals, instant cash!",
+      "Legit trader, fast and honest!",
+      "Drop by my vending shop for great bargains!",
+    ],
+  },
+  {
+    name: "VendingKing",
+    role: PLAYER_ROLE.BASIC,
+    level: 51,
+    gems: 320000,
+    country: "id",
+    behavior: "trader",
+    worldName: "TRADE",
+    targetTileX: 68,
+    targetTileY: 23,
+    minTileX: 56,
+    maxTileX: 82,
+    skinColor: 0xffe4b5ff,
+    clothes: {
+      hair: 46,       // Baseball Cap
+      shirt: 304,     // Tie Dyed Shirt
+      pants: 76,      // Black Pants
+      feet: 496,      // Air Robinsons
+      hand: 98,       // Pickaxe
+    },
+    dialoguePool: [
+      "Restocked vending machines with cheap seeds!",
+      "Best prices in the whole server!",
+      "Auto-buy from vend, hassle free!",
+      "Check the displays for today's specials!",
     ],
   },
 ];

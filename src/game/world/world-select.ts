@@ -41,7 +41,8 @@ export function buildWorldSelectMarkup(worlds: readonly WorldMenuEntry[], option
       return true;
     });
     if (unique.length === 0) return;
-    lines.push(`add_heading|${title}|`);
+    const heading = title.endsWith("<CR>") ? title : `${title}<CR>`;
+    lines.push(`add_heading|${heading}|`);
     for (const name of unique) {
       lines.push(`add_floater|${name}|${byName.get(name)?.players ?? 0}|0.5|${color}`);
       if (!allowRepeats) seen.add(name);

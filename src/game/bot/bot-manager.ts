@@ -9,7 +9,7 @@ import { CHARACTER_STATE } from "../../constants";
 
 /**
  * Manages all simulated NPC bots across worlds.
- * Simulates living multiplayer activity (chatting, farming, casino roulette, wandering).
+ * Simulates living multiplayer activity (chatting, farming, casino roulette, wide roaming, emotes, and commands).
  */
 export class BotManager {
   private static instance: BotManager;
@@ -86,10 +86,12 @@ export class BotManager {
 
     const world = await worldManager.get(config.worldName);
     if (world) {
-      await world.enter(bot, config.targetTileX, config.targetTileY);
-      bot.homeTileX = Math.floor(bot.state.x / 32);
-      bot.homeTileY = Math.floor(bot.state.y / 32);
-      logger.info({ bot: bot.tankIDName, world: world.name }, "bot entered world successfully");
+      const targetX = config.targetTileX ?? world.mainDoor?.x ?? 50;
+      const targetY = config.targetTileY ?? world.mainDoor?.y ?? 23;
+      await world.enter(bot, targetX, targetY);
+      bot.homeTileX = targetX;
+      bot.homeTileY = targetY;
+      logger.info({ bot: bot.tankIDName, world: world.name, x: targetX, y: targetY }, "bot entered world successfully");
     }
 
     return bot;
@@ -143,7 +145,43 @@ export class BotManager {
       if ((bot.state.characterState & CHARACTER_STATE.IS_FROZEN) !== 0) continue;
 
       try {
-        // 1. Dialogue / Chatting
+        // 1. Shocked & Excited reaction when seeing a visible real player (non-invis)
+        const visibleRealPlayers = bot.world.players.filter(
+          (p) => !(p as any).isBot && !p.isInvisible && !p.state.isGhost,
+        );
+
+        if (visibleRealPlayers.length > 0) {
+          for (const player of visibleRealPlayers) {
+            const lastGreeted = bot.seenPlayersCooldown.get(player.playerId) ?? 0;
+            // Cooldown of 45 seconds per player so it doesn't spam every second
+            if (now - lastGreeted > 45_000) {
+              bot.seenPlayersCooldown.set(player.playerId, now);
+
+              // Turn to face the player and jump in surprise!
+              const facingLeft = player.x < bot.state.x;
+              bot.walkTo(bot.state.x, bot.state.y, facingLeft, true);
+              bot.playEmote(Math.random() < 0.6 ? "omg" : "wave");
+
+              const shockedLines = [
+                `OMG! Is that \`w${player.displayName}\`\`?! :O`,
+                `Whoa! The creator has appeared!! *gasp*`,
+                `*gasp* OMG \`w${player.displayName}\`\`! Big fan!!`,
+                `Yooo \`w${player.displayName}\`\` is here! Welcome to \`2${bot.world.name}\`\`! :D`,
+                `Look everyone, it's \`w${player.displayName}\`\`! Can I get an autograph/trade please?! :O`,
+                `*gasp* OMG he's not invisible anymore! Real legend right here!`,
+              ];
+              const line = shockedLines[Math.floor(Math.random() * shockedLines.length)]!;
+              setTimeout(() => {
+                if (bot.world && !bot.state.isMuted) {
+                  bot.say(line);
+                }
+              }, 350);
+              break;
+            }
+          }
+        }
+
+        // 2. Dialogue / Chatting
         if (now >= bot.nextChatAt && !bot.state.isMuted) {
           if (bot.dialoguePool.length > 0 && Math.random() < 0.6) {
             const index = Math.floor(Math.random() * bot.dialoguePool.length);
@@ -154,7 +192,7 @@ export class BotManager {
           bot.nextChatAt = now + 14000 + Math.random() * 14000;
         }
 
-        // 2. Physical Action & Movement
+        // 3. Physical Action, Roaming & Command Execution
         if (now >= bot.nextActionAt) {
           this.executeBehaviorAction(bot, now);
         }
@@ -171,68 +209,128 @@ export class BotManager {
     const world = bot.world;
     if (!world) return;
 
+    // 15% chance to execute a regular player slash command or emote animation!
+    if (Math.random() < 0.15 && !bot.state.isMuted) {
+      const commandsPool = [
+        "cheer",
+        "dance",
+        "dance2",
+        "wave",
+        "dab",
+        "omg",
+        "stats",
+        "time",
+        "rules",
+        "me is having fun in GrowServer!",
+        "me checks the trade market",
+        "me jumps excitedly!",
+      ];
+      const cmd = commandsPool[Math.floor(Math.random() * commandsPool.length)]!;
+      bot.runCommand(cmd).catch(() => {});
+    }
+
     switch (bot.behaviorType) {
       case "farmer": {
-        // Farmer rhythm: punch nearby block, then occasionally take a step along the row
+        // Farmer rhythm: punch nearby block, then walk along farm corridor [minTileX, maxTileX]
         const currentTileX = Math.floor(bot.state.x / 32);
         const currentTileY = Math.floor(bot.state.y / 32);
 
-        if (Math.random() < 0.7) {
+        if (Math.random() < 0.65) {
           // Punch tile in front (left or right)
           const targetX = bot.state.rotatedLeft ? currentTileX - 1 : currentTileX + 1;
           bot.punchTile(targetX, currentTileY);
-          bot.nextActionAt = now + 1200 + Math.random() * 1000;
+          if (Math.random() < 0.1) {
+            bot.playEmote("cheer");
+          }
+          bot.nextActionAt = now + 1000 + Math.random() * 800;
         } else {
-          // Step along the row (+/- 1-2 tiles)
-          const step = (Math.random() < 0.5 ? -1 : 1) * 32;
-          const nextX = Math.max(32, Math.min(world.width * 32 - 64, bot.state.x + step));
-          bot.walkTo(nextX, bot.state.y, step < 0, false);
-          bot.nextActionAt = now + 2000 + Math.random() * 1500;
+          // Step along the farming row within designated corridor
+          const stepTiles = Math.floor(Math.random() * 3) + 1;
+          const direction = Math.random() < 0.5 ? -1 : 1;
+          const targetTile = Math.max(bot.minTileX, Math.min(bot.maxTileX, currentTileX + direction * stepTiles));
+          const targetX = targetTile * 32;
+          const facingLeft = targetX < bot.state.x;
+          const jump = Math.random() < 0.3;
+          bot.walkTo(targetX, bot.state.y, facingLeft, jump);
+          bot.nextActionAt = now + 1800 + Math.random() * 1500;
         }
         break;
       }
 
       case "casino_host": {
-        // Casino Host: spins roulette wheel every 20-30s with audio and announces numbers
+        // Casino Host: spins roulette wheel every 18-25s with audio and announces numbers
         if (Math.random() < 0.35) {
           const number = Math.floor(Math.random() * 37); // 0-36
           const color = number === 0 ? "Green" : number % 2 === 0 ? "Black" : "Red";
 
           world.playPositioned("audio/roulette_spin.wav", bot.netID);
           bot.say(`[Roulette] The wheel stops at number \`w${number} \`$(${color})\`\`!`);
-          bot.nextActionAt = now + 12000 + Math.random() * 10000;
+
+          // Synchronize reactions of nearby gamblers
+          setTimeout(() => {
+            for (const other of world.players) {
+              if (other === bot || !(other as any).isBot) continue;
+              const gBot = other as BotPlayer;
+              if (gBot.behaviorType === "casino_gambler" && !gBot.state.isMuted) {
+                if (Math.random() < 0.5) {
+                  gBot.playEmote("cheer");
+                  gBot.say("YESSS! I won this round! GG!");
+                } else {
+                  gBot.playEmote("sad");
+                  gBot.say("Aww lost my bet! Rematch next round!");
+                }
+                break;
+              }
+            }
+          }, 1200);
+
+          bot.nextActionAt = now + 14000 + Math.random() * 8000;
         } else {
-          // Idle turn left/right or slight step
+          // Host slight step around the table
           const faceLeft = Math.random() < 0.5;
-          bot.walkTo(bot.state.x, bot.state.y, faceLeft, false);
-          bot.nextActionAt = now + 3000 + Math.random() * 4000;
+          const deltaX = (Math.random() < 0.5 ? -1 : 1) * 16;
+          const targetX = Math.max(bot.minTileX * 32, Math.min(bot.maxTileX * 32, bot.state.x + deltaX));
+          bot.walkTo(targetX, bot.state.y, faceLeft, false);
+          bot.nextActionAt = now + 3000 + Math.random() * 3000;
         }
         break;
       }
 
       case "casino_gambler": {
-        // Gambler: reacts to spins, places bets, moves between tables
-        if (Math.random() < 0.4) {
-          const deltaX = (Math.random() < 0.5 ? -1 : 1) * (16 + Math.floor(Math.random() * 48));
-          const targetX = Math.max(32, Math.min(world.width * 32 - 64, bot.homeTileX * 32 + deltaX));
-          bot.walkTo(targetX, bot.state.y, deltaX < 0, Math.random() < 0.2);
+        // Gambler: reacts, bets, wanders along tables [minTileX, maxTileX]
+        const currentTileX = Math.floor(bot.state.x / 32);
+        const step = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 2) + 1);
+        const targetTile = Math.max(bot.minTileX, Math.min(bot.maxTileX, currentTileX + step));
+        const targetX = targetTile * 32;
+        const facingLeft = targetX < bot.state.x;
+        const jump = Math.random() < 0.35;
+        bot.walkTo(targetX, bot.state.y, facingLeft, jump);
+
+        if (Math.random() < 0.15) {
+          bot.playEmote(Math.random() < 0.5 ? "cheer" : "dance");
         }
-        bot.nextActionAt = now + 2500 + Math.random() * 3500;
+        bot.nextActionAt = now + 2500 + Math.random() * 3000;
         break;
       }
 
       case "social":
       case "trader":
       default: {
-        // Social / Trader: wanders smoothly near home position, turns around, occasionally jumps
-        if (Math.random() < 0.5) {
-          const offsetTiles = Math.floor(Math.random() * 5) - 2; // -2 to +2 tiles
-          const targetX = Math.max(32, Math.min(world.width * 32 - 64, (bot.homeTileX + offsetTiles) * 32));
-          const facingLeft = targetX < bot.state.x;
-          const jump = Math.random() < 0.25;
-          bot.walkTo(targetX, bot.state.y, facingLeft, jump);
+        // Social / Trader: roams widely across their designated street/corridor [minTileX, maxTileX]
+        const currentTileX = Math.floor(bot.state.x / 32);
+        const step = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 4) + 1);
+        const targetTile = Math.max(bot.minTileX, Math.min(bot.maxTileX, currentTileX + step));
+        const targetX = targetTile * 32;
+        const facingLeft = targetX < bot.state.x;
+        const jump = Math.random() < 0.3;
+        bot.walkTo(targetX, bot.state.y, facingLeft, jump);
+
+        if (Math.random() < 0.12) {
+          const emotes = ["wave", "dance", "dance2", "dab", "smile", "love"];
+          const emote = emotes[Math.floor(Math.random() * emotes.length)]!;
+          bot.playEmote(emote);
         }
-        bot.nextActionAt = now + 3000 + Math.random() * 4000;
+        bot.nextActionAt = now + 2500 + Math.random() * 3500;
         break;
       }
     }
@@ -250,7 +348,7 @@ export class BotManager {
 
       // Check if player mentioned bot name or greeting
       const botNameLower = bot.tankIDName.toLowerCase();
-      const isAddressed = lower.includes(botNameLower) || lower.includes("bot") || lower.includes("all");
+      const isAddressed = lower.includes(botNameLower) || lower.includes("bot") || lower.includes("all") || lower.includes("halo") || lower.includes("hi");
 
       if (isAddressed) {
         setTimeout(() => {

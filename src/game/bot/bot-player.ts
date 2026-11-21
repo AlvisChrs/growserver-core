@@ -47,6 +47,8 @@ export interface BotConfig {
   dialoguePool?: string[];
   targetTileX?: number;
   targetTileY?: number;
+  minTileX?: number;
+  maxTileX?: number;
 }
 
 export class BotPlayer extends Player {
@@ -56,6 +58,9 @@ export class BotPlayer extends Player {
   public targetWorld: string;
   public homeTileX: number = 0;
   public homeTileY: number = 0;
+  public minTileX: number = 0;
+  public maxTileX: number = 100;
+  public seenPlayersCooldown: Map<number, number> = new Map();
   public nextActionAt: number = 0;
   public nextChatAt: number = 0;
 
@@ -75,6 +80,8 @@ export class BotPlayer extends Player {
     this.behaviorType = config.behavior;
     this.targetWorld = config.worldName.toUpperCase();
     this.dialoguePool = config.dialoguePool ?? [];
+    this.minTileX = config.minTileX ?? Math.max(2, (config.targetTileX ?? 50) - 15);
+    this.maxTileX = config.maxTileX ?? Math.min(98, (config.targetTileX ?? 50) + 15);
 
     if (config.clothes) {
       for (const [slot, id] of Object.entries(config.clothes)) {
@@ -121,12 +128,40 @@ export class BotPlayer extends Player {
   }
 
   /**
-   * Speaks a chat message aloud in the world with both talk bubble and world console message.
+   * Speaks a chat message aloud in the world with both speech bubble above avatar head and console chat log.
    */
   public say(message: string): void {
     if (!this.world || this.state.isMuted) return;
-    this.world.broadcastVariant(Variant.from({ netID: this.netID }, "OnTalkBubble", this.netID, message, 0));
-    this.world.broadcastVariant(Variant.from("OnConsoleMessage", `CP:0_PL:4_o_C:0_ <\`w${this.displayName}\`o> \`$$${message}\`\``));
+    const cleanMsg = message.replace(/`./g, "").trim();
+    if (!cleanMsg) return;
+
+    // Visual speech bubble above the bot's head (matching official GT chat bubble protocol)
+    this.world.broadcastVariant(
+      Variant.from("OnTalkBubble", this.netID, "CP:_PL:0_OID:_`w" + cleanMsg, 0, 0),
+    );
+    // World channel console message formatted as [W] <BotName> message
+    this.world.broadcastVariant(
+      Variant.from("OnConsoleMessage", `CP:_PL:0_OID:_CT:[W]_ \`6<\`w${this.displayName}\`6> \`$player_chat=\`$${cleanMsg}`),
+    );
+  }
+
+  /**
+   * Performs an emote animation for everyone in the world.
+   */
+  public playEmote(name: string): void {
+    if (!this.world) return;
+    this.world.broadcastVariant(Variant.from({ netID: this.netID }, "OnAction", `/${name}`));
+  }
+
+  /**
+   * Executes a regular slash command as a player.
+   */
+  public async runCommand(commandText: string): Promise<void> {
+    if (!this.world) return;
+    try {
+      const { executeCommand } = await import("../commands");
+      await executeCommand(this, commandText);
+    } catch {}
   }
 
   /**

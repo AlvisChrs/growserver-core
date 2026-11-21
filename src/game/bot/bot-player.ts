@@ -5,6 +5,8 @@ import { GameUpdatePacket } from "../packets/game-packet";
 import { Variant } from "../packets/variants";
 import { logger } from "../../utils/logger";
 import { serverManager } from "../server/server-manager";
+import { TileFlags } from "../world/constants";
+import { getItem } from "../item/item-utils";
 
 /**
  * Creates a mock ENet peer for bot instances where all network sends are safe no-ops.
@@ -232,5 +234,133 @@ export class BotPlayer extends Player {
       this.world.broadcast(parsed, this.id);
       this.world.playPositioned("audio/punch.wav", this.netID);
     }
+  }
+
+  /**
+   * Rotates / flips a foreground block horizontally, mimicking wrench interaction.
+   */
+  public rotateBlock(tileX: number, tileY: number): void {
+    if (!this.world) return;
+    const tile = this.world.getTileAt(tileX, tileY);
+    if (!tile || tile.fg === 0) return;
+
+    tile.flags ^= TileFlags.FLIPPED;
+    const flipped = (tile.flags & TileFlags.FLIPPED) !== 0;
+
+    this.punchTile(tileX, tileY);
+    this.world.broadcast(
+      GameUpdatePacket.create({
+        type: TANK_PACKET_TYPE.TILE_CHANGE_REQUEST,
+        netID: this.netID,
+        itemID: tile.fg,
+        tileX,
+        tileY,
+        flags: flipped ? 0x10 : 0,
+      }).parse()!,
+    );
+    this.world.playPositioned("audio/wrench.wav", this.netID);
+    this.world.markDirty();
+  }
+
+  /**
+   * Plants a tree seed on a solid ground tile.
+   */
+  public plantSeed(tileX: number, tileY: number, seedId = 3): void {
+    if (!this.world) return;
+    const tile = this.world.getTileAt(tileX, tileY);
+    const ground = this.world.getTileAt(tileX, tileY + 1);
+    if (!tile || tile.fg !== 0 || !ground || ground.fg === 0) return;
+
+    const seedMeta = getItem(seedId);
+    if (!seedMeta) return;
+
+    tile.fg = seedId;
+    tile.flags |= TileFlags.TILEEXTRA | TileFlags.SEED;
+    tile.tree = {
+      fruit: Math.max(1, seedId - 1),
+      fruitCount: Math.floor(Math.random() * 4) + 1,
+      fullyGrownAt: Date.now() + 5000,
+      plantedAt: Date.now(),
+      isSpliced: false,
+    };
+
+    this.punchTile(tileX, tileY);
+    this.world.broadcast(
+      GameUpdatePacket.create({
+        type: TANK_PACKET_TYPE.TILE_CHANGE_REQUEST,
+        netID: this.netID,
+        itemID: seedId,
+        tileX,
+        tileY,
+      }).parse()!,
+    );
+    this.world.playPositioned("audio/seed_plant.wav", this.netID);
+    this.world.markDirty();
+  }
+
+  /**
+   * Harvests a fully grown crop or tree, dropping fruits and seeds.
+   */
+  public harvestTree(tileX: number, tileY: number): void {
+    if (!this.world) return;
+    const tile = this.world.getTileAt(tileX, tileY);
+    if (!tile || !tile.tree) return;
+
+    const tree = tile.tree;
+    const seedId = tile.fg;
+    const fruitId = tree.fruit;
+    const count = tree.fruitCount;
+
+    this.world.broadcast(
+      GameUpdatePacket.create({
+        type: TANK_PACKET_TYPE.SEND_TILE_TREE_STATE,
+        netID: this.netID,
+        targetNetID: -1,
+        tileX,
+        tileY,
+      }).parse()!,
+    );
+
+    tile.fg = 0;
+    tile.damage = 0;
+    tile.flags &= ~(TileFlags.TILEEXTRA | TileFlags.SEED);
+    delete tile.tree;
+
+    // Drop fruits & chance for seed
+    this.world.drop(this, tileX * 32 + 8, tileY * 32 + 8, fruitId, count, { tree: true, origin: "harvest" });
+    if (Math.random() < 0.75) {
+      this.world.drop(this, tileX * 32 + 16, tileY * 32 + 8, seedId, 1, { tree: true, origin: "harvest" });
+    }
+
+    this.punchTile(tileX, tileY);
+    this.world.playPositioned("audio/punch.wav", this.netID);
+    this.world.markDirty();
+  }
+
+  /**
+   * Rolls a dice block or spins roulette with game update packet.
+   */
+  public rollDice(tileX: number, tileY: number): void {
+    if (!this.world) return;
+    const tile = this.world.getTileAt(tileX, tileY);
+    if (!tile || tile.fg === 0) return;
+
+    const face = Math.floor(Math.random() * 6) + 1; // 1-6
+    if (tile.dice) {
+      tile.dice.symbol = face - 1;
+    }
+
+    this.punchTile(tileX, tileY);
+    this.world.broadcast(
+      GameUpdatePacket.create({
+        type: TANK_PACKET_TYPE.TILE_APPLY_DAMAGE,
+        netID: this.netID,
+        tileX,
+        tileY,
+        buildRange: face - 1,
+      }).parse()!,
+    );
+    this.world.playPositioned("audio/dice.wav", this.netID);
+    this.say(`[Dice] Rolled a \`2${face}\`\`!`);
   }
 }

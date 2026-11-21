@@ -9,6 +9,7 @@ import { GameUpdatePacket } from "../packets/game-packet";
 import { int32, Variant } from "../packets/variants";
 import { getItem } from "../item/item-utils";
 import type { Player } from "../player";
+import { createEmptyClothes } from "../player/inventory";
 import { serverManager } from "../server/server-manager";
 import { tileFrom } from "./tiles";
 import { upgradeXenonite } from "./tiles/xenonite-tile";
@@ -560,12 +561,19 @@ export class World {
     const othersCount = others.length;
     // retail only announces entrances to a small world, and never an invisible player
     const joinMessage = `\`5<${player.formattedName}\`\` entered, \`w${othersCount}\`\` others here>\`\``;
-    const announceJoin = othersCount >= 1 && othersCount <= 14 && !player.state.isGhost;
+    const announceJoin = othersCount >= 1 && othersCount <= 14 && !player.state.isGhost && !player.isInvisible;
 
+    const emptyClothes = createEmptyClothes();
     for (const other of others) {
       other.variants.sendOnSpawn(player.spawnOptions(false));
-      other.variants.sendClothes(player.netID, player.effectiveClothes, player.effectiveSkinColor, player.effectiveCapeColor, player.effectiveCollarColor);
-      other.sendBuffer(other.variants.buildCharacterState(player.netID, player.characterStats, player.state.characterState, player.punchId));
+      if (player.isInvisible) {
+        other.variants.sendClothes(player.netID, emptyClothes, 0x00000000);
+        other.variants.sendOnChangeSkin(player.netID, 0x00000000);
+        other.sendBuffer(other.variants.buildCharacterState(player.netID, player.characterStats, player.state.characterState, 0));
+      } else {
+        other.variants.sendClothes(player.netID, player.effectiveClothes, player.effectiveSkinColor, player.effectiveCapeColor, player.effectiveCollarColor);
+        other.sendBuffer(other.variants.buildCharacterState(player.netID, player.characterStats, player.state.characterState, player.punchId));
+      }
       if (announceJoin) {
         other.variants.sendOnConsoleMessage(joinMessage);
         other.variants.sendOnTalkBubble(player.netID, joinMessage, true);

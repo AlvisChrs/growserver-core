@@ -662,6 +662,7 @@ export class Player {
   public refreshAvatar(): void {
     if (!this.world) return;
     this.variants.sendOnSpawn(this.spawnOptions(true));
+    this.variants.sendOnSetPos(this.netID, this.state.x, this.state.y);
     this.sendCountryState();
     this.world.broadcastVariant(Variant.from({ netID: this.netID }, "OnNameChanged", this.formattedName));
     for (const other of this.world.players) {

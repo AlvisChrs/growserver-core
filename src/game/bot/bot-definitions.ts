@@ -107,7 +107,7 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     behavior: "social",
     worldName: "START",
     targetTileX: 78,
-    targetTileY: 20,
+    targetTileY: 23,
     minTileX: 65,
     maxTileX: 92,
     skinColor: 0xd8b598ff,
@@ -180,6 +180,60 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "A golden pickaxe and a smile is all you need.",
       "Always respect the server rules and moderators!",
       "Patience turns dirt seeds into diamond locks.",
+    ],
+  },
+  {
+    name: "NoobGrower_01",
+    role: PLAYER_ROLE.BASIC,
+    level: 7,
+    gems: 4500,
+    country: "id",
+    behavior: "social",
+    worldName: "START",
+    targetTileX: 36,
+    targetTileY: 23,
+    minTileX: 25,
+    maxTileX: 48,
+    skinColor: 0xffdfd3ff,
+    clothes: {
+      shirt: 4,       // White Shirt
+      pants: 6,       // Blue Jeans
+      feet: 40,       // Brown Shoes
+    },
+    dialoguePool: [
+      "Can anyone teach me how to splice dirt seed and rock seed?",
+      "How do people get Diamond Locks so fast?!",
+      "Is this world safe from drop games?",
+      "Anyone want to be my friend? Type /friend NoobGrower_01!",
+      "I just started today, this server is so cool!",
+    ],
+  },
+  {
+    name: "FashionIcon_GT",
+    role: PLAYER_ROLE.BASIC,
+    level: 63,
+    gems: 340000,
+    country: "fr",
+    behavior: "social",
+    worldName: "START",
+    targetTileX: 72,
+    targetTileY: 23,
+    minTileX: 58,
+    maxTileX: 86,
+    skinColor: 0xffe4b5ff,
+    clothes: {
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 76,      // Black Pants
+      feet: 496,      // Air Robinsons
+      face: 34,       // Shades
+      back: 362,      // Angel Wings
+    },
+    dialoguePool: [
+      "Style is everything! What do you think of my set?",
+      "Matching wings with shoes is an art form!",
+      "Looking fabulous is half the battle in GT!",
+      "Don't just farm, dress to impress!",
     ],
   },
 
@@ -446,6 +500,34 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "One day I'll win big, just you wait!",
     ],
   },
+  {
+    name: "RouletteQueen",
+    role: PLAYER_ROLE.BASIC,
+    level: 64,
+    gems: 620000,
+    country: "ph",
+    behavior: "casino_gambler",
+    worldName: "CASINO",
+    targetTileX: 53,
+    targetTileY: 23,
+    minTileX: 47,
+    maxTileX: 60,
+    skinColor: 0xffe0bdff,
+    clothes: {
+      hair: 462,      // Fedora
+      shirt: 304,     // Tie Dyed Shirt
+      pants: 48,      // Jeans
+      feet: 1940,     // Diamond Rocket Shoes
+      back: 156,      // Fairy Wings
+    },
+    dialoguePool: [
+      "I have a feeling RED 14 is coming up next!",
+      "Always bet with confidence, never tilt!",
+      "The spin of the wheel is pure adrenaline!",
+      "Who's up for a friendly dice duel?!",
+      "Spin that wheel, host! Make us rich!",
+    ],
+  },
 
   // ---------------------------------------------------------------------------
   // TRADE World (High-End Trading & Vending)
@@ -533,6 +615,62 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       "Best prices in the whole server!",
       "Auto-buy from vend, hassle free!",
       "Check the displays for today's specials!",
+    ],
+  },
+  {
+    name: "TradeShark_SG",
+    role: PLAYER_ROLE.BASIC,
+    level: 82,
+    gems: 1900000,
+    country: "sg",
+    behavior: "trader",
+    worldName: "TRADE",
+    targetTileX: 40,
+    targetTileY: 23,
+    minTileX: 28,
+    maxTileX: 52,
+    skinColor: 0xd8b598ff,
+    clothes: {
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 76,      // Black Pants
+      feet: 1940,     // Diamond Rocket Shoes
+      face: 34,       // Shades
+      back: 1460,     // Golden Angel Wings
+      hand: 98,       // Pickaxe
+    },
+    dialoguePool: [
+      "B> WORLD LOCKS 2000 GEMS EACH! FAST DEAL!",
+      "Buying rare unobtainable items, PM offers!",
+      "Trade me to negotiate, cash ready in inventory!",
+      "Honest trader since 2014, zero scam record!",
+    ],
+  },
+  {
+    name: "StockBroker_GT",
+    role: PLAYER_ROLE.BASIC,
+    level: 58,
+    gems: 410000,
+    country: "us",
+    behavior: "trader",
+    worldName: "TRADE",
+    targetTileX: 60,
+    targetTileY: 23,
+    minTileX: 48,
+    maxTileX: 74,
+    skinColor: 0xffdfd3ff,
+    clothes: {
+      hair: 462,      // Fedora
+      shirt: 304,     // Tie Dyed Shirt
+      pants: 48,      // Jeans
+      feet: 78,       // Patent Leather Shoes
+      face: 146,      // Gold-Rimmed Glasses
+    },
+    dialoguePool: [
+      "Market trend: Pepper Tree seeds are rising in value!",
+      "Invest in farmables, passive income is king!",
+      "Check the trade board for daily fluctuations!",
+      "Selling farm bulk packages! PM for inquiries!",
     ],
   },
 ];

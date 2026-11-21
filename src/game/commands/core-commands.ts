@@ -477,6 +477,7 @@ registerCommand({
         world.playPositioned?.("audio/teleport.wav", player.netID);
       }
       player.variants.sendOnConsoleMessage("`4Ghost mode disabled``. You materialize back to normal.");
+      player.refreshAvatar();
       player.sendClothesToWorld();
     }
     player.sendCharacterState();
@@ -1489,6 +1490,7 @@ registerCommand({
       if (world) {
         spawnInvisReappearDarkFlames(world, px, py, player.netID);
       }
+      player.refreshAvatar();
       player.sendClothesToWorld();
       player.sendCharacterState();
       // Re-spawn Wukong's clones if wearing staff
@@ -1505,6 +1507,7 @@ registerCommand({
       if (world) {
         spawnInvisGhostSwarm(world, px, py, player.netID);
       }
+      player.refreshAvatar();
       player.sendClothesToWorld();
       player.sendCharacterState();
       player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadow spirits swarm as you vanish into the unseen.``");

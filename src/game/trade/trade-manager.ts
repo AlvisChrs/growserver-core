@@ -41,6 +41,12 @@ export class TradeManager {
       return false;
     }
 
+    // Check if `to` is a simulated bot -> Immediately accept and start trade
+    if ((to as any).isBot) {
+      this.startTrade(from, to);
+      return true;
+    }
+
     // Check if `to` already invited `from` -> Start trade immediately!
     const reverseKey = `${to.playerId}:${from.playerId}`;
     const reverseExpiry = this.pendingInvites.get(reverseKey) ?? 0;
@@ -69,6 +75,38 @@ export class TradeManager {
     player1.sendSfx("audio/trade_open.wav");
     player2.sendSfx("audio/trade_open.wav");
     session.syncDialogs();
+
+    // If one of the players is a bot, automatically offer an item and lock
+    const botPlayer = (player1 as any).isBot ? player1 : (player2 as any).isBot ? player2 : null;
+    if (botPlayer) {
+      const isP1Bot = botPlayer === player1;
+      const bot = botPlayer as any;
+      setTimeout(() => {
+        const active = this.activeSessions.get(bot.playerId);
+        if (!active || active.isCompleted) return;
+
+        let offerItem = 242; // World Lock
+        let offerCount = 1;
+        if (bot.behaviorType === "farmer") {
+          offerItem = 3; // Dirt Seed
+          offerCount = 20;
+        } else if (bot.behaviorType === "casino_gambler") {
+          offerItem = 112; // Gems
+          offerCount = 100;
+        }
+
+        bot.inventory.addItem(offerItem, offerCount);
+        const myItems = active.getItems(bot);
+        myItems.set(offerItem, offerCount);
+        active.resetLock();
+
+        if (isP1Bot) active.locked1 = true;
+        else active.locked2 = true;
+
+        active.syncDialogs();
+        bot.say?.("I've put my offer in the trade! Lock & accept whenever you're ready! :D");
+      }, 700);
+    }
   }
 
   public cancel(player: Player, reason = "Trade canceled."): void {
@@ -147,8 +185,13 @@ export class TradeManager {
     const session = this.activeSessions.get(player.playerId);
     if (!session || !session.locked1 || !session.locked2) return false;
 
-    if (player.playerId === session.player1.playerId) session.accepted1 = true;
-    else session.accepted2 = true;
+    if (player.playerId === session.player1.playerId) {
+      session.accepted1 = true;
+      if ((session.player2 as any).isBot) session.accepted2 = true;
+    } else {
+      session.accepted2 = true;
+      if ((session.player1 as any).isBot) session.accepted1 = true;
+    }
 
     if (!session.accepted1 || !session.accepted2) {
       session.syncDialogs();
@@ -195,6 +238,15 @@ export class TradeManager {
     p2.variants.sendOnConsoleMessage(successMsg);
     p1.sendSfx("audio/trade_success.wav");
     p2.sendSfx("audio/trade_success.wav");
+
+    if ((p1 as any).isBot) {
+      (p1 as any).playEmote?.("cheer");
+      (p1 as any).say?.("Pleasure doing business with you! Enjoy! :D");
+    }
+    if ((p2 as any).isBot) {
+      (p2 as any).playEmote?.("cheer");
+      (p2 as any).say?.("Pleasure doing business with you! Enjoy! :D");
+    }
 
     // Close trade dialogs
     const endDialog = new DialogBuilder().defaultColor().addTextBox("`2Trade Successful! Items exchanged.\`\`").addQuickExit().endDialog("trade_end", "", "Ok").str();

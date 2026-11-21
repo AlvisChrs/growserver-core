@@ -7,7 +7,7 @@ import { isPackItem } from "../item/packs";
 import { isGrowscan, openGrowscan } from "../item/growscan";
 import type { GameUpdatePacket } from "../packets/game-packet";
 import { Variant } from "../packets/variants";
-import type { Player } from "../player";
+import { type Player, WUKONG_STAFF_ID } from "../player";
 import { FULL_BODY_SUITS, MORPH_ITEMS } from "../player/transform";
 import { ActionTypes, ITEM_ID, LockPermission, TileFlags } from "../world/constants";
 import { isPlaceableType, tileFrom } from "../world/tiles";
@@ -44,6 +44,10 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
   tickGeiger(player);
 
   world.broadcast(tank.parse()!, player.id);
+
+  if (player.wukongClones?.isActive) {
+    player.wukongClones.syncMovement(player, tank, world);
+  }
 
   // Royal Lock "Rainbows for the King!" & Rainbow Wings trail effect
   if (world.isRoyalRainbowsActive(player)) {
@@ -147,8 +151,11 @@ async function TileChangeRequest(player: Player, tank: GameUpdatePacket, world: 
     if (await handleCuttingBoardSlice(player, world, block)) return;
     await tileFrom(world, block).onPunch(player);
     const currentHand = player.effectiveClothes?.hand ?? player.inventory?.clothes?.hand ?? 0;
-    if (currentHand === ITEM_ID.RAYMANS_FIST || currentHand === 5980 || currentHand === 12018) {
+    if (currentHand === ITEM_ID.RAYMANS_FIST || currentHand === 5980 || currentHand === 12018 || currentHand === WUKONG_STAFF_ID) {
       await raymanPunch(player, world, data);
+    }
+    if (player.wukongClones?.isActive) {
+      player.wukongClones.syncPunch(player, data, world);
     }
   } else if (data.itemID === ITEM_ID.WRENCH) {
     if (handleSurgeryWrench(player, world, data.tileX, data.tileY, block.fg)) return;

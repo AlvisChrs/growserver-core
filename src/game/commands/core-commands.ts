@@ -5,7 +5,7 @@ import { PlayerDB } from "../../database/services/player-db";
 import { items } from "../item/item-info";
 import { getItem } from "../item/item-utils";
 import { Variant } from "../packets/variants";
-import type { Player } from "../player";
+import { type Player, WUKONG_STAFF_ID } from "../player";
 import type { World } from "../world/world";
 import { serverManager } from "../server/server-manager";
 import { registerDialog } from "../network/dialog-handler";
@@ -2819,5 +2819,26 @@ registerCommand({
     const msg = args.join(" ");
     if (!msg) return player.variants.sendOnConsoleMessage("`4Usage: /gc <message>``");
     GuildManager.sendGuildChat(player, msg);
+  },
+});
+
+registerCommand({
+  name: "wukong",
+  aliases: ["staff", "ruyi", "clones"],
+  description: "Receive the mythical Wukong's Staff and awaken your 5 Shadow Clones",
+  role: PLAYER_ROLE.BASIC,
+  cooldown: 2,
+  execute(player) {
+    if (!player.inventory.hasItem(WUKONG_STAFF_ID)) {
+      player.addItemInven(WUKONG_STAFF_ID, 1);
+      player.sendInventory();
+    }
+    if (player.inventory.clothes.hand !== WUKONG_STAFF_ID) {
+      player.inventory.clothes.hand = WUKONG_STAFF_ID;
+      player.sendClothesToWorld();
+      player.wukongClones.spawn(player);
+    } else {
+      player.variants.sendOnConsoleMessage("`e[Wukong's Staff]: Already equipped! Run, jump, and punch to command your 5 clones!``");
+    }
   },
 });

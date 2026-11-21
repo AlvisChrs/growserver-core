@@ -1,0 +1,18 @@
+# Wukong's Staff Custom Item Configuration
+id = 11630
+
+target = "extra_file"
+
+[item]
+name = "Wukong's Staff"
+rarity = 999
+
+[wiki]
+name = "Wukong's Staff"
+desc = "The mythical Ruyi Jingu Bang wielded by Sun Wukong. When equipped, it invokes the Multi-Shadow Clone Jutsu, summoning 5 clones to fight at your side!"
+chi = "fire"
+play_mods = ["Shadow Clones (5x)", "Enhanced Punch", "Speedy"]
+
+[wiki.func]
+add = "`e[Wukong's Staff]: Multi-Shadow Clone Jutsu activated! 5 mystical clones summoned!``"
+rem = "`4[Wukong's Staff]: The shadow clones vanish in a puff of smoke.``"

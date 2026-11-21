@@ -7,6 +7,8 @@ import caddyfileDev from "./caddy/Caddyfile.dev" with { type: "text" };
 import caddyfile from "./caddy/Caddyfile" with { type: "text" };
 import bannerConf from "./custom-items/growserver/interface/banner/conf.toml" with { type: "text" };
 import bannerPngPath from "./custom-items/growserver/interface/banner/banner.png";
+import wukongConf from "./custom-items/growserver/game/wukongs_staff/conf.toml" with { type: "text" };
+import wukongPngPath from "./custom-items/growserver/game/wukongs_staff/wukongs_staff.png";
 import storeCatalogText from "./store/store.txt" with { type: "text" };
 import { logger } from "../utils/logger";
 
@@ -44,6 +46,14 @@ export const EMBEDDED_CUSTOM_ITEMS: EmbeddedCustomItemFile[] = [
   {
     relativePath: "growserver/interface/banner/banner.png",
     content: () => Bun.file(bannerPngPath).bytes(),
+  },
+  {
+    relativePath: "growserver/game/wukongs_staff/conf.toml",
+    content: wukongConf,
+  },
+  {
+    relativePath: "growserver/game/wukongs_staff/wukongs_staff.png",
+    content: () => Bun.file(wukongPngPath).bytes(),
   },
 ];
 

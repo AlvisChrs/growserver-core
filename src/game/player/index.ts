@@ -24,6 +24,8 @@ import { DEFAULT_RIFT_CAPE_CONFIG, DEFAULT_RIFT_WINGS_CONFIG, type RiftCapeConfi
 
 export * from "./inventory";
 export * from "./transform";
+export * from "./wukong-clones";
+import { WukongCloneManager, WUKONG_STAFF_ID } from "./wukong-clones";
 
 /** Delay between an inventory change and the database write that persists it. */
 const INVENTORY_SAVE_DEBOUNCE_MS = 1500;
@@ -71,6 +73,9 @@ const PROTECTED_ITEMS: ReadonlySet<number> = new Set([ITEM_ID.FIST, ITEM_ID.WREN
  * to their exact visual punch animation and particle effect IDs.
  */
 export const WEAPON_PUNCH_TYPES: Readonly<Record<number, number>> = {
+  // Wukong's Staff (Ruyi Jingu Bang) (80 = Extending staff punch)
+  [WUKONG_STAFF_ID]: 80,
+
   // Rayman's Fists & Floating Fists (80 = Disembodied floating fists)
   5480: 80,  // Rayman's Fist
   5980: 80,  // Floating Fists
@@ -408,6 +413,8 @@ export class Player {
   public geiger: GeigerSession | null = null;
   /** Active surgery session, if performing surgery. */
   public surgery: ActiveSurgery | null = null;
+  /** Sun Wukong shadow clones controller when Wukong's Staff is equipped. */
+  public wukongClones: WukongCloneManager = new WukongCloneManager();
   /** World `/home` warps to, null when the player has not set one. */
   public homeWorld: string | null = null;
   /** Name of the player who last whispered to this player (for `/r`). */
@@ -1032,6 +1039,14 @@ export class Player {
       this.untransform();
     }
 
+    if (itemId === WUKONG_STAFF_ID) {
+      if (equipped) {
+        this.wukongClones.spawn(this);
+      } else {
+        this.wukongClones.despawn(this);
+      }
+    }
+
     const info = getItemInfo(itemId);
     const message = equipped ? info?.func?.add : info?.func?.rem;
     if (message) this.variants.sendOnConsoleMessage(message);
@@ -1086,6 +1101,9 @@ export class Player {
       }
     } else {
       this.variants.sendClothes(this.netID, clothes, skin, capeColor, collarColor);
+    }
+    if (this.wukongClones?.isActive) {
+      this.wukongClones.updateClothes(this);
     }
   }
 

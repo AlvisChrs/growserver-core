@@ -49,6 +49,11 @@ export class World {
   /** Next avatar net ID handed out to a player entering this world; 0 means "not in a world". */
   private nextNetId = 1;
 
+  /** Allocates a unique avatar net ID inside this world. */
+  public allocNetId(): number {
+    return this.nextNetId++;
+  }
+
   constructor(public data: WorldData) {
     if (!this.data.weather) {
       this.data.weather = { id: WEATHER_CLEAR };
@@ -570,6 +575,9 @@ export class World {
       player.variants.sendOnSpawn(other.spawnOptions(false));
       player.variants.sendClothes(other.netID, other.effectiveClothes, other.effectiveSkinColor, other.effectiveCapeColor, other.effectiveCollarColor);
       player.sendBuffer(player.variants.buildCharacterState(other.netID, other.characterStats, other.state.characterState, other.punchId));
+      if (other.wukongClones?.isActive) {
+        other.wukongClones.sendTo(player, other);
+      }
     }
 
     // every avatar is spawned now, so the tile changes have a valid actor
@@ -577,6 +585,10 @@ export class World {
     this.musicStreams.delete(player.playerId);
     this.musicRelayed.delete(player.playerId);
     this.syncMusic();
+
+    if (player.inventory.clothes.hand === 11630) {
+      player.wukongClones.spawn(player);
+    }
 
     logger.debug({ player: player.tankIDName, world: this.name, players: othersCount + 1 }, "player entered world");
   }
@@ -587,6 +599,10 @@ export class World {
   public leave(player: Player): void {
     if (player.world !== this) return;
     clearMagplantRemote(player);
+
+    if (player.wukongClones?.isActive) {
+      player.wukongClones.despawn(player);
+    }
 
     const leftNetId = player.netID;
     // captured before the world is detached: the name color depends on it

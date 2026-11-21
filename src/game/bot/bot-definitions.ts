@@ -18,12 +18,12 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     worldName: "START",
     skinColor: 0xd8b598ff,
     clothes: {
-      hair: 100,      // Fedora
-      shirt: 102,     // Tuxedo
-      pants: 132,     // Blue Jeans
-      feet: 104,      // Classic Shoes
-      back: 658,      // Dragon Wings
-      necklace: 2596, // Growpro
+      hair: 462,      // Fedora
+      shirt: 38,      // Tuxedo
+      pants: 48,      // Jeans
+      feet: 40,       // Brown Shoes
+      back: 362,      // Angel Wings
+      face: 34,       // Shades
     },
     dialoguePool: [
       "Welcome to GrowServer! :D",
@@ -45,12 +45,12 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     worldName: "START",
     skinColor: 0xffe4b5ff,
     clothes: {
-      hair: 162,      // Newsboy Cap
-      shirt: 102,     // Tuxedo
-      pants: 132,     // Blue Jeans
-      feet: 104,      // Classic Shoes
-      back: 598,      // Angel Wings
-      hand: 1492,     // Diamond Pickaxe
+      hair: 46,       // Baseball Cap
+      shirt: 304,     // Tie Dyed Shirt
+      pants: 48,      // Jeans
+      feet: 496,      // Air Robinsons
+      back: 678,      // Crimson Eagle Wings
+      hand: 98,       // Pickaxe
     },
     dialoguePool: [
       "B> Laser Grid seeds 5/1 fast trade!",
@@ -71,10 +71,10 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     worldName: "START",
     skinColor: 0xffe0bdff,
     clothes: {
-      hair: 140,      // Straw Hat
-      shirt: 136,     // Overalls
-      pants: 132,     // Blue Jeans
-      feet: 120,      // Work Boots
+      hair: 890,      // Straw Hat
+      shirt: 892,     // Overalls
+      pants: 48,      // Jeans
+      feet: 40,       // Brown Shoes
     },
     dialoguePool: [
       "Halo! How do I get rich fast?",
@@ -99,11 +99,11 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     worldName: "FARM",
     skinColor: 0xd8b598ff,
     clothes: {
-      hair: 206,      // Farmer Hat
-      shirt: 204,     // Red Plaid Shirt
-      pants: 132,     // Blue Jeans
-      feet: 120,      // Work Boots
-      hand: 254,      // Pickaxe
+      hair: 890,      // Straw Hat
+      shirt: 36,      // Green Shirt
+      pants: 48,      // Jeans
+      feet: 42,       // Boots
+      hand: 98,       // Pickaxe
     },
     dialoguePool: [
       "Breaking Chandeliers fast! Need more pickaxes!",
@@ -124,12 +124,12 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     worldName: "FARM",
     skinColor: 0xf5deb3ff,
     clothes: {
-      hair: 458,      // Miner Hat
-      shirt: 136,     // Overalls
-      pants: 132,     // Blue Jeans
-      feet: 120,      // Work Boots
-      hand: 256,      // Golden Pickaxe
-      back: 356,      // Jetpack
+      hair: 74,       // Ski Cap
+      shirt: 892,     // Overalls
+      pants: 48,      // Jeans
+      feet: 1030,     // Cowboy Boots
+      hand: 1438,     // Golden Pickaxe
+      back: 156,      // Fairy Wings
     },
     dialoguePool: [
       "Harvest session going strong!",
@@ -153,12 +153,12 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     worldName: "CASINO",
     skinColor: 0xffdfd3ff,
     clothes: {
-      hair: 108,      // Top Hat
-      shirt: 102,     // Tuxedo
-      pants: 132,     // Blue Jeans
-      feet: 104,      // Classic Shoes
-      hand: 156,      // Walking Cane
-      necklace: 448,  // Golden Halo
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 76,      // Black Pants
+      feet: 78,       // Patent Leather Shoes
+      face: 146,      // Gold-Rimmed Glasses
+      hand: 2866,     // Wizard's Staff
     },
     dialoguePool: [
       "All bets in! Minimum bet 5 World Locks!",
@@ -179,11 +179,12 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     worldName: "CASINO",
     skinColor: 0xd8b598ff,
     clothes: {
-      hair: 3602,     // Night King Crown
-      shirt: 102,     // Tuxedo
-      pants: 132,     // Blue Jeans
-      feet: 104,      // Classic Shoes
-      back: 2286,     // Ripper Wings
+      hair: 462,      // Fedora
+      shirt: 38,      // Tuxedo
+      pants: 468,     // Pinstripe Pants
+      feet: 78,       // Patent Leather Shoes
+      face: 34,       // Shades
+      back: 1206,     // Devil Wings
     },
     dialoguePool: [
       "Bet 50 WL on RED!",
@@ -204,12 +205,12 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     worldName: "CASINO",
     skinColor: 0xffe4c4ff,
     clothes: {
-      hair: 168,      // Party Hat
-      face: 170,      // Neon Sunglasses
-      shirt: 136,     // Overalls
-      pants: 132,     // Blue Jeans
-      feet: 104,      // Classic Shoes
-      hand: 1576,     // Fiesta Dragon
+      mask: 70,       // Spikey Hair
+      shirt: 304,     // Tie Dyed Shirt
+      pants: 48,      // Jeans
+      feet: 496,      // Air Robinsons
+      face: 1590,     // 3D Glasses
+      back: 818,      // Ripper Wings
     },
     dialoguePool: [
       "Bet 10 WL on Green 0!",
@@ -233,12 +234,13 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
     worldName: "TRADE",
     skinColor: 0xffffff80,
     clothes: {
-      hair: 3602,     // Night King Crown
-      back: 1786,     // Legendary Wings
-      hand: 2480,     // Rayman's Fist
-      feet: 104,      // Classic Shoes
-      shirt: 102,     // Tuxedo
-      pants: 132,     // Blue Jeans
+      hair: 66,       // Top Hat
+      shirt: 38,      // Tuxedo
+      pants: 76,      // Black Pants
+      feet: 1940,     // Diamond Rocket Shoes
+      face: 146,      // Gold-Rimmed Glasses
+      back: 1460,     // Golden Angel Wings
+      hand: 1438,     // Golden Pickaxe
     },
     dialoguePool: [
       "B> Magplant 80 Diamond Locks! Fast deal!",

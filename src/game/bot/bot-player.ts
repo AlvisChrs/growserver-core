@@ -77,16 +77,12 @@ export class BotPlayer extends Player {
     this.dialoguePool = config.dialoguePool ?? [];
 
     if (config.clothes) {
-      if (config.clothes.hair) this.inventory.clothes.hair = config.clothes.hair;
-      if (config.clothes.shirt) this.inventory.clothes.shirt = config.clothes.shirt;
-      if (config.clothes.pants) this.inventory.clothes.pants = config.clothes.pants;
-      if (config.clothes.feet) this.inventory.clothes.feet = config.clothes.feet;
-      if (config.clothes.face) this.inventory.clothes.face = config.clothes.face;
-      if (config.clothes.hand) this.inventory.clothes.hand = config.clothes.hand;
-      if (config.clothes.back) this.inventory.clothes.back = config.clothes.back;
-      if (config.clothes.mask) this.inventory.clothes.mask = config.clothes.mask;
-      if (config.clothes.necklace) this.inventory.clothes.necklace = config.clothes.necklace;
-      if (config.clothes.ances) this.inventory.clothes.ances = config.clothes.ances;
+      for (const [slot, id] of Object.entries(config.clothes)) {
+        if (id && id > 0) {
+          (this.inventory.clothes as any)[slot] = id;
+          this.inventory.items.set(id, 1);
+        }
+      }
     }
 
     const now = Date.now();

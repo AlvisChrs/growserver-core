@@ -30,7 +30,7 @@ export function buildWorldSelectMarkup(worlds: readonly WorldMenuEntry[], option
     .sort((a, b) => b.players - a.players || a.name.localeCompare(b.name));
   const byName = new Collection<string, WorldMenuEntry>(loaded.map((world) => [world.name, world]));
   const seen = new Set<string>();
-  const lines: string[] = [];
+  const lines: string[] = ["default|"];
 
   const addSection = (title: string, names: readonly string[], color: number, allowRepeats = false): void => {
     const inSection = new Set<string>();
@@ -70,6 +70,6 @@ export function buildWorldSelectMarkup(worlds: readonly WorldMenuEntry[], option
   const recent = (options.recentWorlds ?? []).map((name) => name.toUpperCase()).reverse().slice(0, 12);
   // Recent history is always shown, even if a world was also listed as Home/Top.
   addSection("Recently Visited Worlds<CR>", recent, 0xcbaaf4ff, true);
-  if (lines.length === 0) addSection("Recommended Worlds", ["START"], 0xcbaf8bff);
+  if (lines.length <= 1) addSection("Recommended Worlds", ["START"], 0xcbaf8bff);
   return lines.join("\n");
 }

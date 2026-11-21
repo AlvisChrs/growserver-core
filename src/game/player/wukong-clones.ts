@@ -1,5 +1,5 @@
 import { Packet, PacketKind } from "growtopia.wasm";
-import { TANK_PACKET_TYPE } from "../../constants";
+import { TANK_PACKET_FLAGS, TANK_PACKET_TYPE } from "../../constants";
 import { GameUpdatePacket } from "../packets/game-packet";
 import { Variant } from "../packets/variants";
 import { TextParser } from "../../utils/text-parser";
@@ -119,7 +119,7 @@ export class WukongCloneManager {
     if (!this.isActive || this.clones.length === 0 || !world) return;
 
     const facingSign = player.state.rotatedLeft ? -1 : 1;
-    const facingFlag = player.state.rotatedLeft ? 0x10 : 0;
+    const facingFlag = player.state.rotatedLeft ? TANK_PACKET_FLAGS.FACING_LEFT : 0;
     const playerTileX = Math.floor(player.state.x / 32);
     const playerTileY = Math.floor(player.state.y / 32);
 
@@ -138,7 +138,7 @@ export class WukongCloneManager {
       const cloneState = GameUpdatePacket.create({
         type: TANK_PACKET_TYPE.STATE,
         netID: clone.netID,
-        flags: (tank.data.flags & ~0x10) | facingFlag,
+        flags: (tank.data.flags & ~TANK_PACKET_FLAGS.FACING_LEFT) | facingFlag,
         posX: cloneX,
         posY: cloneY,
         speedX: tank.data.speedX,
@@ -171,7 +171,7 @@ export class WukongCloneManager {
 
     // Determine facing based on target tile
     const punchLeft = data.tileX < playerTileX || (data.tileX === playerTileX && player.state.rotatedLeft);
-    const punchFlag = punchLeft ? 0x10 : 0;
+    const facingFlag = punchLeft ? TANK_PACKET_FLAGS.FACING_LEFT : 0;
 
     for (const clone of this.clones) {
       const cloneTileX = Math.floor(clone.x / 32) + relTileX;
@@ -180,7 +180,7 @@ export class WukongCloneManager {
       const punchPacket = GameUpdatePacket.create({
         type: TANK_PACKET_TYPE.STATE,
         netID: clone.netID,
-        flags: (data.flags & ~0x10) | punchFlag | 0x2000,
+        flags: TANK_PACKET_FLAGS.ON_GROUND | facingFlag | TANK_PACKET_FLAGS.ON_TILE_ACTION | TANK_PACKET_FLAGS.ON_PUNCHED,
         posX: clone.x,
         posY: clone.y,
         tileX: cloneTileX,
@@ -196,7 +196,7 @@ export class WukongCloneManager {
   }
 
   /**
-   * Re-sends clothing to all clones if the owner changes clothing while clones are active.
+   * Re-sends clothing and character state to all clones if the owner changes clothing while clones are active.
    */
   public updateClothes(player: Player): void {
     if (!this.isActive || !player.world) return;
@@ -209,6 +209,14 @@ export class WukongCloneManager {
         player.effectiveCapeColor,
         player.effectiveCollarColor,
       );
+      player.sendBuffer(
+        player.variants.buildCharacterState(
+          clone.netID,
+          player.characterStats,
+          player.state.characterState,
+          80, // Extending staff punch
+        ),
+      );
       for (const other of world.players) {
         other.variants.sendClothes(
           clone.netID,
@@ -216,6 +224,14 @@ export class WukongCloneManager {
           player.effectiveSkinColor,
           player.effectiveCapeColor,
           player.effectiveCollarColor,
+        );
+        other.sendBuffer(
+          other.variants.buildCharacterState(
+            clone.netID,
+            player.characterStats,
+            player.state.characterState,
+            80, // Extending staff punch
+          ),
         );
       }
     }
@@ -232,7 +248,7 @@ export class WukongCloneManager {
   }
 
   /**
-   * Internal helper to send the spawn and clothing packet for one clone to a recipient.
+   * Internal helper to send the spawn, clothing, and character state packet for one clone to a recipient.
    */
   private spawnCloneFor(target: Player, clone: CloneInstance, owner: Player): void {
     const text = new TextParser();
@@ -264,6 +280,15 @@ export class WukongCloneManager {
       owner.effectiveSkinColor,
       owner.effectiveCapeColor,
       owner.effectiveCollarColor,
+    );
+
+    target.sendBuffer(
+      target.variants.buildCharacterState(
+        clone.netID,
+        owner.characterStats,
+        owner.state.characterState,
+        80, // Extending staff punch animation ID
+      ),
     );
   }
 }

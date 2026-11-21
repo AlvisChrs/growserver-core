@@ -66,6 +66,9 @@ registerCommand({
     if (requested) {
       const command = commands.get(requested) ?? commands.find((entry) => (entry.aliases ?? []).includes(requested));
       if (!command) return player.variants.sendOnConsoleMessage("It seems that command doesn't exist.");
+      if (!canUseCommand(player, command)) {
+        return player.variants.sendOnConsoleMessage("`4You don't have permission to view or use this command.``");
+      }
 
       const dialog = new DialogBuilder()
         .defaultColor()
@@ -90,6 +93,7 @@ registerCommand({
       .toArray()
       .filter((command: ChatCommand) => canUseCommand(player, command));
 
+    const ownerCmds: ChatCommand[] = [];
     const devCmds: ChatCommand[] = [];
     const modCmds: ChatCommand[] = [];
     const guardianCmds: ChatCommand[] = [];
@@ -99,7 +103,9 @@ registerCommand({
     for (const cmd of allowed) {
       const requiredRole = cmd.role ?? PLAYER_ROLE.BASIC;
       const cmdRank = roleRank(requiredRole);
-      if (cmdRank >= roleRank(PLAYER_ROLE.DEVELOPER)) {
+      if (cmdRank >= roleRank(PLAYER_ROLE.OWNER)) {
+        ownerCmds.push(cmd);
+      } else if (cmdRank >= roleRank(PLAYER_ROLE.DEVELOPER)) {
         devCmds.push(cmd);
       } else if (cmdRank >= roleRank(PLAYER_ROLE.MODERATOR)) {
         modCmds.push(cmd);
@@ -113,6 +119,7 @@ registerCommand({
     }
 
     const sortFn = (a: ChatCommand, b: ChatCommand) => a.name.localeCompare(b.name);
+    ownerCmds.sort(sortFn);
     devCmds.sort(sortFn);
     modCmds.sort(sortFn);
     guardianCmds.sort(sortFn);
@@ -126,6 +133,12 @@ registerCommand({
       .addSmallText(`Your Role: \`2${userRoleName}\`\` (Rank ${userRank}) | Total Commands: \`w${allowed.length}\`\``)
       .addSmallText("`oTip: Use `w/help <command>`o for full parameter usage & description!``")
       .addSpacer("small");
+
+    if (ownerCmds.length > 0) {
+      dialog.addLabelWithIcon(`\`bOwner Commands (${ownerCmds.length})\`\``, 32, "small");
+      dialog.addTextBox(ownerCmds.map((c) => `\`b/${c.name}\`\``).join(", "));
+      dialog.addSpacer("small");
+    }
 
     if (devCmds.length > 0) {
       dialog.addLabelWithIcon(`\`#Developer Commands (${devCmds.length})\`\``, 32, "small");
@@ -528,9 +541,9 @@ registerCommand({
 
 registerCommand({
   name: "giverole",
-  description: "Change a player's role.",
+  description: "Permanently assign a player's role in the database.",
   usage: "/giverole <target> <0 user|1 developer|2 moderator|3 supporter|4 owner|5 guardian>",
-  role: PLAYER_ROLE.DEVELOPER,
+  role: PLAYER_ROLE.OWNER,
   cooldown: 1,
   async execute(player, args) {
     const [rawTarget, rawRole] = args;
@@ -545,9 +558,77 @@ registerCommand({
       target.online.role = role;
       target.online.realRole = role;
       target.online.refreshAvatar();
-      target.online.variants.sendOnConsoleMessage(`\`2Your role has been changed to \`o${ROLE_NAMES[role]}\`2 by an administrator!\`\``);
+      target.online.variants.sendOnConsoleMessage(`\`2Your role has been changed to \`o${ROLE_NAMES[role]}\`2 by Server Owner \`$${player.displayName}\`2!\`\``);
     }
     player.variants.sendOnConsoleMessage(`\`2Successfully changed role of \`o${target.name}\`2 to \`o${ROLE_NAMES[role]}\`2.\`\``);
+  },
+});
+
+registerCommand({
+  name: "saveall",
+  aliases: ["save-all", "flush"],
+  description: "Force saves all active worlds and flushes database state to disk immediately",
+  usage: "/saveall",
+  role: PLAYER_ROLE.OWNER,
+  cooldown: 5,
+  async execute(player) {
+    const count = worldManager.worlds.size;
+    await worldManager.saveAll();
+    player.variants.sendOnConsoleMessage(`\`2[Owner]: Successfully saved \`w${count}\`2 active worlds and flushed state to disk!\`\``);
+  },
+});
+
+registerCommand({
+  name: "serverstatus",
+  aliases: ["sysinfo", "stats"],
+  description: "Shows live server performance metrics, RAM usage, and multi-server status",
+  usage: "/serverstatus",
+  role: PLAYER_ROLE.OWNER,
+  cooldown: 3,
+  execute(player) {
+    const mem = process.memoryUsage();
+    const rssMb = (mem.rss / 1024 / 1024).toFixed(1);
+    const heapMb = (mem.heapUsed / 1024 / 1024).toFixed(1);
+    const uptimeSec = Math.floor(process.uptime());
+    const hours = Math.floor(uptimeSec / 3600);
+    const mins = Math.floor((uptimeSec % 3600) / 60);
+    const secs = uptimeSec % 60;
+    const totalPlayers = serverManager.players.size;
+    const activeWorlds = worldManager.worlds.size;
+
+    const dialog = new DialogBuilder()
+      .defaultColor()
+      .addLabelWithIcon("`bServer System Status (Owner)``", 32, "big")
+      .addSpacer("small")
+      .addSmallText(`Server Uptime: \`w${hours}h ${mins}m ${secs}s\`\``)
+      .addSmallText(`Total Connected Players: \`2${totalPlayers}\`\``)
+      .addSmallText(`Active Worlds in Memory: \`e${activeWorlds}\`\``)
+      .addSmallText(`RAM Usage (Heap / RSS): \`w${heapMb} MB / ${rssMb} MB\`\``)
+      .addSmallText(`Active Subservers: \`w${serverManager.servers.size}\`\``)
+      .addQuickExit()
+      .endDialog("sysinfo_end", "", "Close")
+      .str();
+    player.variants.sendOnDialogRequest(dialog);
+  },
+});
+
+registerCommand({
+  name: "alert",
+  aliases: ["announcement", "notice"],
+  description: "Send a server-wide popup alert to every online player across all servers",
+  usage: "/alert <message>",
+  role: PLAYER_ROLE.OWNER,
+  cooldown: 2,
+  execute(player, args) {
+    const message = args.join(" ").trim();
+    if (!message) return player.variants.sendOnConsoleMessage("`4Usage: /alert <message>``");
+
+    for (const target of serverManager.players.values()) {
+      target.sendTextBubble(`\`4[ANNOUNCEMENT]\`o: ${message}`, true);
+      target.variants.sendOnConsoleMessage(`\`4[ANNOUNCEMENT from Owner ${player.displayName}]: \`$$${message}\`\``);
+      target.sendSfx("audio/party_horn.wav");
+    }
+    player.variants.sendOnConsoleMessage(`\`2Alert broadcasted to \`w${serverManager.players.size}\`2 online players.\`\``);
   },
 });
 
@@ -606,6 +687,14 @@ registerCommand({
         return player.variants.sendOnConsoleMessage("`4Invalid role. Available: dev, mod, guardian, supporter, user, owner``");
       }
 
+      if (targetRole === PLAYER_ROLE.OWNER && player.realRole !== PLAYER_ROLE.OWNER) {
+        return player.variants.sendOnConsoleMessage("`4Only the true Server Owner can assume the Owner role!``");
+      }
+
+      if (roleRank(targetRole) > roleRank(player.realRole)) {
+        return player.variants.sendOnConsoleMessage("`4You cannot disguise as a role higher than your original rank!``");
+      }
+
       player.role = targetRole;
       player.refreshAvatar();
       player.variants.sendOnConsoleMessage(`\`2Your active role is now: \`$${ROLE_NAMES[targetRole]}\`2! (Disguise/Test mode active)`);
@@ -619,8 +708,16 @@ registerCommand({
       return player.variants.sendOnConsoleMessage("`4Invalid role. Available: dev, mod, guardian, supporter, user, owner``");
     }
 
+    if (targetRole === PLAYER_ROLE.OWNER && !player.isOwner) {
+      return player.variants.sendOnConsoleMessage("`4Only the Server Owner can grant the Owner role!``");
+    }
+
     const target = await resolveTarget(rawTarget!);
     if (!target?.playerId) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 not found.\`\``);
+
+    if (target.online && roleRank(target.online.role) >= roleRank(player.role) && target.online.playerId !== player.playerId) {
+      return player.variants.sendOnConsoleMessage("`4You cannot change the role of an equal or higher ranked staff member!``");
+    }
 
     await PlayerDB.updateById(target.playerId, { role_id: targetRole });
     if (target.online) {
@@ -789,7 +886,7 @@ registerCommand({
     const target = await resolveTarget(rawTarget);
     if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
 
-    if (target.online.isDeveloper || roleRank(target.online.role) >= roleRank(player.role)) {
+    if (roleRank(target.online.role) >= roleRank(player.role)) {
       return player.variants.sendOnConsoleMessage("`4You cannot mute equal or higher ranked staff.``");
     }
 
@@ -852,7 +949,7 @@ registerCommand({
     const target = await resolveTarget(rawTarget);
     if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
 
-    if (target.online.isDeveloper || roleRank(target.online.role) >= roleRank(player.role)) {
+    if (roleRank(target.online.role) >= roleRank(player.role)) {
       return player.variants.sendOnConsoleMessage("`4You cannot freeze equal or higher ranked staff.``");
     }
 
@@ -900,7 +997,7 @@ registerCommand({
     const target = await resolveTarget(rawTarget);
     if (!target?.online) return player.variants.sendOnConsoleMessage(`\`4Player \`o${rawTarget}\`4 is not online.\`\``);
 
-    if (target.online.isDeveloper || roleRank(target.online.role) >= roleRank(player.role)) {
+    if (roleRank(target.online.role) >= roleRank(player.role)) {
       return player.variants.sendOnConsoleMessage("`4You cannot curse equal or higher ranked staff.``");
     }
 
@@ -997,12 +1094,12 @@ registerCommand({
     }
 
     if (target.online) {
-      if (target.online.isDeveloper || roleRank(target.online.role) >= roleRank(player.role)) {
+      if (roleRank(target.online.role) >= roleRank(player.role)) {
         return player.variants.sendOnConsoleMessage("`4You cannot ban an administrator or equal/higher rank staff member.``");
       }
     } else {
       const record = await PlayerDB.getByIdWithDeleted(target.playerId);
-      if (record && roleRank(record.role_id) >= roleRank(player.role)) {
+      if (record && roleRank(record.role_id ?? PLAYER_ROLE.BASIC) >= roleRank(player.role)) {
         return player.variants.sendOnConsoleMessage("`4You cannot ban an administrator or equal/higher rank staff member.``");
       }
     }

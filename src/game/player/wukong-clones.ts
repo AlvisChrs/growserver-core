@@ -44,7 +44,7 @@ export class WukongCloneManager {
    * Summons 5 shadow clones standing side-by-side alongside the player.
    */
   public spawn(player: Player): void {
-    if (this.isActive || !player.world) return;
+    if (this.isActive || !player.world || player.isInvisible) return;
     const world = player.world;
     this.isActive = true;
     this.clones = [];
@@ -116,7 +116,7 @@ export class WukongCloneManager {
    * Synchronizes clone positions and animation states with the player's movement.
    */
   public syncMovement(player: Player, tank: GameUpdatePacket, world: World): void {
-    if (!this.isActive || this.clones.length === 0 || !world) return;
+    if (!this.isActive || this.clones.length === 0 || !world || player.isInvisible) return;
 
     const facingSign = player.state.rotatedLeft ? -1 : 1;
     const facingFlag = player.state.rotatedLeft ? TANK_PACKET_FLAGS.FACING_LEFT : 0;
@@ -160,7 +160,7 @@ export class WukongCloneManager {
    * in the exact same relative angle and direction as the player's extending staff.
    */
   public syncPunch(player: Player, data: GameUpdatePacket["data"], world: World): void {
-    if (!this.isActive || this.clones.length === 0 || !world) return;
+    if (!this.isActive || this.clones.length === 0 || !world || player.isInvisible) return;
 
     const playerTileX = Math.floor(player.state.x / 32);
     const playerTileY = Math.floor(player.state.y / 32);
@@ -241,7 +241,7 @@ export class WukongCloneManager {
    * Sends all active clones to a newly entering player.
    */
   public sendTo(targetPlayer: Player, owner: Player): void {
-    if (!this.isActive || this.clones.length === 0) return;
+    if (!this.isActive || this.clones.length === 0 || owner.isInvisible) return;
     for (const clone of this.clones) {
       this.spawnCloneFor(targetPlayer, clone, owner);
     }

@@ -35,18 +35,6 @@ export function runSlowTick(now = Date.now()): void {
   for (const player of serverManager.players.values()) {
     try {
       player.playMods.tick();
-      // Periodic ambient wandering ghosts while invisible (randomized ~3s interval, wide radius)
-      if (player.world && (player.state.characterState & CHARACTER_STATE.IS_INVISIBLE) !== 0 && Math.random() < 0.35) {
-        const count = Math.random() < 0.5 ? 1 : 2;
-        for (let i = 0; i < count; i++) {
-          const angle = Math.random() * 2 * Math.PI;
-          const dist = 25 + Math.random() * 55;
-          const gx = Math.round(player.state.x + 10 + Math.cos(angle) * dist);
-          const gy = Math.round(player.state.y + 16 + Math.sin(angle) * dist);
-          player.world.sendParticleEffect?.(3, gx, gy);
-          player.world.broadcastVariant?.(Variant.from("OnParticleEffect", 3, [gx, gy]));
-        }
-      }
     } catch (err) {
       logger.error({ err, id: player.id }, "play mod tick failed");
     }

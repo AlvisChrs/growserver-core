@@ -43,14 +43,25 @@ function State(player: Player, tank: GameUpdatePacket, world: World): void {
   handleFishingMovement(player, world);
   tickGeiger(player);
 
-  world.broadcast(tank.parse()!, player.id);
+  const parsed = tank.parse();
+  if (parsed) {
+    if (!player.isInvisible) {
+      world.broadcast(parsed, player.id);
+    } else {
+      for (const other of world.players) {
+        if (other !== player && (other.isModerator || other.isDeveloper)) {
+          other.sendBuffer(parsed);
+        }
+      }
+    }
+  }
 
-  if (player.wukongClones?.isActive) {
+  if (player.wukongClones?.isActive && !player.isInvisible) {
     player.wukongClones.syncMovement(player, tank, world);
   }
 
   // Royal Lock "Rainbows for the King!" & Rainbow Wings trail effect
-  if (world.isRoyalRainbowsActive(player)) {
+  if (world.isRoyalRainbowsActive(player) && !player.isInvisible) {
     const now = Date.now();
     const moved = Math.abs(data.posX - (player.lastRainbowX ?? 0)) > 6 || Math.abs(data.posY - (player.lastRainbowY ?? 0)) > 6;
     if (moved && now - (player.lastRainbowAt ?? 0) >= 160) {

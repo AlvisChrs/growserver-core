@@ -1,6 +1,6 @@
 import { Packet, PacketKind, type Peer } from "growtopia.wasm";
 import { Variant, VariantHandler, type SpawnOptions } from "../packets/variants";
-import { PlayerInventory, CLOTH_MAP, type ClothTypes } from "./inventory";
+import { PlayerInventory, CLOTH_MAP, createEmptyClothes, type ClothTypes, type PlayerClothes } from "./inventory";
 import { PlayerAuth } from "./auth";
 import { ActionsHandler } from "../packets/actions";
 import { CHARACTER_STATE, LOGON_MODE, PLAYER_ROLE, WORLD_FEATURE_FLAGS, playerRoleRank } from "../../constants";
@@ -477,6 +477,11 @@ export class Player {
     return this.role === PLAYER_ROLE.OWNER;
   }
 
+  /** Whether the player is currently invisible via /invis or invisible item state. */
+  public get isInvisible(): boolean {
+    return (this.state.characterState & CHARACTER_STATE.IS_INVISIBLE) !== 0;
+  }
+
   /** Whether player has permission to switch roles (Owner/Developer). */
   public get canManageRoles(): boolean {
     return playerRoleRank(this.realRole) >= playerRoleRank(PLAYER_ROLE.DEVELOPER) ||
@@ -637,6 +642,7 @@ export class Player {
 
   /** OnSpawn parameters for this player. `local` marks the receiving client's own avatar. */
   public spawnOptions(local: boolean): SpawnOptions {
+    const isInvis = this.state.isGhost || this.isInvisible;
     const options: SpawnOptions = {
       netID: this.netID,
       userID: this.playerId,
@@ -644,7 +650,7 @@ export class Player {
       y: this.state.y,
       displayName: this.formattedName,
       country: this.country,
-      invis: this.state.isGhost ? 1 : 0,
+      invis: isInvis ? 1 : 0,
       mstate: (this.isModerator || this.isGuardian) && !this.isDeveloper ? 1 : 0,
       smstate: this.isDeveloper ? 1 : 0,
     };
@@ -1094,16 +1100,28 @@ export class Player {
     const clothes = this.effectiveClothes;
     const capeColor = this.effectiveCapeColor;
     const collarColor = this.effectiveCollarColor;
+    const emptyClothes = createEmptyClothes();
+
     if (this.world) {
       for (const other of this.world.players) {
-        other.variants.sendClothes(this.netID, clothes, skin, capeColor, collarColor);
-        other.variants.sendOnChangeSkin(this.netID, skin);
+        if (other !== this && this.isInvisible) {
+          // Hide all visual clothes & item particles from other players when invisible
+          other.variants.sendClothes(this.netID, emptyClothes, 0x00000000);
+          other.variants.sendOnChangeSkin(this.netID, 0x00000000);
+        } else {
+          other.variants.sendClothes(this.netID, clothes, skin, capeColor, collarColor);
+          other.variants.sendOnChangeSkin(this.netID, skin);
+        }
       }
     } else {
       this.variants.sendClothes(this.netID, clothes, skin, capeColor, collarColor);
     }
     if (this.wukongClones?.isActive) {
-      this.wukongClones.updateClothes(this);
+      if (this.isInvisible) {
+        this.wukongClones.despawn(this);
+      } else {
+        this.wukongClones.updateClothes(this);
+      }
     }
   }
 
@@ -1126,7 +1144,18 @@ export class Player {
   public sendCharacterState(): void {
     const buffer = this.variants.buildCharacterState(this.netID, this.characterStats, this.state.characterState, this.punchId);
     this.sendBuffer(buffer);
-    this.world?.broadcast(buffer, this.id);
+    if (!this.world) return;
+    if (!this.isInvisible) {
+      this.world.broadcast(buffer, this.id);
+    } else {
+      // Invisible: suppress weapon punch/projectile effects for other players
+      const hiddenBuffer = this.variants.buildCharacterState(this.netID, this.characterStats, this.state.characterState, 0);
+      for (const other of this.world.players) {
+        if (other !== this) {
+          other.sendBuffer(hiddenBuffer);
+        }
+      }
+    }
   }
 
   /** Punch effect id forced with /pid; null uses the active mods' punch type. */

@@ -448,27 +448,24 @@ registerDialog("search_item", (player, action) => {
   player.variants.sendOnConsoleMessage(`Added \`6${item.name}\`\` (200) to your inventory.`);
 });
 
-const GHOST_STATE = CHARACTER_STATE.WALK_IN_BLOCKS | CHARACTER_STATE.DOUBLE_JUMP | CHARACTER_STATE.HAVE_FLYING_PINEAPPLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
+const GHOST_STATE = CHARACTER_STATE.WALK_IN_BLOCKS | CHARACTER_STATE.DOUBLE_JUMP | CHARACTER_STATE.HAVE_FLYING_PINEAPPLE;
 
 registerCommand({
   name: "ghost",
   aliases: ["unghost"],
-  description: "Toggle ghost mode to walk through blocks with haunted shadows.",
+  description: "Toggle ghost mode to walk through blocks.",
   role: PLAYER_ROLE.MODERATOR,
   cooldown: 2,
   execute(player) {
     player.state.isGhost = !player.state.isGhost;
     const world = player.world;
-    const px = player.state.x + 10;
-    const py = player.state.y + 16;
 
     if (player.state.isGhost) {
       player.state.characterState |= GHOST_STATE;
       if (world) {
-        world.sendParticleEffect?.(3, px, py);
         world.playPositioned?.("audio/spooky.wav", player.netID);
       }
-      player.variants.sendOnConsoleMessage("`2Ghost mode enabled``. Haunted shadows swirl as you walk through blocks!");
+      player.variants.sendOnConsoleMessage("`2Ghost mode enabled``. You can now walk through blocks!");
       // semi-transparent white appearance
       for (const other of player.world?.players ?? [player]) {
         other.variants.sendClothes(player.netID, player.effectiveClothes, 0xffffff80);
@@ -476,8 +473,6 @@ registerCommand({
     } else {
       player.state.characterState &= ~GHOST_STATE;
       if (world) {
-        world.sendParticleEffect?.(3, px, py);
-        world.sendParticleEffect?.(12, px, py);
         world.playPositioned?.("audio/teleport.wav", player.netID);
       }
       player.variants.sendOnConsoleMessage("`4Ghost mode disabled``. You materialize back to normal.");
@@ -1472,17 +1467,28 @@ registerCommand({
     const py = player.state.y + 16;
 
     if (isCurrentlyInvisible) {
-      player.state.characterState &= ~(CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS);
+      player.state.characterState &= ~CHARACTER_STATE.IS_INVISIBLE;
       if (world) {
         spawnInvisReappearDarkFlames(world, px, py, player.netID);
       }
       player.sendClothesToWorld();
+      player.sendCharacterState();
+      // Re-spawn Wukong's clones if wearing staff
+      const handItem = player.inventory.clothes.hand || player.effectiveClothes.hand;
+      if (handItem === 11630) {
+        player.wukongClones.spawn(player);
+      }
       player.variants.sendOnConsoleMessage("`4Invisibility disabled. You step back through the dark shadow portal into reality.``");
     } else {
-      player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE | CHARACTER_STATE.HAVE_HAUNTED_SHADOWS;
+      player.state.characterState |= CHARACTER_STATE.IS_INVISIBLE;
+      if (player.wukongClones?.isActive) {
+        player.wukongClones.despawn(player);
+      }
       if (world) {
         spawnInvisGhostSwarm(world, px, py, player.netID);
       }
+      player.sendClothesToWorld();
+      player.sendCharacterState();
       player.variants.sendOnConsoleMessage("`2Invisibility enabled! Haunted shadow spirits swarm as you vanish into the unseen.``");
     }
     player.sendCharacterState();

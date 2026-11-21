@@ -1950,63 +1950,6 @@ registerCommand({
 });
 
 registerCommand({
-  name: "transform",
-  aliases: ["morph", "growformer"],
-  description: "Toggle vehicle or robot transform mode with transformable items",
-  cooldown: 1,
-  execute(player, args) {
-    const sub = args[0]?.toLowerCase();
-
-    // Revert / untransform
-    if (sub === "off" || sub === "revert" || sub === "normal" || sub === "civilian") {
-      player.untransform();
-      return;
-    }
-
-    // Hero alias
-    if (sub === "hero" || sub === "ezio" || sub === "altair") {
-      const heroCmd = commands.get("hero");
-      if (heroCmd) return heroCmd.execute(player, args.slice(sub === "hero" ? 1 : 0));
-    }
-
-    // Auto-equip Go-Go-Growformer! (#7384) if not equipped
-    if (player.inventory.clothes.feet !== 7384) {
-      if (player.inventory.hasItem(7384)) {
-        player.inventory.clothes.feet = 7384;
-      } else if (player.isDeveloper || player.isModerator) {
-        player.addItemInven(7384, 1);
-        player.inventory.clothes.feet = 7384;
-        player.sendInventory();
-      }
-    }
-
-    if (sub === "car" || sub === "vehicle") {
-      player.isTransformed = false;
-      player.playMods.remove("transformed");
-      player.sendClothesToWorld();
-      player.sendCharacterState();
-      player.sendTextBubble("`3Growformer: Car Mode!``", true);
-      player.variants.sendOnConsoleMessage("`3Go-Go-Growformer: Switched to sports car vehicle mode! 🏎️``");
-      player.sendSfx("audio/jet_engine01.wav");
-      return;
-    }
-
-    if (sub === "robot" || sub === "mech" || sub === "automaton") {
-      player.isTransformed = true;
-      player.playMods.add("transformed");
-      player.sendClothesToWorld();
-      player.sendCharacterState();
-      player.sendTextBubble("`3Growformer: Robot Automaton!``", true);
-      player.variants.sendOnConsoleMessage("`3Go-Go-Growformer: Activated Robot Automaton battle mech mode! 🤖``");
-      player.sendSfx("audio/jet_engine01.wav");
-      return;
-    }
-
-    player.toggleTransform();
-  },
-});
-
-registerCommand({
   name: "who",
   aliases: ["players", "listplayers"],
   description: "List players in the current world",
@@ -2416,30 +2359,6 @@ registerCommand({
 });
 
 registerCommand({
-  name: "katana",
-  aliases: ["lkat", "katanas"],
-  description: "Give Legendary Katana and elemental katana series",
-  role: PLAYER_ROLE.DEVELOPER,
-  execute(player) {
-    const katanas = [
-      { id: 2592, name: "Legendary Katana" },
-      { id: 9058, name: "Cursed Katana" },
-      { id: 11118, name: "Sonic Buster Katana" },
-      { id: 13710, name: "Dark Magic Katana" },
-      { id: 16428, name: "Immortal Sonic Buster Katana" },
-    ];
-    for (const k of katanas) {
-      if (!player.inventory.hasItem(k.id)) player.addItemInven(k.id, 1);
-    }
-    // Auto-equip Legendary Katana
-    player.equipClothes(2592);
-    player.sendSfx("audio/thousandSlash.wav");
-    player.sendTextBubble("`#SHING! Legendary Katana equipped!``", true);
-    player.variants.sendOnConsoleMessage("`#You have unsheathed the Legendary Katana! Punch to unleash crescent slashes!``");
-  },
-});
-
-registerCommand({
   name: "immortal",
   aliases: ["immortals", "immortalset"],
   description: "Receive the full Immortal Collection (Katana, Da Vinci Wings, Pickaxe, Swordfish, and Giant Eye Head)",
@@ -2583,43 +2502,6 @@ registerCommand({
 });
 
 registerCommand({
-  name: "transforms",
-  aliases: ["transformitems", "morphs"],
-  description: "Receive transform items: Go-Go-Growformer, PowerKey, Mystic Transform Crystal, Space Rabbit, and Hero Suits",
-  role: PLAYER_ROLE.DEVELOPER,
-  execute(player) {
-    const items = [
-      7384,  // Go-Go-Growformer! (Feet)
-      7480,  // Growformer PowerKey (Consumable)
-      10456, // Mystic Transform Crystal (Consumable)
-      10454, // Mystic Snow Fox
-      10960, // Space Rabbit (Consumable)
-      12014, // Dal's Phasers
-      12018, // Rok's Fists
-      11560, // Ezio Full-Body Suit
-      12646, // Altair Full-Body Suit
-    ];
-    for (const id of items) {
-      if (!player.inventory.hasItem(id)) player.addItemInven(id, 1);
-    }
-    // Auto-equip Go-Go-Growformer and transform into vehicle mode
-    if (player.inventory?.clothes) player.inventory.clothes.feet = 7384;
-    else player.equipClothes?.(7384);
-    if (!player.isTransformed) {
-      player.toggleTransform?.();
-    } else {
-      player.sendClothesToWorld?.();
-      player.sendCharacterState?.();
-    }
-    player.sendInventory();
-    player.sendSfx("audio/jet_engine01.wav");
-    player.sendTextBubble("`3Transform gear loaded! Roll out!``", true);
-    player.variants.sendOnConsoleMessage("`3[Transforms]: Received Go-Go-Growformer! (#7384), PowerKey (#7480), Mystic Transform Crystal (#10456), Space Rabbit (#10960), and Hero Suits!``");
-    player.variants.sendOnConsoleMessage("`oTip: Use /transform or double-click Growformer PowerKey (#7480) / Mystic Transform Crystal (#10456) to morph into vehicle mode!``");
-  },
-});
-
-registerCommand({
   name: "criminal",
   aliases: ["villain", "crime", "mastermind"],
   description: "Receive Crime Wave, Crime In Progress, Criminal Mastermind, and full deck of Superpower Cards",
@@ -2656,86 +2538,6 @@ registerCommand({
     player.sendTextBubble("`4Villainous schemes in motion! Superhero cards ready!``", true);
     player.variants.sendOnConsoleMessage("`4[Crimefighting]: Received Crime Wave (#2382), Crime In Progress (#2302), Criminal Mastermind (#12276), and Superpower Cards!``");
     player.variants.sendOnConsoleMessage("`oTip: Place Criminal Mastermind or Crime in Progress and wrench or punch to battle! Counter elements for 3x critical damage! (Fire > Muscle > Lightning > Ice > Fire)``");
-  },
-});
-
-registerCommand({
-  name: "fish",
-  aliases: ["fishing", "angler"],
-  description: "Receive fishing rods, baits, fish tank and port starter pack",
-  role: PLAYER_ROLE.DEVELOPER,
-  execute(player) {
-    const fishingPack = [
-      { id: 2912, count: 1 }, // Fishing Rod
-      { id: 3040, count: 1 }, // Goldenrod
-      { id: 2914, count: 50 }, // Wiggly Worm
-      { id: 3014, count: 25 }, // Salmon Eggs
-      { id: 5528, count: 10 }, // Mega-Pellet Bait
-      { id: 3004, count: 20 }, // Fish Tank (background)
-      { id: 3002, count: 2 }, // Fish Tank Port
-      { id: 5530, count: 2 }, // Training Port
-    ];
-    for (const item of fishingPack) {
-      player.addItemInven(item.id, item.count);
-    }
-    // Auto-equip Fishing Rod
-    player.equipClothes(2912);
-    player.sendSfx("audio/splash.wav");
-    player.sendTextBubble("`2Equipped Fishing Rod! Select bait and tap water to fish!``", true);
-    player.variants.sendOnConsoleMessage("`2Received Fishing Starter Pack! Equip rod, select bait, and tap water to catch fish!``");
-  },
-});
-
-registerCommand({
-  name: "wizard",
-  aliases: ["lquester", "legendarywizard"],
-  description: "Get Legendary Wizard NPC block and interact with the wizard",
-  role: PLAYER_ROLE.DEVELOPER,
-  execute(player) {
-    player.addItemInven(1790, 1); // Legendary Wizard
-    player.sendSfx("audio/magic_hit.wav");
-    player.sendTextBubble("`9The Legendary Wizard answers your call!``", true);
-    player.variants.sendOnConsoleMessage("`9Received Legendary Wizard block! Place it or interact to undertake Legendary Quests!``");
-  },
-});
-
-registerCommand({
-  name: "surg",
-  aliases: ["surgery", "surgtools", "med"],
-  description: "Receive Surg-E practice dummies and full kit of all 14 surgical tools",
-  role: PLAYER_ROLE.DEVELOPER,
-  execute(player) {
-    player.addItemInven(4296, 5); // Surg-E Anatomical Dummy
-    player.addItemInven(8558, 5); // Train-E
-    player.addItemInven(1256, 1); // Hospital Bed
-    player.addItemInven(1280, 1); // Caduceus
-
-    const tools = [
-      { id: 1258, count: 50 }, // Sponge
-      { id: 1260, count: 50 }, // Scalpel
-      { id: 1262, count: 50 }, // Anesthetic
-      { id: 1264, count: 50 }, // Antiseptic
-      { id: 1266, count: 50 }, // Antibiotics
-      { id: 1268, count: 50 }, // Splint
-      { id: 1270, count: 50 }, // Stitches
-      { id: 1296, count: 1 },  // Fix it!
-      { id: 4308, count: 50 }, // Pins
-      { id: 4310, count: 50 }, // Transfusion
-      { id: 4312, count: 50 }, // Defibrillator
-      { id: 4314, count: 50 }, // Clamp
-      { id: 4316, count: 50 }, // Ultrasound
-      { id: 4318, count: 50 }, // Lab Kit
-    ];
-
-    for (const tool of tools) {
-      player.addItemInven(tool.id, tool.count);
-    }
-
-    player.sendInventory();
-    player.sendSfx("audio/bleep_clean.wav");
-    player.sendTextBubble("`2Received Surg-E dummies and all 14 surgical tools!``", true);
-    player.variants.sendOnConsoleMessage("`2[Surgery]: Received Surg-E dummies (#4296), Train-E (#8558), and 50x of each surgical tool!``");
-    player.variants.sendOnConsoleMessage("`oTip: Place Surg-E (#4296) and punch or wrench it to practice surgery.`");
   },
 });
 

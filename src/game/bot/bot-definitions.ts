@@ -961,11 +961,11 @@ export const DEFAULT_BOT_ROSTER: BotConfig[] = [
       hand: 1438,     // Golden Pickaxe
     },
     dialoguePool: [
-      "Welcome to SHOP! All 4 floors of vending machines are fully restocked!",
+      "Welcome to SHOP! The luxury Sunset Mall is fully restocked!",
+      "Check out our 4 grand marble floors and the VIP Diamond Vault basement!",
       "Floor 1: Seeds & Tools | Floor 2: Wings | Floor 3: Clothes | Floor 4: PRO Items!",
-      "Safe automated trading with vending machines! 100% scam-free!",
-      "Wrench any vending machine to check price and purchase with World Locks!",
-      "Enjoy your shopping! Thanks for supporting our server marketplace!",
+      "Wrench any vending machine to check prices and purchase instantly with World Locks!",
+      "Notice the golden Sunset sky and hanging Chandeliers? Best shopping vibe!",
     ],
   },
   {
